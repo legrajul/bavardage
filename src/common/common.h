@@ -18,7 +18,7 @@ typedef struct {
 	int code;
 	char name[MAX_NAME_SIZE];
 	char mess[MAX_MESS_SIZE];
-	char room[MAX_ROOM_NAME_SIZE];
+	char rooms[MAX_ROOM_NAME_SIZE];
 } message;
 
 #endif
