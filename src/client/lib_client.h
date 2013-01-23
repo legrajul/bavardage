@@ -1,17 +1,62 @@
 #ifndef LIB_CLIENT
 #define LIB_CLIENT
 
-int send_message (const char* mess);
+int extract_code (const char *str);
 
-int send_commande (const int code, const char* param);
+/**
+*	Découpe une chaine de caractère
+*	@param s chaine de caractère
+*	@param start position de départ dans la chaine s
+*	@param end position de fin dans la chaine s
+*	@return la chaine s de la position start jusqu'a end
+*/
+char *str_sub (const char *s, unsigned int start, unsigned int end);
 
-int connect (const char* addr, const int port);
+/**
+*	Envoi un message au serveur de la forme "message" ou
+*	fait appel a send_command si message de la forme /COMMAND "message"
+*	@param mess message envoyé au serveur
+*	@return 0 ou -1 en cas d'erreur
+*/
+int send_message (const char *mess);
+
+/**
+*	Envoi une commande au serveur
+*	@param code numéro de la commande
+*	@param param paramètre de la commande
+*	@return 0 ou -1 en cas d'erreur
+*/
+int send_command (const int code, const char *param);
+
+/**
+*	Ce connecte au serveur
+*	@param addr adresse IP du serveur
+*	@param port port du serveur
+*	@return 0 ou -1 en cas d'erreur
+*/
+int connect_socket (const char *addr, const int port);
+
+/**
+*	Ce charge de l'envoi des requetes au serveur
+*/
+void *traitement_send(void *param);
+
+/**
+*	Ce charge de la réception des réponses du serveur
+*/
+void *traitement_recv(void *param);
 
 int disconnect ();
 
-int switch_to_room (const char* room_name);
+/**
+*	Débute la communication avec le serveur en lancant les threads
+*	pour envoyer de requetes et lire les réponses du serveur 
+*/
+int start_communication ();
 
-int ask_to_join_room (const char* room_name);
+int switch_to_room (const char *room_name);
+
+int ask_to_join_room (const char *room_name);
 
 /* struct rooms
 	char** rooms

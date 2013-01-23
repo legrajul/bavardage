@@ -77,7 +77,7 @@ int initSockAddr(const char *adresse, int port, struct sockaddr_in *in) {
 		// c'est une erreur
         return 0;
 	} else {
-        if ((in->sin_addr.s_addr = inet_addr(adresse)) == -1) {
+       	if ((in->sin_addr.s_addr = inet_addr(adresse)) == -1) {
 			// nom de domaine
             in->sin_addr = *((struct in_addr *) h->h_addr_list[0]);
 		} else {
@@ -122,20 +122,25 @@ int connectSocketTCP(SocketTCP *socket, const char *addresse, int port) {
 	if (initSockAddr(addresse, port, &in) == 0) {
 		return -1;
 	}
+	
+	/*struct hostent *h;
+	if ((h = gethostbyname(addresse)) == NULL) {
+		printf("erreur hostent\n");
+	}*/
+
 	if (connect(socket->socket, (struct sockaddr *) &in, sizeof(in)) == -1) {
 		return -1;
 	}
-	
+
 	socket->distant = getIdBySockAddr(&in);
 	socket->local = getIdByDescriptor(socket->socket);
-	
-	if (initSockAddr(socket->local.ip, socket->local.port, &in) == 0) {
+	/*if (initSockAddr(socket->local.ip, socket->local.port, &in) == 0) {
 		return -1;
 	}
 	if (bind(socket->socket, (struct sockaddr *) &in, sizeof(in)) == -1) {
 		return -1;
-	}
-	
+	}*/
+
 	return 0;
 }
 
