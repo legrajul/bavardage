@@ -6,7 +6,7 @@ OPTS= -Wall -std=c99 -pthread
 all: Client client
 
 Client: Client.vala interface.ui
-	$(VALAC) $(PKGS) Client.vala
+	$(VALAC) $(PKGS) Client.vala -o $@
 
 client: ../common/SocketTCP.o client.o 
 	$(CC) $(OPTS) $^ -o $@

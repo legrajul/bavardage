@@ -40,12 +40,72 @@ namespace Bavardage {
 			}
 		}
 
+
+		[CCode (instance_pos = -1)]
+		public void show_aboutdialog () {
+			var window = builder.get_object ("mainWindow") as Window;
+			var dialog = new AboutDialog ();
+			dialog.set_destroy_with_parent (true);
+			dialog.set_transient_for (window);
+			dialog.set_modal (true);
+
+			dialog.artists = {"Charles Ango", "Julien Legras"};
+			dialog.authors = {"Charles Ango", "Ismaël Kabore", "Julien Legras", "Yves Nouafo", "Jean-Baptiste Souchal"};
+
+			dialog.program_name = "Barvardage";
+			dialog.comments = "Messagerie instantanée";
+			dialog.copyright = "Copyright © 2012-2013";
+			dialog.version = "0.1";
+
+
+			dialog.website = "http://github.com/legrajul/bavardage";
+			dialog.website_label = "Dépôt github";
+
+			dialog.response.connect ((response_id) => {
+				if (response_id == Gtk.ResponseType.CANCEL || response_id == Gtk.ResponseType.DELETE_EVENT) {
+					dialog.hide_on_delete ();
+				}
+			});
+			dialog.present ();
+		}
+
+		[CCode (instance_pos = -1)]
+		public void show_connection_dialog () {
+			var window = builder.get_object ("mainWindow") as Window;
+			var dialog = new Dialog.with_buttons ("Connexion", window, DialogFlags.MODAL | DialogFlags.DESTROY_WITH_PARENT, Gtk.Stock.CANCEL, Gtk.ResponseType.CANCEL, Gtk.Stock.CONNECT, Gtk.ResponseType.ACCEPT);
+			var content = dialog.get_content_area () as Gtk.Box;
+			var grid = new Gtk.Grid ();
+			var label = new Gtk.Label ("Adresse du serveur :");
+			grid.attach (label, 0, 0, 1, 1);
+			var entry_server_ip = new Gtk.Entry ();
+			grid.attach (entry_server_ip, 1, 0, 1, 1);
+			
+			label = new Gtk.Label ("Port du serveur :");
+			grid.attach (label, 0, 1, 1, 1);
+			var entry_server_port = new Gtk.Entry ();
+			grid.attach (entry_server_port, 1, 1, 1, 1);
+
+			label = new Gtk.Label ("Pseudo :");
+			grid.attach (label, 0, 2, 1, 1);
+			var entry_login = new Gtk.Entry ();
+			grid.attach (entry_login, 1, 2, 1, 1);
+
+			content.add (grid);
+			dialog.response.connect ((response_id) => {
+				if (response_id == Gtk.ResponseType.CANCEL || response_id == Gtk.ResponseType.DELETE_EVENT) {
+					dialog.hide_on_delete ();
+				} else if (response_id == Gtk.ResponseType.ACCEPT) {
+					// établir la connexion
+				}
+			});
+			dialog.show_all ();
+		}
 		
 		public Client () {
 			try {
 				// On commence par définir notre Application
 				Object(application_id: "bavardage.client",
-					flags: ApplicationFlags.FLAGS_NONE);
+					flags: ApplicationFlags.HANDLES_OPEN);
 				GLib.Environment.set_prgname("bavardage-client");
 				// Puis on peut l'enregistrer (permet l'unicité)
 				this.register ();
@@ -66,9 +126,7 @@ namespace Bavardage {
 				message = builder.get_object ("message_entry") as Entry;
 				window.set_application (this);
 				window.show_all ();
-				var dialog = builder.get_object ("connection_dialog") as Dialog;
-				dialog.show_all ();
-			
+				show_connection_dialog ();
 			} catch (Error e) {
 				stderr.printf ("Could not load UI: %s\n", e.message);
 			}
