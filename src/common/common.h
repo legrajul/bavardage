@@ -13,6 +13,8 @@
 #define MESSAGE 	0xD1
 #define OK			0xF5
 #define KO			0x5F
+#define LOGIN_IN_USE  0x5A
+#define NOT_CONNECTED 0x5B
 
 typedef struct {
 	int code;
@@ -20,5 +22,7 @@ typedef struct {
 	char mess[MAX_MESS_SIZE];
 	char rooms[MAX_ROOM_NAME_SIZE];
 } message;
+
+
 
 #endif
