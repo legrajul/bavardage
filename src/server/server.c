@@ -1,7 +1,7 @@
 #include "lib_server.h"
 #include "../common/common.h"
 #include "../common/SocketTCP.h"
-#include "../common/mysqlite.c"
+#include "../common/mysqlite.h"
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
@@ -58,9 +58,11 @@ void *handle_connexion(void *param) {
 
         		       	case DISCONNECT:																				
 										if (is_connected) {
+											pthread_mutex_lock(&mutex);
 											printf("Disconnection\n");
 											response.code = OK;	
-											delete_user (buffer.name);							
+											delete_user (buffer.name);
+											pthread_mutex_unlock(&mutex);							
 										} else {
 												printf("Not connected\n");
 												response.code = NOT_CONNECTED;
@@ -75,12 +77,14 @@ void *handle_connexion(void *param) {
 										   response.code = LOGIN_IN_USE;
 										   printf("login name already in use\n");
 									     } else {
+												  pthread_mutex_lock(&mutex);
 												  printf ("successful connection : %s\n", buffer.name);										
 												  strcpy(response.name, buffer.name);
 												  response.code = OK;
 												  strcpy(response.mess, "successful connection");
 										          is_connected = 1;
 										          add_user(buffer.name);
+										          pthread_mutex_unlock(&mutex);							
 											}
 										
 										break;
