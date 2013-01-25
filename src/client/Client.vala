@@ -1,6 +1,7 @@
 using Gtk;
 using Gee;
 
+
 namespace Bavardage {
 	public class Client: Gtk.Application {
 		private static Gtk.Builder builder;
@@ -15,6 +16,45 @@ namespace Bavardage {
 		public void on_send_button_clicked (Button source) {
 			stdout.printf ("send_button_clicked\n");
 		}
+		
+		
+/*Signaux des boutons gerant les salons*/
+		[CCode (instance_pos = -1)]
+		public void on_button_create_room_clicked (Button source) {
+			stdout.printf ("button_create_room_clicked\n");
+		}
+		
+		[CCode (instance_pos = -1)]
+		public void on_button_quit_room_clicked (Button source, TreeSelection select) {
+			stdout.printf ("button_quit_room_clicked\n");
+			TreeModel m;
+			TreeIter iter;
+			ListStore list;
+			Value v;			
+			if (select.get_selected (out m, out iter)) {
+				m.get_value (iter, 0,out v); // On récupère le nom du salon qu'on a choisi
+				var salon = (string) v; 
+				if (salon != "salon 2") {	// on vérifie que ce n'est pas le salon principal
+				list = (m) as ListStore;	// on cast le Model reçu en listStore
+				list.remove(iter);			// On supprime le salon de la liste des salons
+				}
+			}
+		}
+		
+		[CCode (instance_pos = -1)]
+		public void on_button1_clicked (Button source) {
+			stdout.printf ("button_1_clicked\n");
+		}
+		
+		[CCode (instance_pos = -1)]
+		public void on_touched_button (Window window, Gdk.Event e){
+			if (e.type== Gdk.EventType.KEY_PRESS){
+			var k= (uint) e.key.keyval;
+			stdout.printf ("%u\n",k);
+			}		
+		}
+/*Fin de la liste des signaux des boutons concernant les salons*/
+
 
 		[CCode (instance_pos = -1)]
 		public void on_destroy (Widget window) {
