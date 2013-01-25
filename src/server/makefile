@@ -6,7 +6,7 @@ all: server
 server: ../common/SocketTCP.o ../common_server/mysqlite.o server.o
 	$(CC) $^ -o $@ $(OPTS)
 
-server.o: server.c lib_server.h
+server.o: server.c lib_server.h ../common/common.h
 	$(CC) $< -c
 
 clean:

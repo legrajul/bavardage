@@ -34,7 +34,7 @@ namespace Bavardage {
 			if (select.get_selected (out m, out iter)) {
 				m.get_value (iter, 0,out v); // On récupère le nom du salon qu'on a choisi
 				var salon = (string) v; 
-				if (salon != "salon 2") {	// on vérifie que ce n'est pas le salon principal
+				if (salon != "accueil") {	// on vérifie que ce n'est pas le salon principal
 				list = (m) as ListStore;	// on cast le Model reçu en listStore
 				list.remove(iter);			// On supprime le salon de la liste des salons
 				}
@@ -193,10 +193,13 @@ namespace Bavardage {
 			rooms.set (iter, 0, "salon 1", -1);
 			rooms.append (out iter);
 			rooms.set (iter, 0, "salon 2", -1);
+			rooms.append (out iter);
+			rooms.set (iter, 0, "accueil", -1);
 			rooms_view.set_model (rooms);
 			
 			rooms_map_users.set ("salon 1", users_room1);
 			rooms_map_users.set ("salon 2", users_room2);
+			rooms_map_users.set ("accueil", new ListStore (1, typeof (string)));
 
 			var buffer1 = new TextBuffer (new TextTagTable ());
 			buffer1.set_text ("Texte du salon 1...");
@@ -205,12 +208,14 @@ namespace Bavardage {
 
 			rooms_map_chats.set ("salon 1", buffer1);
 			rooms_map_chats.set ("salon 2", buffer2);
+			rooms_map_chats.set ("accueil", new TextBuffer (new TextTagTable ()));
 
 			var entry1 = new EntryBuffer ("Message 1...".data);
 			var entry2 = new EntryBuffer ("Message 2...".data);
 
 			rooms_map_entries.set ("salon 1", entry1);
 			rooms_map_entries.set ("salon 2", entry2);
+			rooms_map_entries.set ("accueil", new EntryBuffer ({}));
 		}
 		
 	}

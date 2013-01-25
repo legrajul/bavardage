@@ -5,12 +5,23 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <signal.h>
 
 SocketTCP *client_sock;
 message *msg;
 char *login;
 int status = NOT_CONNECTED;
 pthread_t thread_send, thread_recv;
+
+void my_sigaction(int s) {
+    switch (s) {
+        case SIGINT:
+			disconnect ();
+            break;
+        default:
+            break;
+    }
+}
 
 char *str_sub (const char *s, unsigned int start, unsigned int end) {
     char *new_s = NULL;
@@ -23,7 +34,7 @@ char *str_sub (const char *s, unsigned int start, unsigned int end) {
             }
             new_s[i-start] = '\0';
         } else {
-            fprintf (stderr, "Memoire insuffisante\n");
+            fprintf (stderr, "Out of memory\n");
             exit (EXIT_FAILURE);
         }
     }
@@ -33,8 +44,6 @@ char *str_sub (const char *s, unsigned int start, unsigned int end) {
 int extract_code (const char *str) {
     char *command = NULL;
     command = str_sub(str, 1, strlen(str));
-
-    printf("command: <%s>\n", command);
 
     if (strcmp(command, "CREATE_ROOM") == 0) {
         return CREATE_ROOM;
@@ -54,6 +63,7 @@ int extract_code (const char *str) {
 }
 
 int start_communication () {
+	(void) signal(SIGINT, my_sigaction);
     pthread_create(&thread_recv, NULL, traitement_recv, NULL);
     pthread_create(&thread_send, NULL, traitement_send, NULL);
 
@@ -69,12 +79,13 @@ int connect_socket (const char *addr, const int port) {
         perror("creerSocketTCP");
         return -1;
     }
+    printf ("Please wait for connecting the server...\n");
     if ((co = connectSocketTCP(client_sock, addr, port)) == -1 ) {
     	perror("connectSocketTCP");
         return -1;
     }
 
-    printf("Debut de communication\n");
+    printf("You can now send commands and messages\n");
     start_communication();
 
     return 0;
@@ -93,36 +104,41 @@ void *traitement_recv(void *param) {
     message mess;
     while (1) {
         int r = readSocketTCP(client_sock, (char*) &mess, sizeof(message));
-
-        if (r >0) {
-            printf("msg.code: %i\n", mess.code);
-            printf("msg.mess: %s\n", mess.mess);
+		
+        if (r > 0) {
+			// printf ("message recieved, code = %d, mess = %s, asked_code = %d, status = %d\n", mess.code, mess.mess, msg->code, status);
         }
 
         if (msg->code == CONNECT && mess.code == OK && status == NOT_CONNECTED) {
+			printf ("You're now connected to the chat server with the login: %s\n", login);
             status = CONNECTED;
         }
 
+        if (msg->code == CONNECT && mess.code == KO && status == NOT_CONNECTED) {
+			printf ("Error : %s\n", mess.mess);
+		}
+
         if (msg->code == DISCONNECT && mess.code == OK && status == CONNECTED) {
+			closeSocketTCP(client_sock);
+			printf ("You're now disconnected from the chat server\n");
             pthread_detach(thread_send);
-            pthread_exit(0);
-            closeSocketTCP(client_sock);
+            exit (0);
         }
     }
     pthread_exit(0);
 }
 
 int send_command (const int code, const char *param) {
-    printf("send_command/login: %s\n", login);
     message mess;
     mess.code = code;
     strcpy(mess.name, login);
     if (param != NULL)
         strcpy(mess.mess, param);
-    strcpy(mess.rooms, "");
+    strcpy(mess.room, "");
 
-    printf("msg.code: %i\n", mess.code);
+    msg->code = mess.code;
     writeSocketTCP(client_sock, (char*) &mess, sizeof(message));
+    
     return 0;
 }
 
@@ -138,12 +154,20 @@ int send_message (const char *mess) {
             perror("extract_code");
             return -1;
         }
+        
         msg->code = code;
 
         switch (code) {
             case CONNECT:
                 if (status == NOT_CONNECTED) {
-                    login = strdup(strtok(NULL, ""));
+                    char *tmp;
+                    tmp = strtok (NULL, " ");
+                    if (tmp != NULL) {
+						login = strdup (tmp);
+					}
+                    if (login == NULL) {
+						printf ("login null\n");
+					}
                     strcpy(msg->name, login);
                     send_command (msg->code, msg->name);
                 }         
@@ -158,15 +182,11 @@ int send_message (const char *mess) {
         //envoyer un message classique sur le salon general su server
     }
 
-    printf("Code: <%i>\n", msg->code);
-    printf("Login: <%s>\n", login);
-
     return 0;
 }
 
 int disconnect() {
     send_command(DISCONNECT, "");
-
     return 0;
 }
 

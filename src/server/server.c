@@ -1,7 +1,7 @@
 #include "lib_server.h"
 #include "../common/common.h"
 #include "../common/SocketTCP.h"
-#include "../common/mysqlite.h"
+#include "../common_server/mysqlite.h"
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
@@ -21,6 +21,7 @@ void my_sigaction(int s) {
     switch (s) {
         case SIGINT:
             closeSocketTCP(listen_socket);
+            exit (0);
             break;
         default:
             break;
@@ -30,7 +31,7 @@ void my_sigaction(int s) {
 int clear_message (message *m) {
 	strcpy (m->name, "");
 	strcpy (m->mess, "");
-	strcpy (m->rooms, "");
+	strcpy (m->room, "");
 	m->code = -1;
 	
 }
@@ -46,6 +47,7 @@ void *handle_connexion(void *param) {
 			clear_message (&response);
 			receive = readSocketTCP(s, (char *) &buffer, sizeof (message));
 			if (receive > 0) {
+				pthread_mutex_lock(&mutex);
         		switch (buffer.code) {
         		       	case CREATE_ROOM:
 										break;
@@ -58,33 +60,31 @@ void *handle_connexion(void *param) {
 
         		       	case DISCONNECT:																				
 										if (is_connected) {
-											pthread_mutex_lock(&mutex);
 											printf("Disconnection\n");
 											response.code = OK;	
 											delete_user (buffer.name);
-											pthread_mutex_unlock(&mutex);							
 										} else {
 												printf("Not connected\n");
 												response.code = NOT_CONNECTED;
 											} 
 										writeSocketTCP(s, (char *) &response, sizeof(message));
+										pthread_mutex_unlock(&mutex);
 										closeSocketTCP(s);                        
 										pthread_exit(0);
 										break;                        
 					                                                             
         		       	case CONNECT:
-										if (check_user(buffer.name)) {
+										if (check_user(buffer.name) == -1) {
 										   response.code = LOGIN_IN_USE;
-										   printf("login name already in use\n");
+										   strcpy (response.mess, "Login already in use");
 									     } else {
-												  pthread_mutex_lock(&mutex);
-												  printf ("successful connection : %s\n", buffer.name);										
+												  
+												  printf ("successful connection : %s\n", buffer.name);
 												  strcpy(response.name, buffer.name);
 												  response.code = OK;
-												  strcpy(response.mess, "successful connection");
+												  strcpy(response.mess, "Successful connection");
 										          is_connected = 1;
 										          add_user(buffer.name);
-										          pthread_mutex_unlock(&mutex);							
 											}
 										
 										break;
@@ -95,7 +95,9 @@ void *handle_connexion(void *param) {
 						default:
 								break;
            		}
-	               writeSocketTCP(s, (char *) &response, sizeof(message));			
+				pthread_mutex_unlock(&mutex);
+	            writeSocketTCP(s, (char *) &response, sizeof(message));
+	             
 			}
 			
       		}
@@ -143,7 +145,7 @@ int start_listening(const char *addr, int port) {
 	(void) signal(SIGINT, my_sigaction);
     pthread_mutex_init(&mutex, NULL);
 	while (1) {
-        client = acceptSocketTCP(listen_socket); 									
+        client = acceptSocketTCP(listen_socket);
 		printf ("New connection\n");  
         new_thread (client);
 	 }
@@ -152,8 +154,10 @@ int start_listening(const char *addr, int port) {
 
 
 int main(int argc, char *argv[]) {
+	printf ("Setting up the database...\n");
 	char r[QUERY_SIZE] = "server_database.db";
 	connect_server_database(r);
+	printf ("Now listening to the clients connections...\n");
 	start_listening(argv[1], atoi(argv[2]));  
 	close_server_database();  
 	return -1;
