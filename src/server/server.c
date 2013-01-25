@@ -57,7 +57,7 @@ void *handle_connexion(void *param) {
         		       	case DISCONNECT:																				
 										if (is_connected) {
 											printf("Disconnection\n");
-											response.code = OK;									
+											response.code = OK;								
 										 
 										} else {
 												printf("Not connected\n");

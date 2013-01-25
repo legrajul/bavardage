@@ -49,5 +49,7 @@ int clear_message (message *m);
 
 
 int create_room(char *room_name);
+int setup_socket();
+//int create_room(char *room_name);
 int set_ip(char *ip);
 int set_port(int p);

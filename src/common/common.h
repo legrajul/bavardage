@@ -24,6 +24,4 @@ typedef struct {
 	char rooms[MAX_ROOM_NAME_SIZE];
 } message;
 
-
-
 #endif
