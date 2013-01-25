@@ -9,6 +9,7 @@
 SocketTCP *client_sock;
 message *msg;
 char *login;
+int status = NOT_CONNECTED;
 pthread_t thread_send, thread_recv;
 
 char *str_sub (const char *s, unsigned int start, unsigned int end) {
@@ -98,7 +99,11 @@ void *traitement_recv(void *param) {
             printf("msg.mess: %s\n", mess.mess);
         }
 
-        if (msg->code == DISCONNECT && mess.code == OK) {
+        if (msg->code == CONNECT && mess.code == OK && status == NOT_CONNECTED) {
+            status = CONNECTED;
+        }
+
+        if (msg->code == DISCONNECT && mess.code == OK && status == CONNECTED) {
             pthread_detach(thread_send);
             pthread_exit(0);
             closeSocketTCP(client_sock);
@@ -108,15 +113,16 @@ void *traitement_recv(void *param) {
 }
 
 int send_command (const int code, const char *param) {
-    message msg;
-    msg.code = code;
+    printf("send_command/login: %s\n", login);
+    message mess;
+    mess.code = code;
+    strcpy(mess.name, login);
     if (param != NULL)
-        strcpy(msg.name, param);
-    strcpy(msg.mess, "");
-    strcpy(msg.room, "");
+        strcpy(mess.mess, param);
+    strcpy(mess.rooms, "");
 
-    printf("msg.code: %i\n", msg.code);
-    writeSocketTCP(client_sock, (char*) &msg, sizeof(message));
+    printf("msg.code: %i\n", mess.code);
+    writeSocketTCP(client_sock, (char*) &mess, sizeof(message));
 
     return 0;
 }
@@ -125,7 +131,7 @@ int send_message (const char *mess) {
     int code;
     char buffer[strlen(mess)];
     strcpy(buffer, mess);
-     msg = (message*) malloc(sizeof(message));
+    msg = (message*) malloc(sizeof(message));
 
     if (mess[0] == '/') {
         code = extract_code(strtok(buffer, " "));
@@ -137,12 +143,15 @@ int send_message (const char *mess) {
 
         switch (code) {
             case CONNECT:
-                login = strtok(NULL, "");
-                strcpy(msg->name, login);
-                send_command (msg->code, msg->name);
+                if (status == NOT_CONNECTED) {
+                    login = strdup(strtok(NULL, ""));
+                    strcpy(msg->name, login);
+                    send_command (msg->code, msg->name);
+                }         
                 break;
             case DISCONNECT:
-                send_command (code, NULL);
+                strcpy(msg->name, login);
+                disconnect();
                 break;
         }
         
@@ -151,13 +160,19 @@ int send_message (const char *mess) {
     }
 
     printf("Code: <%i>\n", msg->code);
-    printf("Login: <%s>\n", msg->name);
+    printf("Login: <%s>\n", login);
 
     return 0;
 }
 
-/*int main(int argc, char *argv[]) {
+int disconnect() {
+    send_command(DISCONNECT, "");
+
+    return 0;
+}
+
+int main(int argc, char *argv[]) {
     connect_socket (argv[1], atoi(argv[2]));
 
     return 0;
-}*/
+}

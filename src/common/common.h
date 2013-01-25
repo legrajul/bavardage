@@ -15,6 +15,7 @@
 #define KO			0x5F
 #define LOGIN_IN_USE  0x5A
 #define NOT_CONNECTED 0x5B
+#define CONNECTED 	0xE2
 
 typedef struct {
 	int code;
