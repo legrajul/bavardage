@@ -1,17 +1,13 @@
 CC=gcc
-OPTS= -Wall -std=c99 -pthread
+OPTS= -Wall -std=c99 -pthread -l sqlite3
 
 all: server
 
-mysqlite: ../common/mysqlite.c ../common/mysqlite.h
-	gcc $(CC_OPTS) -c ../common/mysqlite.c -o ../common/mysqlite -l sqlite3 -std=c99
-
-server: ../common/SocketTCP.o server.o
-	$(CC) $(OPTS) $^ -o $@ -l sqlite3
+server: ../common/SocketTCP.o ../common_server/mysqlite.o server.o
+	$(CC) $^ -o $@ $(OPTS)
 
 server.o: server.c lib_server.h
-
-
+	$(CC) $< -c
 
 clean:
-	server
+	rm server server.o
