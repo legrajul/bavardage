@@ -155,9 +155,12 @@ SocketTCP *creerSocketEcouteTCP(const char *addresse, int port) {
     if (bind(s->socket, (struct sockaddr *) &in, sizeof(in)) == -1) {
         return NULL;
     }
+
 	if (listen(s->socket, SIZE_QUEUE) == -1) {
+		perror ("listen");
 		return NULL;
 	}
+
 	return s;
 }
 
@@ -185,7 +188,7 @@ int writeSocketTCP(SocketTCP *socket, const char *buffer, int length) {
 }
 
 int readSocketTCP(SocketTCP *socket, char *buffer, int length) {
-	return read(socket->socket, buffer, length);
+	return recv(socket->socket, buffer, length, 0);
 }
 
 int closeSocketTCP(SocketTCP *socket) {

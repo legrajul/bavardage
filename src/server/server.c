@@ -1,6 +1,7 @@
 #include "lib_server.h"
 #include "../common/common.h"
 #include "../common/SocketTCP.h"
+#include "../common/mysqlite.c"
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
@@ -10,6 +11,7 @@
 #include <sys/un.h>
 #include <signal.h>
 #include <string.h>
+#include <sqlite3.h>
 
 
 SocketTCP *listen_socket;
@@ -57,8 +59,8 @@ void *handle_connexion(void *param) {
         		       	case DISCONNECT:																				
 										if (is_connected) {
 											printf("Disconnection\n");
-											response.code = OK;								
-										 
+											response.code = OK;	
+											delete_user (buffer.name);							
 										} else {
 												printf("Not connected\n");
 												response.code = NOT_CONNECTED;
@@ -67,24 +69,20 @@ void *handle_connexion(void *param) {
 										closeSocketTCP(s);                        
 										pthread_exit(0);
 										break;                        
-					                                                             //supprimer l'utilisateur de la BD
+					                                                             
         		       	case CONNECT:
-										printf ("successful connection : %s\n", buffer.name);
-										/* verifier si le nom du client existe, si oui retour structure message avec ko
-										creer et rempli une struct reponse avec ok
-										-> code OK
-										-> mess => connexion acceptée
-										-> response room => buffer room
-										-> response name = buffer name
-										*/
-										//if (buffer->name n'exist pas)
-										strcpy(response.name, buffer.name);
-										response.code = OK;
-										strcpy(response.mess, "successful connection");
-										is_connected = 1;
-										//else
-										//response->code = LOGIN_IN_USE;
-										//printf("login name already in use");
+										if (check_user(buffer.name)) {
+										   response.code = LOGIN_IN_USE;
+										   printf("login name already in use\n");
+									     } else {
+												  printf ("successful connection : %s\n", buffer.name);										
+												  strcpy(response.name, buffer.name);
+												  response.code = OK;
+												  strcpy(response.mess, "successful connection");
+										          is_connected = 1;
+										          add_user(buffer.name);
+											}
+										
 										break;
 
                			case MESSAGE:
@@ -150,7 +148,10 @@ int start_listening(const char *addr, int port) {
 
 
 int main(int argc, char *argv[]) {
-	start_listening(argv[1], atoi(argv[2]));    
+	char r[QUERY_SIZE] = "server_database.db";
+	connect_server_database(r);
+	start_listening(argv[1], atoi(argv[2]));  
+	close_server_database();  
 	return -1;
 }
 

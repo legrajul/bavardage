@@ -123,7 +123,6 @@ int send_command (const int code, const char *param) {
 
     printf("msg.code: %i\n", mess.code);
     writeSocketTCP(client_sock, (char*) &mess, sizeof(message));
-
     return 0;
 }
 
@@ -176,3 +175,4 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+
