@@ -1,3 +1,5 @@
+#ifndef LIB_SERVER
+#define LIB_SERVER
 #include "../common/common.h"
 #include "../common/SocketTCP.h"
 
@@ -12,8 +14,6 @@ typedef struct  {
         user *users;
 } room;
 
-
-void *handle_connexion(void *param);
 /**
 *   Traite une connexion lancée dans un thread 
 *   Lit les données envoyées par le client et
@@ -21,18 +21,19 @@ void *handle_connexion(void *param);
 *	@param param Socket du client
 */
 
-int start_listening(const char *addr, int port);
+void *handle_connexion(void *param);
+
 /**
 *   Crée la socket serveur
 *   Se met en écoute pour attendre la connexion d'un client
 *   Crée un thread
-*   Retourne -1 si erreur de création de socket ou de thread 
-*   retourne 1 si pas d'erreur
 *	@param addr adresse ip du serveur
 *   @param port port du serveur
+*   @return -1 si erreur de création de socket ou de thread 
 */
 
-void new_thread(SocketTCP *socket);
+int start_listening(const char *addr, int port);
+
 /**
 *   Initie un thread  
 *   Crée un thread
@@ -41,15 +42,18 @@ void new_thread(SocketTCP *socket);
 *	@param socket socket client
 */
 
-int clear_message (message *m);
+void new_thread(SocketTCP *socket);
+
 /**
  * Vide la structure message
  * @param m structure message
  */
 
+int clear_message (message *m);
+
 
 int create_room(char *room_name);
-int setup_socket();
-//int create_room(char *room_name);
 int set_ip(char *ip);
 int set_port(int p);
+
+#endif
