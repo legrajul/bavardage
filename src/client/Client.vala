@@ -122,7 +122,8 @@ namespace Bavardage {
 					}
 				}
 			});
-
+			
+			
 			// On clique sur une invitation, demande une confirmation
 			invited_rooms.cursor_changed.connect ( () => {
 				TreeModel m;
@@ -192,8 +193,22 @@ namespace Bavardage {
 			send_button.clicked.connect ( () => {
 				var msg = message.get_text ();
 				stdout.printf ("message à envoyer : %s\n", msg);
+				message.set_text("");
 			});
-
+			
+			// On appuie sur la touche "Entrée"
+			message.key_press_event.connect( (e)=> {
+				//e = new Gdk.Event(Gdk.EventType.KEY_PRESS);
+				if (e.keyval == 65293){
+				var msg = message.get_text();
+				stdout.printf ("message à envoyer: %u\n",e.keyval);
+				stdout.printf ("message à envoyer: %s\n", msg);
+				message.set_text("");
+				return true;
+				}
+				else return false;
+			});
+			
 			// On clique sur Fichier > Connexion
 			connect_item.activate.connect ( () => {
 				var dialog = new Dialog.with_buttons ("Connexion", window, DialogFlags.MODAL | DialogFlags.DESTROY_WITH_PARENT, Gtk.Stock.CANCEL, Gtk.ResponseType.CANCEL, Gtk.Stock.CONNECT, Gtk.ResponseType.ACCEPT);
