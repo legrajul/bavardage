@@ -59,14 +59,10 @@ void *handle_connexion(void *param) {
 										break;
 
         		       	case DISCONNECT:																				
-										if (is_connected) {
-											printf("Disconnection\n");
-											response.code = OK;	
+										printf("Disconnection\n");
+										response.code = OK;
+										if (is_connected)
 											delete_user (buffer.name);
-										} else {
-												printf("Not connected\n");
-												response.code = NOT_CONNECTED;
-											} 
 										writeSocketTCP(s, (char *) &response, sizeof(message));
 										pthread_mutex_unlock(&mutex);
 										closeSocketTCP(s);                        
@@ -75,17 +71,17 @@ void *handle_connexion(void *param) {
 					                                                             
         		       	case CONNECT:
 										if (check_user(buffer.name) == -1) {
-										   response.code = LOGIN_IN_USE;
-										   strcpy (response.mess, "Login already in use");
-									     } else {
-												  
-												  printf ("successful connection : %s\n", buffer.name);
-												  strcpy(response.name, buffer.name);
-												  response.code = OK;
-												  strcpy(response.mess, "Successful connection");
-										          is_connected = 1;
-										          add_user(buffer.name);
-											}
+											printf ("login already in use : %s\n", buffer.name);
+											response.code = LOGIN_IN_USE;
+											strcpy (response.mess, "Login already in use, change your login");
+									    } else {
+											printf ("successful connection : %s\n", buffer.name);
+											strcpy(response.name, buffer.name);
+											response.code = OK;
+											strcpy(response.mess, "Successful connection");
+										    is_connected = 1;
+										    add_user(buffer.name);
+										}
 										
 										break;
 
@@ -153,9 +149,9 @@ int start_listening(const char *addr, int port) {
 }
 
 int main(int argc, char *argv[]) {
-	if((argv[1] == NULL) || (argv[2] == NULL)) {
-		printf ("Use : ./server ip port\n");
-
+	if(argc < 3) {
+		fprintf (stderr, "Usage: ./server ip port\n");
+		exit (EXIT_FAILURE);
 	} else {		
 		printf ("Setting up the database...\n");		
 		connect_server_database("server_database.db");

@@ -103,10 +103,9 @@ void *traitement_send(void *param) {
 void *traitement_recv(void *param) {
     message mess;
     while (1) {
-        int r = readSocketTCP(client_sock, (char*) &mess, sizeof(message));
 		
-        if (r > 0) {
-			// printf ("message recieved, code = %d, mess = %s, asked_code = %d, status = %d\n", mess.code, mess.mess, msg->code, status);
+        if (readSocketTCP(client_sock, (char*) &mess, sizeof(message)) > 0) {
+			//~ printf ("message recieved, code = %d, mess = %s, asked_code = %d, status = %d\n", mess.code, mess.mess, msg->code, status);
         }
 
         if (msg->code == CONNECT && mess.code == OK && status == NOT_CONNECTED) {
@@ -114,11 +113,11 @@ void *traitement_recv(void *param) {
             status = CONNECTED;
         }
 
-        if (msg->code == CONNECT && mess.code == KO && status == NOT_CONNECTED) {
+        if (msg->code == CONNECT && mess.code == LOGIN_IN_USE && status == NOT_CONNECTED) {
 			printf ("Error : %s\n", mess.mess);
 		}
 
-        if (msg->code == DISCONNECT && mess.code == OK && status == CONNECTED) {
+        if (msg->code == DISCONNECT && mess.code == OK) {
 			closeSocketTCP(client_sock);
 			printf ("You're now disconnected from the chat server\n");
             pthread_detach(thread_send);
@@ -191,8 +190,11 @@ int disconnect() {
 }
 
 int main(int argc, char *argv[]) {
+	if (argc < 3) {
+		fprintf (stderr, "Usage: ./client ip_server port_server\n");
+		exit (EXIT_FAILURE);
+	}
     connect_socket (argv[1], atoi(argv[2]));
-
     return 0;
 }
 
