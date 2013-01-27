@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <!-- interface-requires gtk+ 3.0 -->
-  <object class="GtkListStore" id="liststore1"/>
-  <object class="GtkListStore" id="liststore2"/>
-  <object class="GtkListStore" id="liststore3"/>
   <object class="GtkWindow" id="mainWindow">
     <property name="can_focus">False</property>
     <property name="title">Bavardage</property>
@@ -11,8 +8,6 @@
     <property name="default_height">400</property>
     <property name="hide_titlebar_when_maximized">True</property>
     <property name="icon_name">emblem-mail</property>
-    <signal name="destroy" handler="bavardage_client_on_destroy" swapped="no"/>
-    <signal name="key-press-event" handler="bavardage_client_on_touched_button" swapped="no"/>
     <child>
       <object class="GtkBox" id="vbox1">
         <property name="visible">True</property>
@@ -24,7 +19,6 @@
             <property name="can_focus">False</property>
             <child>
               <object class="GtkMenuItem" id="menuitem1">
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">_Fichier</property>
@@ -36,18 +30,15 @@
                     <child>
                       <object class="GtkImageMenuItem" id="imagemenuitem2">
                         <property name="label">gtk-connect</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="bavardage_client_show_connection_dialog" swapped="no"/>
                       </object>
                     </child>
                     <child>
                       <object class="GtkImageMenuItem" id="imagemenuitem1">
                         <property name="label">gtk-disconnect</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
@@ -63,32 +54,6 @@
                     <child>
                       <object class="GtkImageMenuItem" id="imagemenuitem5">
                         <property name="label">gtk-quit</property>
-                        <property name="use_action_appearance">False</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-              </object>
-            </child>
-            <child>
-              <object class="GtkMenuItem" id="menuitem2">
-                <property name="use_action_appearance">False</property>
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="label" translatable="yes">É_dition</property>
-                <property name="use_underline">True</property>
-                <child type="submenu">
-                  <object class="GtkMenu" id="menu2">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <child>
-                      <object class="GtkImageMenuItem" id="imagemenuitem6">
-                        <property name="label">gtk-preferences</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
@@ -101,7 +66,6 @@
             </child>
             <child>
               <object class="GtkMenuItem" id="menuitem4">
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">Aid_e</property>
@@ -113,12 +77,10 @@
                     <child>
                       <object class="GtkImageMenuItem" id="imagemenuitem10">
                         <property name="label">gtk-about</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="bavardage_client_show_aboutdialog" swapped="no"/>
                       </object>
                     </child>
                   </object>
@@ -158,9 +120,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="vexpand">True</property>
-                            <property name="model">liststore1</property>
                             <property name="fixed_height_mode">True</property>
-                            <signal name="cursor-changed" handler="bavardage_client_room_changed" object="treeview-selection1" swapped="no"/>
                             <child internal-child="selection">
                               <object class="GtkTreeSelection" id="treeview-selection1"/>
                             </child>
@@ -182,7 +142,6 @@
                           <object class="GtkTreeView" id="invited_rooms">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="model">liststore2</property>
                             <child internal-child="selection">
                               <object class="GtkTreeSelection" id="treeview-selection2"/>
                             </child>
@@ -211,12 +170,9 @@
                     <child>
                       <object class="GtkButton" id="button_create_room">
                         <property name="label" translatable="yes">Créer un salon</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="use_action_appearance">False</property>
-                        <signal name="clicked" handler="bavardage_client_on_button_create_room_clicked" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -227,12 +183,9 @@
                     <child>
                       <object class="GtkButton" id="button_quit_room">
                         <property name="label" translatable="yes">Quitter salon</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="use_action_appearance">False</property>
-                        <signal name="clicked" handler="bavardage_client_on_button_quit_room_clicked" object="treeview-selection1" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -241,14 +194,11 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="button1">
+                      <object class="GtkButton" id="button_ask_join_room">
                         <property name="label" translatable="yes">Demander à rejoindre un salon</property>
-                        <property name="use_action_appearance">False</property>
-                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="use_action_appearance">False</property>
-                        <signal name="clicked" handler="bavardage_client_on_button1_clicked" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -319,12 +269,9 @@
                         <child>
                           <object class="GtkButton" id="send_button">
                             <property name="label" translatable="yes">Envoyer</property>
-                            <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="use_action_appearance">False</property>
-                            <signal name="clicked" handler="bavardage_client_on_send_button_clicked" swapped="no"/>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -357,7 +304,6 @@
                       <object class="GtkTreeView" id="connected_users">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="model">liststore3</property>
                         <child internal-child="selection">
                           <object class="GtkTreeSelection" id="treeview-selection3"/>
                         </child>
@@ -386,8 +332,5 @@
         </child>
       </object>
     </child>
-  </object>
-  <object class="GtkTreeViewColumn" id="treeviewcolumn1">
-    <property name="title" translatable="yes">column</property>
   </object>
 </interface>
