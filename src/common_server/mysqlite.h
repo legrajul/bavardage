@@ -35,6 +35,10 @@
 /**
  *   Déconnecte le serveur de la base de données
  */  
+<<<<<<< HEAD
   void close_server_database();
+=======
+  int close_server_database();
+>>>>>>> 04516d6e68508c5faf24828b1e6159379de2ccf0
 
 #endif

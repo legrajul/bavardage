@@ -162,6 +162,10 @@ int main(int argc, char *argv[]) {
 		printf ("Now listening to the clients connections...\n");
 		start_listening(argv[1], atoi(argv[2]));  
 		close_server_database(); 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 04516d6e68508c5faf24828b1e6159379de2ccf0
 	} 
 	return -1;
 }
