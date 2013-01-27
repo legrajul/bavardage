@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
 		connect_server_database("server_database.db");
 		printf ("Now listening to the clients connections...\n");
 		start_listening(argv[1], atoi(argv[2]));  
-		close_server_database("users"); 
+		close_server_database(); 
 
 	} 
 	return -1;

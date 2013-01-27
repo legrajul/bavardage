@@ -35,6 +35,6 @@
 /**
  *   Déconnecte le serveur de la base de données
  */  
-  int close_server_database(char *tableOfDb);
+  int close_server_database();
 
 #endif
