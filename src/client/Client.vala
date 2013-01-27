@@ -1,3 +1,9 @@
+/*
+ * Client.vala
+ * 
+ * Copyright 2013 Charles Ango, Julien Legras
+ * 
+ */
 using Gtk;
 using Gee;
 
@@ -24,16 +30,32 @@ namespace Bavardage {
 
 		private signal void update_connected (bool is_connected);
 
+		/*
+		 * Constructeur d'un client
+		 */
 		public Client () {
 			try {
 				// On commence par définir notre Application
 				Object(application_id: "bavardage.client",
 					flags: ApplicationFlags.HANDLES_OPEN);
 				GLib.Environment.set_prgname("bavardage-client");
-				// Puis on peut l'enregistrer (permet l'unicité)
 				this.register ();
 
-				// On charge l'interface depuis le fichier xml
+				setup_ui ();
+				connect_signals ();
+				update_connected (false);
+				window.show_all ();
+				connect_item.activate ();
+			} catch (Error e) {
+				stderr.printf ("Error: %s\n", e.message);
+			}
+		}
+
+		/*
+		 * Fonction qui charge l'interface et initialise les attributs d'interface
+		 */
+		private void setup_ui () {
+			try {
 				builder = new Builder ();
 				builder.add_from_file ("interface.ui");
 				builder.connect_signals (this);
@@ -61,26 +83,28 @@ namespace Bavardage {
 
 				
 				window.set_application (this);
-				connect_signals ();
-				update_connected (false);
-				window.show_all ();
-				connect_item.activate ();
 			} catch (Error e) {
-				stderr.printf ("Could not load UI: %s\n", e.message);
+			 	stderr.printf ("Could not load UI: %s\n", e.message);
 			}
 		}
 
+		/*
+		 * Fonction qui connecte les signaux de l'interface
+		 */
 		private void connect_signals () {
+			// On clique sur la croix de la fenêtre
 			window.destroy.connect ( () => {
 				// se déconnecter du serveur
 				Gtk.main_quit ();
 			});
 
+			// On clique sur Fichier > Quitter
 			quit_item.activate.connect ( () => {
 				// se déconnecter du serveur
 				Gtk.main_quit ();
 			});
 
+			// On clique sur un salon ouvert (<=> on change de salon)
 			open_rooms.cursor_changed.connect ( () => {
 				TreeModel m;
 				TreeIter iter;
@@ -99,6 +123,7 @@ namespace Bavardage {
 				}
 			});
 
+			// On clique sur une invitation, demande une confirmation
 			invited_rooms.cursor_changed.connect ( () => {
 				TreeModel m;
 				TreeIter iter;
@@ -125,6 +150,7 @@ namespace Bavardage {
 				}
 			});
 
+			// On clique sur le bouton "Créer un salon"
 			create_room_button.clicked.connect ( () => {
 				var dialog = new Dialog.with_buttons ("Création d'un salon", window, DialogFlags.MODAL | DialogFlags.DESTROY_WITH_PARENT, Gtk.Stock.CANCEL, Gtk.ResponseType.CANCEL, Gtk.Stock.OK, Gtk.ResponseType.ACCEPT);
 				var content = dialog.get_content_area () as Gtk.Box;
@@ -145,6 +171,7 @@ namespace Bavardage {
 				dialog.show_all ();
 			});
 
+			// On clique sur le bouton "Quitter le salon"
 			quit_room_button.clicked.connect ( () => {
 				TreeModel m;
 				TreeIter iter;
@@ -161,11 +188,13 @@ namespace Bavardage {
 				}
 			});
 
+			// On clique sur le bouton "Envoyer"
 			send_button.clicked.connect ( () => {
 				var msg = message.get_text ();
 				stdout.printf ("message à envoyer : %s\n", msg);
 			});
 
+			// On clique sur Fichier > Connexion
 			connect_item.activate.connect ( () => {
 				var dialog = new Dialog.with_buttons ("Connexion", window, DialogFlags.MODAL | DialogFlags.DESTROY_WITH_PARENT, Gtk.Stock.CANCEL, Gtk.ResponseType.CANCEL, Gtk.Stock.CONNECT, Gtk.ResponseType.ACCEPT);
 				var content = dialog.get_content_area () as Gtk.Box;
@@ -199,13 +228,14 @@ namespace Bavardage {
 				dialog.show_all ();
 			});
 
+			// On clique sur Fichier > Déconnexion
 			disconnect_item.activate.connect ( () => {
 				// démander déconnexion
 					update_connected (false);
 			});
 
+			// On clique sur Fichier > À propos
 			about_item.activate.connect ( () => {
-				var window = builder.get_object ("mainWindow") as Window;
 				var dialog = new AboutDialog ();
 				dialog.set_destroy_with_parent (true);
 				dialog.set_transient_for (window);
@@ -231,12 +261,17 @@ namespace Bavardage {
 				dialog.present ();
 			});
 
+			// Écoute les changements d'état connecté/déconnecté
 			this.update_connected.connect ( (is_connected) => {
 				connect_item.set_sensitive (!is_connected);
 				disconnect_item.set_sensitive (is_connected);
 			});
 		}
 
+		/*
+		 * Fonction qui met des valeurs dans les différents éléments
+		 * graphiques pour tester l'application
+		 */
 		public void setup_test () {
 
 			var users_room1 = new ListStore (1, typeof (string));
@@ -290,12 +325,17 @@ namespace Bavardage {
 		}
 		
 	}
+
+	/*
+	 * Point d'entrée du programme
+	 */
+	int main (string[] args) {
+		Gtk.init (ref args);
+		var c = new Bavardage.Client ();
+		c.setup_test ();
+		Gtk.main ();
+		return 0;
+	}
+
 }
 
-int main (string[] args) {
-    Gtk.init (ref args);
-	var c = new Bavardage.Client ();
-	c.setup_test ();
-	Gtk.main ();
-    return 0;
-}
