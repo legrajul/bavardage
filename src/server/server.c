@@ -114,7 +114,7 @@ void new_thread(SocketTCP *socket) {
     exit(EXIT_FAILURE);
   }
   
-  // On détache le thread afin de ne pas avoir à faire de join
+  // On dÃ©tache le thread afin de ne pas avoir Ã  faire de join
   if ((ret = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED)) != 0) {
     fprintf(stderr, "pthread_attr_setdetachstate: %s\n", strerror(ret));
     exit(EXIT_FAILURE);
@@ -158,10 +158,11 @@ int main(int argc, char *argv[]) {
 
 	} else {		
 		printf ("Setting up the database...\n");		
-		connect_server_database("server_database.db", "users");
+		connect_server_database("server_database.db");
 		printf ("Now listening to the clients connections...\n");
 		start_listening(argv[1], atoi(argv[2]));  
 		close_server_database(); 
+
 	} 
 	return -1;
 }
