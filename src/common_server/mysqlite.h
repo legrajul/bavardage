@@ -9,7 +9,7 @@
  *   Connecte le server à la base de données
  *   @return 1 si la connexion s'est bien effectuée, -1 sinon
  */
-  int connect_server_database(const char *fileDb);
+  int connect_server_database(const char *fileDb, const char *tableOfDb);
   
 /**
  *   Ajoute un utilisateur dans la base de données
@@ -35,6 +35,6 @@
 /**
  *   Déconnecte le serveur de la base de données
  */  
-  int close_server_database(char *tableOfDb);
+  void close_server_database();
 
 #endif

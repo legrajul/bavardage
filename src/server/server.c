@@ -158,12 +158,10 @@ int main(int argc, char *argv[]) {
 
 	} else {		
 		printf ("Setting up the database...\n");		
-		connect_server_database("server_database.db");
+		connect_server_database("server_database.db", "users");
 		printf ("Now listening to the clients connections...\n");
 		start_listening(argv[1], atoi(argv[2]));  
-		close_server_database("users"); 
-
+		close_server_database(); 
 	} 
 	return -1;
 }
-

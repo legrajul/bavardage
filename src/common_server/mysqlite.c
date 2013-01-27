@@ -12,7 +12,7 @@ sqlite3_stmt *stmt;
 
 
 /** connection la base de donnees **/
-int connect_server_database(const char *fileDb) {
+int connect_server_database(const char *fileDb, const char *tableOfDb) {
 	
 	// creation de la base de donnée si existe pas sinon ouverture de la base
 	int open = sqlite3_open(fileDb, &database);
@@ -21,7 +21,18 @@ int connect_server_database(const char *fileDb) {
 		sqlite3_close(database);
 		return -1;
 	}
-		
+	
+	// suppresion de la table users si existe 
+	char delete[QUERY_SIZE] = "";
+	sprintf (delete, "DELETE FROM  %s'", tableOfDb);
+
+	int sql = sqlite3_exec(database, delete, 0, 0, 0);
+	if (sql != SQLITE_OK) {
+		perror("Deleting users in server database failed\n");
+		return -1;
+    }
+	printf("Deleting users in server database...\n");
+	
 	// creation de la table users
 	char create_table[QUERY_SIZE] = "CREATE TABLE IF NOT EXISTS users (login VARCHAR(20) unique)";
 	int sq = sqlite3_exec(database, create_table, 0, 0, 0);
@@ -35,18 +46,8 @@ int connect_server_database(const char *fileDb) {
 
 
 /** fermer la base de données */	
-int close_server_database(char *tableOfDb) {
-	char delete[QUERY_SIZE] = "";
-	sprintf (delete, "DELETE FROM  %s'", tableOfDb);
-
-	int sql = sqlite3_exec(database, delete, 0, 0, 0);
-	if (sql != SQLITE_OK) {
-		perror("Deleting users in server database failed\n");
-		return -1;
-    }
-	printf("Deleting users in server database...\n");
+void close_server_database() {
 	sqlite3_close(database);
-	return 1;
 }
 
 
