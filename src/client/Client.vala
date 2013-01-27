@@ -199,14 +199,15 @@ namespace Bavardage {
 			// On appuie sur la touche "Entrée"
 			message.key_press_event.connect( (e)=> {
 				//e = new Gdk.Event(Gdk.EventType.KEY_PRESS);
-				if (e.keyval == 65293){
-				var msg = message.get_text();
-				stdout.printf ("message à envoyer: %u\n",e.keyval);
-				stdout.printf ("message à envoyer: %s\n", msg);
-				message.set_text("");
-				return true;
+				if (e.keyval == Gdk.Key.Return){
+					var msg = message.get_text();
+					stdout.printf ("message à envoyer: %u\n",e.keyval);
+					stdout.printf ("message à envoyer: %s\n", msg);
+					message.set_text("");
+					return true;
+				} else {
+					return false;
 				}
-				else return false;
 			});
 			
 			// On clique sur Fichier > Connexion
