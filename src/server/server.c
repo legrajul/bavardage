@@ -157,13 +157,11 @@ int main(int argc, char *argv[]) {
 	if((argv[1] == NULL) || (argv[2] == NULL)) {
 		printf ("Use : ./server ip port\n");
 	} else {
-		
 		printf ("Setting up the database...\n");
-		char r[QUERY_SIZE] = "server_database.db";
-		connect_server_database(r);
+		connect_server_database("server_database.db");
 		printf ("Now listening to the clients connections...\n");
 		start_listening(argv[1], atoi(argv[2]));  
-		close_server_database(); 
+		close_server_database("server_database.db"); 
 	} 
 	return -1;
 }
