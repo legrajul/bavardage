@@ -21,11 +21,11 @@ int connect_server_database(const char *fileDb) {
 		sqlite3_close(database);
 		return -1;
 	}
-	
+		
 	// creation de la table users
 	char create_table[QUERY_SIZE] = "CREATE TABLE IF NOT EXISTS users (login VARCHAR(20) unique)";
-	int sql = sqlite3_exec(database, create_table, 0, 0, 0);
-	if (sql != SQLITE_OK) {
+	int sq = sqlite3_exec(database, create_table, 0, 0, 0);
+	if (sq != SQLITE_OK) {
 		perror("Can't create table users\n");
 		return -1;
     }
@@ -35,8 +35,18 @@ int connect_server_database(const char *fileDb) {
 
 
 /** fermer la base de données */	
-void close_server_database() {
+int close_server_database(char *tableOfDb) {
+	char delete[QUERY_SIZE] = "";
+	sprintf (delete, "DELETE FROM  %s'", tableOfDb);
+
+	int sql = sqlite3_exec(database, delete, 0, 0, 0);
+	if (sql != SQLITE_OK) {
+		perror("Deleting users in server database failed\n");
+		return -1;
+    }
+	printf("Deleting users in server database...\n");
 	sqlite3_close(database);
+	return 1;
 }
 
 
@@ -76,8 +86,7 @@ int delete_user (char *login) {
 }
 
 
-
-
+/** verifie la présence d'un user */
 int check_user(char *login) {
 	char select[QUERY_SIZE] = "";
 	sprintf (select, "SELECT * FROM users WHERE login = \'%s\'", login);
@@ -109,5 +118,3 @@ int check_user(char *login) {
 		}
 	}
 }
-
-
