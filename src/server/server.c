@@ -152,16 +152,17 @@ int start_listening(const char *addr, int port) {
 	return -1;
 }
 
-
 int main(int argc, char *argv[]) {
 	if((argv[1] == NULL) || (argv[2] == NULL)) {
 		printf ("Use : ./server ip port\n");
-	} else {
-		printf ("Setting up the database...\n");
+
+	} else {		
+		printf ("Setting up the database...\n");		
 		connect_server_database("server_database.db");
 		printf ("Now listening to the clients connections...\n");
 		start_listening(argv[1], atoi(argv[2]));  
-		close_server_database("server_database.db"); 
+		close_server_database("users"); 
+
 	} 
 	return -1;
 }
