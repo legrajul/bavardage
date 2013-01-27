@@ -4,10 +4,37 @@
   #define QUERY_SIZE 524
 
   // commun au serveurs
-  int connect_server_database();
+  
+/**
+ *   Connecte le server à la base de données
+ *   @return 1 si la connexion s'est bien effectuée, -1 sinon
+ */
+  int connect_server_database(const char *fileDb);
+  
+/**
+ *   Ajoute un utilisateur dans la base de données
+ *	 @param login 
+ *   @return 1 si la l'ajout s'est bien effectué, -1 sinon
+ */
   int add_user(char *login);
+  
+/**
+ *   Supprime un utilisateur dans la base de données
+ *	 @param login 
+ *   @return 1 si la suppression s'est bien effectuée, -1 sinon
+ */
   int delete_user(char *login);
+  
+/**
+ *   Vérifie si un utilisateur est dans la base de données
+ *	 @param login 
+ *   @return 1 si la vérification s'est bien effectuée, -1 sinon
+ */
   int check_user(char *login);
-  void close_server_database();
+  
+/**
+ *   Déconnecte le serveur de la base de données
+ */  
+  int close_server_database(char *tableOfDb);
 
 #endif
