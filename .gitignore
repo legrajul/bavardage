@@ -1,3 +1,9 @@
 .anjuta/
 .anjuta_sym_db.db
 bavardage.anjuta
+*~
+*.o
+src/server/server_database.db
+src/server/server
+src/client/client
+src/client/Client
