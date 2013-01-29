@@ -3,11 +3,6 @@
 #include "../common/common.h"
 #include "../common/SocketTCP.h"
 
-typedef struct {
-        char name[MAX_NAME_SIZE];
-        SocketTCP s;
-} user;
-
 typedef struct  {
         char login[MAX_ROOM_NAME_SIZE];
         user admin;

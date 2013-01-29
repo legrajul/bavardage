@@ -10,9 +10,7 @@
 #include <sys/types.h>
 #include <sys/un.h>
 #include <signal.h>
-#include <string.h>
 #include <sqlite3.h>
-
 
 SocketTCP *listen_socket;
 pthread_mutex_t mutex;

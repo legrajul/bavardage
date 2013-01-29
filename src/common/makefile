@@ -1,6 +1,6 @@
 FLAGS = -Wall -std=c99
 
-all: SocketTCP.o room_manager.o
+all: SocketTCP.o user_manager.o room_manager.o
 
 %.o: %.c
 	gcc -c $< $(FLAGS)
