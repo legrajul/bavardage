@@ -7,6 +7,9 @@
 #include <stdlib.h>
 #include <signal.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+
 SocketTCP *client_sock;
 message *msg;
 char *login;
@@ -128,13 +131,16 @@ void *traitement_recv(void *param) {
 }
 
 int send_command (const int code, const char *param) {
+	if (msg == NULL) {
+		msg = (message*) malloc(sizeof(message));
+	}
     message mess;
     mess.code = code;
-    strcpy(mess.name, login);
+    if (login != NULL)
+		strcpy(mess.name, login);
     if (param != NULL)
         strcpy(mess.mess, param);
     strcpy(mess.room, "");
-
     msg->code = mess.code;
     writeSocketTCP(client_sock, (char*) &mess, sizeof(message));
     

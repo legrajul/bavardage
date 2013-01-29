@@ -94,9 +94,12 @@ void *handle_connexion(void *param) {
 				pthread_mutex_unlock(&mutex);
 	            writeSocketTCP(s, (char *) &response, sizeof(message));
 	             
+			} else if (receive == -1) {
+				printf ("Error: exiting thread...\n");
+				pthread_exit (0);
 			}
 			
-      		}
+      		} 
 		return NULL;
 	}
 
