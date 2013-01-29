@@ -26,21 +26,21 @@ int connect_server_database(const char *fileDb) {
 	char delete[QUERY_SIZE] = "";
 	sprintf (delete, "DELETE FROM  users");
 
-	int sql = sqlite3_exec(database, delete, 0, 0, 0);
-	if (sql != SQLITE_OK) {
-		perror("Deleting users in server database failed\n");
-		return -1;
-    }
-	printf("Deleting users in server database...\n");
-		
 	// creation de la table users
 	char create_table[QUERY_SIZE] = "CREATE TABLE IF NOT EXISTS users (login VARCHAR(20) unique)";
 	int sq = sqlite3_exec(database, create_table, 0, 0, 0);
 	if (sq != SQLITE_OK) {
 		perror("Can't create table users\n");
 		return -1;
-    }
+	}
 	
+	int sql = sqlite3_exec(database, delete, 0, 0, 0);
+	if (sql != SQLITE_OK) {
+		perror("Deleting users in server database failed\n");
+		return -1;
+	}
+	printf("Deleting users in server database...\n");
+
 	return 1;
 }
 
