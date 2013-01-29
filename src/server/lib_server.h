@@ -3,12 +3,6 @@
 #include "../common/common.h"
 #include "../common/SocketTCP.h"
 
-typedef struct  {
-        char login[MAX_ROOM_NAME_SIZE];
-        user admin;
-        user *users;
-} room;
-
 /**
 *   Traite une connexion lancée dans un thread 
 *   Lit les données envoyées par le client et

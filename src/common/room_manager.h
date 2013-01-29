@@ -21,7 +21,7 @@ typedef struct ROOM {
  * Structure représentant une liste chaînée de salons
  */
 typedef struct ROOM_LIST {
-    room *current;
+    room current;
     struct ROOM_LIST *next;
 } *room_list;
 
@@ -86,5 +86,9 @@ int remove_room (char *room_name);
  * @return NULL si erreur, l'administrateur du salon sinon
  */
 user *get_admin (char *room_name);
+
+int add_user_in_room (char *login, char *room_name);
+
+int remove_user_from_room (char *login, char *room_name);
 
 #endif

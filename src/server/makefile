@@ -10,4 +10,4 @@ server.o: server.c lib_server.h ../common/common.h
 	$(CC) $< -c
 
 clean:
-	rm server server.o
+	rm -rf server *.o
