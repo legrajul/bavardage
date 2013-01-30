@@ -161,26 +161,31 @@ int send_message (const char *mess) {
         }
         
         msg->code = code;
-
+	char *tmp;
         switch (code) {
-            case CONNECT:
-                if (status == NOT_CONNECTED) {
-                    char *tmp;
-                    tmp = strtok (NULL, " ");
-                    if (tmp != NULL) {
-						login = strdup (tmp);
-					}
-                    if (login == NULL) {
-						printf ("login null\n");
-					}
-                    strcpy(msg->name, login);
-                    send_command (msg->code, msg->name);
-                }         
-                break;
-            case DISCONNECT:
-                strcpy(msg->name, login);
-                disconnect();
-                break;
+	case CONNECT:
+	  if (status == NOT_CONNECTED) {
+	    tmp = strtok (NULL, " ");
+	    if (tmp != NULL) {
+	      login = strdup (tmp);
+	    }
+	    if (login == NULL) {
+	      printf ("login null\n");
+	    }
+	    strcpy(msg->name, login);
+	    send_command (msg->code, msg->name);
+	  }         
+	  break;
+	case DISCONNECT:
+	  strcpy(msg->name, login);
+	  disconnect();
+	  break;
+	case CREATE_ROOM:
+	  tmp = strtok (NULL, " ");
+	  if (tmp != NULL) {
+	    strcpy (msg->mess, tmp);
+	  }
+	  send_command (msg->code, msg->mess);
         }
         
     } else {

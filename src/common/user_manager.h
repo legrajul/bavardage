@@ -1,7 +1,7 @@
 #ifndef _USER_MANAGER_H
 #define _USER_MANAGER_H
 #include "common.h"
-#include "../common/SocketTCP.h"
+#include "SocketTCP.h"
 
 #define HASH_USER_MAP_SIZE 1997
 
