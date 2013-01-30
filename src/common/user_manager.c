@@ -44,16 +44,12 @@ int is_login_used (char *login, user_map map) {
   return 0;
 }
 
-int add_user (char *login, user_map map) {
-  if (is_login_used(login, map))
+int add_user (user u, user_map map) {
+  if (is_login_used(u->name, map))
     return -1;
-  // creation du user
-  user u;
-  u = (user) malloc(sizeof(struct USER));
-  strcpy(u->name, login);
 
   // Ajout du user dans la liste
-  int index = hash_user(login);
+  int index = hash_user(u->name);
   user_list l = map[index];
   user_list t;
   t = (user_list) malloc(sizeof(struct USER_LIST));
@@ -64,25 +60,25 @@ int add_user (char *login, user_map map) {
   return 0;
 }
 
-int remove_user (char *login, user_map map) {
-  if (!is_login_used(login, map))
-    return -1;
+int remove_user (user u, user_map map) {
+	if (!is_login_used(u->name, map))
+    	return -1;
 
-  int index = hash_user(login);
-  user_list l = map[index];
-  user_list t, prec = NULL;
+	int index = hash_user(u->name);
+	user_list l = map[index];
+	user_list t, prec = NULL;
 
-  for (t = l; t != NULL; t = t->next) {
-    if (strcmp(t->current_user->name, login) == 0) {
-      if (prec != NULL)
-	prec->next = t->next;
-      t->next = NULL;
-      free(t->current_user);
-      free(t);
-    }
+	for (t = l; t != NULL; t = t->next) {
+ 		if (strcmp(t->current_user->name, u->name) == 0) {
+    		if (prec != NULL)
+				prec->next = t->next;
+      		t->next = NULL;
+      		free(t->current_user);
+      		free(t);
+    	}
     prec = t;
-  }
+  	}
 
-  return -1;
+	return -1;
 }
 

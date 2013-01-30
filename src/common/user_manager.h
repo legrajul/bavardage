@@ -1,11 +1,13 @@
 #ifndef _USER_MANAGER_H
 #define _USER_MANAGER_H
 #include "common.h"
+#include "../common/SocketTCP.h"
 
 #define HASH_USER_MAP_SIZE 1997
 
 typedef struct USER {
   char name[MAX_NAME_SIZE];
+  SocketTCP *socket;
 } *user;
 
 typedef struct USER_LIST {
@@ -21,8 +23,8 @@ user_map create_user_map ();
 
 int is_login_used (char *login, user_map map);
 
-int add_user (char *login, user_map map);
+int add_user (user u, user_map map);
 
-int remove_user (char *login, user_map map);
+int remove_user (user u, user_map map);
 
 #endif

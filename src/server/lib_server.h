@@ -40,6 +40,7 @@ void new_thread(SocketTCP *socket);
 
 int clear_message (message *m);
 
+int create_main_room ();
 
 int create_room(char *room_name);
 int set_ip(char *ip);

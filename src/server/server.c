@@ -1,7 +1,8 @@
 #include "lib_server.h"
 #include "../common/common.h"
 #include "../common/SocketTCP.h"
-#include "../common_server/mysqlite.h"
+#include "../common/room_manager.h"
+#include "../common/user_manager.h"
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
@@ -10,10 +11,11 @@
 #include <sys/types.h>
 #include <sys/un.h>
 #include <signal.h>
-#include <sqlite3.h>
 
 SocketTCP *listen_socket;
 pthread_mutex_t mutex;
+user_map server_user_map;
+char *server_room = "server_room";
 
 void my_sigaction(int s) {
     switch (s) {
@@ -40,6 +42,7 @@ void *handle_connexion(void *param) {
 		message buffer;
         message response;
         int is_connected = 0;
+        user u;
         while (1) {
 			clear_message (&buffer);
 			clear_message (&response);
@@ -59,8 +62,10 @@ void *handle_connexion(void *param) {
         		       	case DISCONNECT:																				
 										printf("Disconnection\n");
 										response.code = OK;
-										if (is_connected)
-											delete_user (buffer.name);
+										if (is_connected) {
+											remove_user(u, server_user_map);
+											remove_user_from_room(u, server_room);
+										}
 										writeSocketTCP(s, (char *) &response, sizeof(message));
 										pthread_mutex_unlock(&mutex);
 										closeSocketTCP(s);                        
@@ -68,7 +73,7 @@ void *handle_connexion(void *param) {
 										break;                        
 					                                                             
         		       	case CONNECT:
-										if (check_user(buffer.name) == -1) {
+										if (is_login_used(buffer.name, server_user_map) == 1) {
 											printf ("login already in use : %s\n", buffer.name);
 											response.code = LOGIN_IN_USE;
 											strcpy (response.mess, "Login already in use, change your login");
@@ -78,7 +83,11 @@ void *handle_connexion(void *param) {
 											response.code = OK;
 											strcpy(response.mess, "Successful connection");
 										    is_connected = 1;
-										    add_user(buffer.name);
+										    u = (user) malloc(sizeof(struct USER));
+										    strcpy(u->name, buffer.name);
+										    u->socket = s;
+										    add_user(u, server_user_map);
+										    add_user_in_room(u, server_room);
 										}
 										
 										break;
@@ -130,14 +139,22 @@ void new_thread(SocketTCP *socket) {
   }
 }
 
+int create_main_room () {
+	printf("Server room created\n");
+	init_rooms();
+	add_room(server_room, NULL);
+	server_user_map = (user_map) malloc(HASH_USER_MAP_SIZE * sizeof(user_list));
+}
+
 int start_listening(const char *addr, int port) {
 	SocketTCP *client;
 	
-        
     if ((listen_socket = creerSocketEcouteTCP(addr, port)) == NULL) {
         perror("creerSocketEcouteTCP");
         return -1;
      }
+
+    create_main_room();
 
 	(void) signal(SIGINT, my_sigaction);
     pthread_mutex_init(&mutex, NULL);
@@ -153,12 +170,9 @@ int main(int argc, char *argv[]) {
 	if(argc < 3) {
 		fprintf (stderr, "Usage: ./server ip port\n");
 		exit (EXIT_FAILURE);
-	} else {		
-		printf ("Setting up the database...\n");		
-		connect_server_database("server_database.db");
+	} else {				
 		printf ("Now listening to the clients connections...\n");
 		start_listening(argv[1], atoi(argv[2]));  
-		close_server_database(); 
 
 	} 
 	return -1;

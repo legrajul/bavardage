@@ -54,7 +54,7 @@ int close_server_database() {
 
 
 /** ajoute un user dans la base **/
-int add_user(char *login) {
+int add_user_db(char *login) {
 	
 	// creation de la requete insertion
 	char insert[QUERY_SIZE] = "";
@@ -72,7 +72,7 @@ int add_user(char *login) {
 
 
 /** supprime un user de la base **/
-int delete_user (char *login) { 
+int delete_user_db (char *login) { 
     
 	char delete[QUERY_SIZE] = "";
 	sprintf (delete, "DELETE FROM users WHERE login = \'%s\'", login);
@@ -90,7 +90,7 @@ int delete_user (char *login) {
 
 
 /** verifie la prÃ©sence d'un user */
-int check_user(char *login) {
+int check_user_db(char *login) {
 	char select[QUERY_SIZE] = "";
 	sprintf (select, "SELECT * FROM users WHERE login = \'%s\'", login);
 	
