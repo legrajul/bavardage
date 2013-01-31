@@ -119,6 +119,14 @@ void *traitement_recv(void *param) {
         if (msg->code == CONNECT && mess.code == LOGIN_IN_USE && status == NOT_CONNECTED) {
 			printf ("Error : %s\n", mess.mess);
 		}
+		
+		if (msg->code ==  CREATE_ROOM && mess.code == OK && status == CONNECTED) {
+			printf ("Vous venez de creer le salon de discussion nommé %s dont vous serrez administrateur...\n", msg->mess);
+		}
+		
+		if (msg->code ==  CREATE_ROOM && mess.code == KO && status == CONNECTED) {
+			printf ("Error : %s\n", mess.mess);
+		}
 
         if (msg->code == DISCONNECT && mess.code == OK) {
 			closeSocketTCP(client_sock);
@@ -163,29 +171,38 @@ int send_message (const char *mess) {
         msg->code = code;
 	char *tmp;
         switch (code) {
-	case CONNECT:
-	  if (status == NOT_CONNECTED) {
-	    tmp = strtok (NULL, " ");
-	    if (tmp != NULL) {
-	      login = strdup (tmp);
-	    }
-	    if (login == NULL) {
-	      printf ("login null\n");
-	    }
-	    strcpy(msg->name, login);
-	    send_command (msg->code, msg->name);
-	  }         
-	  break;
-	case DISCONNECT:
-	  strcpy(msg->name, login);
-	  disconnect();
-	  break;
-	case CREATE_ROOM:
-	  tmp = strtok (NULL, " ");
-	  if (tmp != NULL) {
-	    strcpy (msg->mess, tmp);
-	  }
-	  send_command (msg->code, msg->mess);
+			case CONNECT:	// Cas d'une demande de connexion
+				if (status == NOT_CONNECTED) {
+					tmp = strtok (NULL, " ");
+					if (tmp != NULL) {
+						login = strdup (tmp);
+					}
+					if (login == NULL) {
+						printf ("login null\n");
+					}
+					strcpy(msg->name, login);
+					send_command (msg->code, msg->name);
+				}         
+			break;
+			
+			case DISCONNECT:	// Cas d'une demande de déconnexion
+				strcpy(msg->name, login);
+				disconnect();
+			break;
+			
+			case CREATE_ROOM:	// Cas d'une demande de création de Salon
+				tmp = strtok (NULL, " ");
+				if (tmp != NULL) {
+					strcpy (msg->mess, tmp);
+				}
+				send_command (msg->code, msg->mess);
+			
+			case QUIT_ROOM:		// Cas d'une demande pour quitter une room
+				tmp = strtok (NULL, " ");
+				if (tmp!= NULL) {
+					strcpy (msg->mess, tmp);
+				}
+				send_command (msg->code, msg->mess);
         }
         
     } else {
