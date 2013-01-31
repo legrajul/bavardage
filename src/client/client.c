@@ -182,49 +182,60 @@ int send_message (const char *mess) {
         }
         
         msg->code = code;
-	char *tmp;
+		char *tmp;
         switch (code) {
-	case CONNECT:	// Cas d'une demande de connexion
-	    if (status == NOT_CONNECTED) {
-		tmp = strtok (NULL, " ");
-		if (tmp != NULL) {
-		    login = strdup (tmp);
+		case CONNECT:	// Cas d'une demande de connexion
+			if (status == NOT_CONNECTED) {
+			tmp = strtok (NULL, " ");
+			if (tmp != NULL) {
+				login = strdup (tmp);
+			}
+			if (login == NULL) {
+				printf ("login null\n");
+			}
+			strcpy(msg->name, login);
+			send_command (msg->code, msg->name);
+			}         
+			break;
+			
+		case DISCONNECT:	// Cas d'une demande de déconnexion
+			strcpy(msg->name, login);
+			disconnect();
+			break;
+			
+		case CREATE_ROOM:	// Cas d'une demande de création de Salon
+			tmp = strtok (NULL, " ");
+			if (tmp != NULL) {
+			strcpy (msg->mess, tmp);
+			}
+			send_command (msg->code, msg->mess);
+			break;
+		case DELETE_ROOM:
+			tmp = strtok (NULL, " ");
+			if (tmp != NULL) {
+			strcpy (msg->mess, tmp);
+			}
+			send_command (msg->code, msg->mess);
+			break;
+		case QUIT_ROOM:		// Cas d'une demande pour quitter une room
+			tmp = strtok (NULL, " ");
+			if (tmp!= NULL) {
+			strcpy (msg->mess, tmp);
+			}
+			strcpy(msg->name, login);
+			send_command (msg->code, msg->name);
+		           
+		  break;
+
+		case JOIN_ROOM:
+			tmp = strtok (NULL, " ");
+			if (tmp != NULL) {
+				strcpy (msg->mess, tmp);
+			}
+			send_command (msg->code, msg->mess);
+			break;
+
 		}
-		if (login == NULL) {
-		    printf ("login null\n");
-		}
-		strcpy(msg->name, login);
-		send_command (msg->code, msg->name);
-	    }         
-	    break;
-	    
-	case DISCONNECT:	// Cas d'une demande de déconnexion
-	    strcpy(msg->name, login);
-	    disconnect();
-	    break;
-	    
-	case CREATE_ROOM:	// Cas d'une demande de création de Salon
-	    tmp = strtok (NULL, " ");
-	    if (tmp != NULL) {
-		strcpy (msg->mess, tmp);
-	    }
-	    send_command (msg->code, msg->mess);
-	    break;
-	case DELETE_ROOM:
-	    tmp = strtok (NULL, " ");
-	    if (tmp != NULL) {
-		strcpy (msg->mess, tmp);
-	    }
-	    send_command (msg->code, msg->mess);
-	    break;
-	case QUIT_ROOM:		// Cas d'une demande pour quitter une room
-	    tmp = strtok (NULL, " ");
-	    if (tmp!= NULL) {
-		strcpy (msg->mess, tmp);
-	    }
-	    send_command (msg->code, msg->mess);
-	    break;
-        }
         
     } else {
         //envoyer un message classique sur le salon general su server
