@@ -129,6 +129,18 @@ void *traitement_recv(void *param) {
 	if (msg->code ==  CREATE_ROOM && mess.code == KO) {
 	    printf ("Error : %s\n", mess.mess);
 	}
+	
+	if (msg->code ==  JOIN_ROOM && mess.code == OK && status == CONNECTED) {
+	    printf ("You've successfully joined a room named: %s\n", msg->mess);
+	}
+	
+	if (msg->code ==  JOIN_ROOM && mess.code == KO) {
+	    printf ("The room does not exist\n");
+	}
+	
+	if (msg->code ==  QUIT_ROOM && mess.code == OK && status == CONNECTED) {
+	    printf ("You've successfully quitted the room %s\n", msg->mess);
+	}
 
 	if (msg->code == DELETE_ROOM && mess.code == OK && status == CONNECTED) {
 	    printf ("Room successfully deleted: %s\n", msg->mess);

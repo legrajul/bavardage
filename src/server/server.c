@@ -99,6 +99,7 @@ void *handle_connexion(void *param) {
 					remove_user_from_room (u, buffer.mess);
 					strcpy(response.mess, "User successfully deleted");
 					response.code = OK;  
+					printf("User successfully deleted");
 					break;
 				}
 				remove_user_from_room (u, buffer.mess);
