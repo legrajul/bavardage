@@ -1,8 +1,7 @@
 CC=gcc
-OPTS= -Wall -std=c99 -pthread -l sqlite3
+OPTS= -Wall -std=c99 -pthread
 
 all: server
-
 
 server: ../common/SocketTCP.o ../common/user_manager.o ../common/room_manager.o server.o
 	$(CC) $^ -o $@ $(OPTS)

@@ -1,4 +1,4 @@
-#include "../common/common.h"
+#include "common.h"
 #include "user_manager.h"
 #ifndef _ROOM_MANAGER_H
 #define _ROOM_MANAGER_H

@@ -50,6 +50,8 @@ int extract_code (const char *str) {
 
     if (strcmp(command, "CREATE_ROOM") == 0) {
         return CREATE_ROOM;
+    } else if (strcmp(command, "DELETE_ROOM") == 0) {
+	return DELETE_ROOM;
     } else if (strcmp(command, "DISCONNECT") == 0) {
         return DISCONNECT;
     } else if (strcmp(command, "CONNECT") == 0) {
@@ -112,25 +114,36 @@ void *traitement_recv(void *param) {
         }
 
         if (msg->code == CONNECT && mess.code == OK && status == NOT_CONNECTED) {
-			printf ("You're now connected to the chat server with the login: %s\n", login);
+	    printf ("You're now connected to the chat server with the login: %s\n", login);
             status = CONNECTED;
         }
+	
+        if (msg->code == CONNECT && mess.code == KO && status == NOT_CONNECTED) {
+	    printf ("Error : %s\n", mess.mess);
+	}
+		
+	if (msg->code ==  CREATE_ROOM && mess.code == OK && status == CONNECTED) {
+	    printf ("You've successfully created a room named: %s\n", msg->mess);
+	}
+		
+	if (msg->code ==  CREATE_ROOM && mess.code == KO) {
+	    printf ("Error : %s\n", mess.mess);
+	}
 
-        if (msg->code == CONNECT && mess.code == LOGIN_IN_USE && status == NOT_CONNECTED) {
-			printf ("Error : %s\n", mess.mess);
-		}
-		
-		if (msg->code ==  CREATE_ROOM && mess.code == OK && status == CONNECTED) {
-			printf ("Vous venez de creer le salon de discussion nommé %s dont vous serrez administrateur...\n", msg->mess);
-		}
-		
-		if (msg->code ==  CREATE_ROOM && mess.code == KO && status == CONNECTED) {
-			printf ("Error : %s\n", mess.mess);
-		}
+	if (msg->code == DELETE_ROOM && mess.code == OK && status == CONNECTED) {
+	    printf ("Room successfully deleted: %s\n", msg->mess);
+	}
+	if (msg->code == DELETE_ROOM && mess.code == KO) {
+	    printf ("Error: %s\n", mess.mess);
+	}
+	if (mess.code == DELETE_ROOM) {
+	    //TODO supprimer le salon
+	    printf ("The room %s has been deleted\n", mess.mess);
+	}
 
         if (msg->code == DISCONNECT && mess.code == OK) {
-			closeSocketTCP(client_sock);
-			printf ("You're now disconnected from the chat server\n");
+	    closeSocketTCP(client_sock);
+	    printf ("You're now disconnected from the chat server\n");
             pthread_detach(thread_send);
             exit (0);
         }
@@ -171,38 +184,46 @@ int send_message (const char *mess) {
         msg->code = code;
 	char *tmp;
         switch (code) {
-			case CONNECT:	// Cas d'une demande de connexion
-				if (status == NOT_CONNECTED) {
-					tmp = strtok (NULL, " ");
-					if (tmp != NULL) {
-						login = strdup (tmp);
-					}
-					if (login == NULL) {
-						printf ("login null\n");
-					}
-					strcpy(msg->name, login);
-					send_command (msg->code, msg->name);
-				}         
-			break;
-			
-			case DISCONNECT:	// Cas d'une demande de déconnexion
-				strcpy(msg->name, login);
-				disconnect();
-			break;
-			
-			case CREATE_ROOM:	// Cas d'une demande de création de Salon
-				tmp = strtok (NULL, " ");
-				if (tmp != NULL) {
-					strcpy (msg->mess, tmp);
-				}
-				send_command (msg->code, msg->mess);
-			
-			case QUIT_ROOM:		// Cas d'une demande pour quitter une room
-				tmp = strtok (NULL, " ");
-				if (tmp!= NULL) {
-					strcpy (msg->mess, tmp);
-				}
-				send_command (msg->code, msg->mess);
+	case CONNECT:	// Cas d'une demande de connexion
+	    if (status == NOT_CONNECTED) {
+		tmp = strtok (NULL, " ");
+		if (tmp != NULL) {
+		    login = strdup (tmp);
+		}
+		if (login == NULL) {
+		    printf ("login null\n");
+		}
+		strcpy(msg->name, login);
+		send_command (msg->code, msg->name);
+	    }         
+	    break;
+	    
+	case DISCONNECT:	// Cas d'une demande de déconnexion
+	    strcpy(msg->name, login);
+	    disconnect();
+	    break;
+	    
+	case CREATE_ROOM:	// Cas d'une demande de création de Salon
+	    tmp = strtok (NULL, " ");
+	    if (tmp != NULL) {
+		strcpy (msg->mess, tmp);
+	    }
+	    send_command (msg->code, msg->mess);
+	    break;
+	case DELETE_ROOM:
+	    tmp = strtok (NULL, " ");
+	    if (tmp != NULL) {
+		strcpy (msg->mess, tmp);
+	    }
+	    send_command (msg->code, msg->mess);
+	    break;
+	case QUIT_ROOM:		// Cas d'une demande pour quitter une room
+	    tmp = strtok (NULL, " ");
+	    if (tmp!= NULL) {
+		strcpy (msg->mess, tmp);
+	    }
+	    send_command (msg->code, msg->mess);
+	    break;
         }
         
     } else {
