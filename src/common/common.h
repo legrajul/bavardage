@@ -17,6 +17,10 @@
 #define LOGIN_IN_USE   10
 #define NOT_CONNECTED  11
 #define CONNECTED      12
+#define USER_LIST_CHUNK 13
+#define USER_LIST_END 14
+
+
 
 typedef struct {
 	int code;
