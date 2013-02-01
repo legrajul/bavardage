@@ -137,6 +137,22 @@ void *traitement_recv(void *param) {
 	if (msg->code ==  JOIN_ROOM && mess.code == KO) {
 	    printf ("The room does not exist\n");
 	}
+	char * res = NULL;
+	if (msg->code ==  JOIN_ROOM && mess.code == USER_LIST_CHUNK) {
+		printf("You joined the room %s\n",msg->mess);
+	    res = strdup(mess.mess);
+	    while(mess.code == USER_LIST_CHUNK) {
+	        readSocketTCP(client_sock, (char*) &mess, sizeof(message));    
+	        strcat (res, ", ");
+	        strcat(res, mess.mess);
+		}	    
+		printf("%s", res);		
+	}
+	
+	if(mess.code == USER_LIST_END)
+	{
+		printf("The user %s joined the room \n", mess.name);
+	}
 	
 	if (msg->code ==  QUIT_ROOM && mess.code == OK && status == CONNECTED) {
 	    printf ("You've successfully quitted the room %s\n", msg->mess);

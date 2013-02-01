@@ -83,10 +83,29 @@ void *handle_connexion(void *param) {
 
 			case JOIN_ROOM:				
 				if(is_room_used(buffer.mess)) {
+					
+									
+					// On envoie la liste des clients connectés à tous les clients connectés au salon	
+					user_list users = get_users (buffer.mess);
+					user_list t;
+					user_list l;
+					message m;									
+					m.code = USER_LIST_CHUNK;					
+				    for (l = users; l != NULL; l = l->next) {
+						strcpy(m.mess, l->current_user->name);
+						writeSocketTCP (u->socket, (char *) &m, sizeof (message));
+					}
+					m.code = USER_LIST_END;
+					strcpy(m.name, u->name);
+					for (t = users; t != NULL; t = t->next) {							
+							writeSocketTCP (t->current_user->socket, (char *) &m, sizeof (message));
+						}
+					
 					add_user_in_room (u, buffer.mess);
 					strcpy(response.mess, "User added successfully to room");
 					response.code = OK;
-					printf("User added successfully to room\n");
+					printf("User added successfully to room\n");	
+					
 				} else {											
 					strcpy(response.mess, "The room does not exist");
 					response.code = KO;
@@ -95,11 +114,28 @@ void *handle_connexion(void *param) {
 				break;  
 				
 			case QUIT_ROOM:
-				if(u != get_admin (buffer.mess)) {
+				if(u != get_admin (buffer.mess)) {					
 					remove_user_from_room (u, buffer.mess);
 					strcpy(response.mess, "User successfully deleted");
 					response.code = OK;  
 					printf("User successfully deleted");
+					
+					// On envoie la liste des clients connectés à tous les clients connectés au salon
+					user_list users = get_users (buffer.mess);
+					user_list t;
+					user_list u;
+					message m;	
+					m.code = USER_LIST_CHUNK;									  						
+					for (t = users; t != NULL; t = t->next) {	
+						strcpy(m.mess, u->current_user->name);						
+						writeSocketTCP (t->current_user->socket, (char *) &m, sizeof (message));
+						}
+				    
+					m.code = USER_LIST_END;
+					strcpy(m.name, buffer.name);
+					for (t = users; t != NULL; t = t->next) {							
+							writeSocketTCP (t->current_user->socket, (char *) &m, sizeof (message));
+						}
 					break;
 				}
 				remove_user_from_room (u, buffer.mess);
@@ -122,7 +158,7 @@ void *handle_connexion(void *param) {
 				m.code = DELETE_ROOM;
 				strcpy (m.mess, buffer.mess);
 				for (t = users; t != NULL; t = t->next) {
-					writeSocketTCP (t->current_user->socket, (char *) &m, sizeof (message));
+					writeSocketTCP (s, (char *) &m, sizeof (message));
 				}
 								
 				remove_room (buffer.mess);
