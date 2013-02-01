@@ -15,7 +15,7 @@
 SocketTCP *listen_socket;
 pthread_mutex_t mutex;
 user_map server_user_map;
-char *server_room = "server_room";
+char *home_room = "home_room";
 
 int is_login_valid (char *login) {
     int i = 0;
@@ -135,7 +135,7 @@ void *handle_connexion(void *param) {
 				response.code = OK;
 				if (is_connected) {
 				remove_user(u, server_user_map);
-				remove_user_from_room(u, server_room);
+				remove_user_from_room(u, home_room);
 				}
 				writeSocketTCP(s, (char *) &response, sizeof(message));
 				pthread_mutex_unlock(&mutex);
@@ -161,13 +161,37 @@ void *handle_connexion(void *param) {
 				strcpy(u->name, buffer.name);
 				u->socket = s;
 				add_user(u, server_user_map);
-				add_user_in_room(u, server_room);
+				add_user_in_room(u, home_room);
 				}
 
 				break;
 
 			case MESSAGE:
-				break;
+				if (buffer.room == NULL) {
+					response.code = KO;
+					strcpy(response.mess, "Error this command is not allowed");
+					break;
+				}
+				if (buffer.mess == NULL) {
+					response.code = KO;
+					strcpy(response.mess, "You can not send an empty message");
+					break;
+				}
+				if (is_room_used(buffer.room) != 1) {
+					response.code = KO;
+					strcpy(response.mess, "This room does not exist");
+					break;
+				}
+				response.code = OK;
+				strcpy(response.room, buffer.room);
+				strcpy(response.mess, buffer.mess);
+				user_list l = get_users(buffer.room);
+				user_list t;
+				for (t = l; t != NULL; t = t->next) {
+					strcpy(response.name, t->current_user->name);
+					writeSocketTCP(t->current_user->socket, (char *) &response, sizeof(message));
+				}
+			    break;
 
 			default:
 				break;
@@ -219,7 +243,7 @@ void new_thread(SocketTCP *socket) {
 int create_main_room () {
     printf("Server room created\n");
     init_rooms();
-    add_room(server_room, NULL);
+    add_room(home_room, NULL);
     server_user_map = (user_map) malloc(HASH_USER_MAP_SIZE * sizeof(user_list));
 }
 
