@@ -228,7 +228,24 @@ void *handle_connexion(void *param) {
 					writeSocketTCP(t->current_user->socket, (char *) &response, sizeof(message));
 				}
 			    break;
-
+            
+            case MP:
+                if (!is_login_used (buffer.room)) {
+                    reponse.code = KO;
+                    strcpy (reponse.mess, "You can not send a message to an non-existing user");
+                    break;
+			    }
+			    if (buffer.mess == NULL) {
+				    response.code KO;
+				    strcpy (response.mess, "You can not send an empty message");
+				    break;
+			    }
+			    
+			    response.code OK;
+			    strcpy (response.mess, buffer.mess);
+			    strcpy (response.name, buffer.name);
+			    strcpy (response.room, buffer.room);
+			    break;
 			default:
 				break;
 			}
