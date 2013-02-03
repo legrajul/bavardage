@@ -19,6 +19,7 @@
 #define CONNECTED      12
 #define USER_LIST_CHUNK 13
 #define USER_LIST_END 14
+#define MP 15
 
 
 
