@@ -231,17 +231,17 @@ void *handle_connexion(void *param) {
             
             case MP:
                 if (!is_login_used (buffer.room, server_user_map)) {
-                    reponse.code = KO;
-                    strcpy (reponse.mess, "You can not send a message to an non-existing user");
+                    response.code = KO;
+                    strcpy (response.mess, "You can not send a message to an non-existing user");
                     break;
 			    }
 			    if (buffer.mess == NULL) {
-				    response.code KO;
+				    response.code = KO;
 				    strcpy (response.mess, "You can not send an empty message");
 				    break;
 			    }
 			    
-			    response.code OK;
+			    response.code = OK;
 			    strcpy (response.mess, buffer.mess);
 			    strcpy (response.name, buffer.name);
 			    strcpy (response.room, buffer.room);
