@@ -230,7 +230,7 @@ void *handle_connexion(void *param) {
 			    break;
             
             case MP:
-                if (!is_login_used (buffer.room)) {
+                if (!is_login_used (buffer.room, server_user_map)) {
                     reponse.code = KO;
                     strcpy (reponse.mess, "You can not send a message to an non-existing user");
                     break;
