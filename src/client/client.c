@@ -12,7 +12,7 @@
 
 SocketTCP *client_sock;
 message *msg;
-char *login;
+char *login, **tab_string;
 int status = NOT_CONNECTED;
 pthread_t thread_send, thread_recv;
 
@@ -62,6 +62,8 @@ int extract_code (const char *str) {
         return JOIN_ROOM;
     } else if (strcmp(command, "MESSAGE") == 0) {
         return MESSAGE;
+    } else if (strcmp(command, "MP") == 0) {
+        return MP;
     }
 
     return -1;
@@ -108,17 +110,17 @@ void *traitement_send(void *param) {
 void *traitement_recv(void *param) {
     message mess;
     while (1) {
-		
-        if (readSocketTCP(client_sock, (char*) &mess, sizeof(message)) > 0) {
-			//~ printf ("message recieved, code = %d, mess = %s, asked_code = %d, status = %d\n", mess.code, mess.mess, msg->code, status);
-        }
-
-        if (msg->code == CONNECT && mess.code == OK && status == NOT_CONNECTED) {
-	    printf ("You're now connected to the chat server with the login: %s\n", login);
-            status = CONNECTED;
-        }
 	
-        if (msg->code == CONNECT && mess.code == KO && status == NOT_CONNECTED) {
+	if (readSocketTCP(client_sock, (char*) &mess, sizeof(message)) > 0) {
+		//~ printf ("message recieved, code = %d, mess = %s, asked_code = %d, status = %d\n", mess.code, mess.mess, msg->code, status);
+	}
+
+	if (msg->code == CONNECT && mess.code == OK && status == NOT_CONNECTED) {
+	    printf ("You're now connected to the chat server with the login: %s\n", login);
+		status = CONNECTED;
+	}
+
+	if (msg->code == CONNECT && mess.code == KO && status == NOT_CONNECTED) {
 	    printf ("Error : %s\n", mess.mess);
 	}
 		
@@ -134,11 +136,19 @@ void *traitement_recv(void *param) {
 	    printf ("You've successfully joined a room named: %s\n", msg->mess);
 	}
 	
+	if (mess.code == MESSAGE && status == CONNECTED) {
+	    printf ("You've successfully send a public message \"%s\"\n", msg->mess);
+	}
+	
+	if (mess.code == MP && status == CONNECTED) {
+	    printf ("You've successfully send a private message \"%s\"\n", msg->mess);
+	}
+	
 	if (msg->code ==  JOIN_ROOM && mess.code == KO) {
 	    printf ("The room does not exist\n");
 	}
 	char * res = NULL;
-	if (msg->code ==  JOIN_ROOM && mess.code == USER_LIST_CHUNK) {
+	if (msg->code == JOIN_ROOM && mess.code == USER_LIST_CHUNK) {
 		printf("You joined the room %s\n",msg->mess);
 	    res = strdup(mess.mess);
 	    while(mess.code == USER_LIST_CHUNK) {
@@ -158,7 +168,7 @@ void *traitement_recv(void *param) {
 	    printf ("You've successfully quitted the room %s\n", msg->mess);
 	}
 
-	if (msg->code == DELETE_ROOM && mess.code == OK && status == CONNECTED) {
+	if (msg->code == DELETE_ROOM && status == CONNECTED) {
 	    printf ("Room successfully deleted: %s\n", msg->mess);
 	}
 	if (msg->code == DELETE_ROOM && mess.code == KO) {
@@ -179,6 +189,20 @@ void *traitement_recv(void *param) {
     pthread_exit(0);
 }
 
+int len (char **tab) {
+	int n = 0;
+	if (tab == NULL)
+		return n;
+	else {
+		int l=0;
+		while (tab[l] != NULL) {
+			n++;
+			l += sizeof(char *)/sizeof(tab[l]);
+		}
+		return n;
+	}
+}
+
 int send_command (const int code, const char *param) {
 	if (msg == NULL) {
 		msg = (message*) malloc(sizeof(message));
@@ -196,80 +220,117 @@ int send_command (const int code, const char *param) {
     return 0;
 }
 
+char **create_table_param(const char *string) {
+	char **res = (char **) malloc(sizeof(char*) * MAX_MESS_SIZE);
+	int i=0;
+	if (string != NULL) {
+		char *tok = strtok(strdup (string), " ");
+		while (tok != NULL) {
+			res[i] = tok;
+			tok = strtok(NULL, " ");
+			i++;
+		}
+	}
+	return res;
+}
+
 int send_message (const char *mess) {
     int code;
     char buffer[strlen(mess)];
     strcpy(buffer, mess);
     msg = (message*) malloc(sizeof(message));
 
-    if (mess[0] == '/') {
-        code = extract_code(strtok(buffer, " "));
+    if (mess[0] == '/') {	
+        code = extract_code(strtok(strdup(buffer), " "));
         if (code == -1) {
             perror("extract_code");
             return -1;
         }
         
         msg->code = code;
-		char *tmp;
+		char *tmp, buff[MAX_MESS_SIZE] = "";
+		int i;
         switch (code) {
-		case CONNECT:	// Cas d'une demande de connexion
-			if (status == NOT_CONNECTED) {
-			tmp = strtok (NULL, " ");
-			if (tmp != NULL) {
-				login = strdup (tmp);
-			}
-			if (login == NULL) {
-				printf ("login null\n");
-			}
-			strcpy(msg->name, login);
-			send_command (msg->code, msg->name);
-			}         
-			break;
-			
-		case DISCONNECT:	// Cas d'une demande de déconnexion
-			strcpy(msg->name, login);
-			disconnect();
-			break;
-			
-		case CREATE_ROOM:	// Cas d'une demande de création de Salon
-			tmp = strtok (NULL, " ");
-			if (tmp != NULL) {
-			strcpy (msg->mess, tmp);
-			}
-			send_command (msg->code, msg->mess);
-			break;
-		case DELETE_ROOM:
-			tmp = strtok (NULL, " ");
-			if (tmp != NULL) {
-			strcpy (msg->mess, tmp);
-			}
-			send_command (msg->code, msg->mess);
-			break;
-		case QUIT_ROOM:		// Cas d'une demande pour quitter une room
-			tmp = strtok (NULL, " ");
-			if (tmp!= NULL) {
-			strcpy (msg->mess, tmp);
-			}
-			strcpy(msg->name, login);
-			send_command (msg->code, msg->name);
-		           
-		  break;
-
-		case JOIN_ROOM:
-			tmp = strtok (NULL, " ");
-			if (tmp != NULL) {
+			case CONNECT:	// Cas d'une demande de connexion
+				if (status == NOT_CONNECTED) {
+				tmp = strtok (NULL, " ");
+				if (tmp != NULL) {
+					login = strdup (tmp);
+				}
+				if (login == NULL) {
+					printf ("login null\n");
+				}
+				strcpy(msg->name, login);
+				send_command (msg->code, msg->name);
+				}         
+				break;
+	
+			case DISCONNECT:	// Cas d'une demande de déconnexion
+				strcpy(msg->name, login);
+				disconnect();
+				break;
+	
+			case CREATE_ROOM:	// Cas d'une demande de création de Salon
+				tmp = strtok (NULL, " ");
+				if (tmp != NULL) {
 				strcpy (msg->mess, tmp);
-			}
-			send_command (msg->code, msg->mess);
-			break;
-
+				}
+				send_command (msg->code, msg->mess);
+				break;
+			case DELETE_ROOM:
+				tmp = strtok (NULL, " ");
+				if (tmp != NULL) {
+				strcpy (msg->mess, tmp);
+				}
+				send_command (msg->code, msg->mess);
+				break;
+			case QUIT_ROOM:		// Cas d'une demande pour quitter une room
+				tmp = strtok (NULL, " ");
+				if (tmp!= NULL) {
+				strcpy (msg->mess, tmp);
+				}
+				strcpy(msg->name, login);
+				send_command (msg->code, msg->name);
+	
+			  break;
+	
+			case JOIN_ROOM:
+				tmp = strtok (NULL, " ");
+				if (tmp != NULL) {
+					strcpy (msg->mess, tmp);
+				}
+				send_command (msg->code, msg->mess);
+				break;
+	
+				
+			case MESSAGE:  // Cas d'envoi de message
+				tab_string = create_table_param(buffer);
+				strcpy(msg->room, tab_string[1]);
+				
+				for (i=2; i<len(tab_string); i++) {
+					strcat(buff, tab_string[i]);
+				    strcat(buff, " ");
+				}
+				
+				strcpy(msg->mess, buff);
+				send_command (msg->code, msg->mess);
+				break;
+				
+			case MP:  // Cas d'envoi de message prive
+				tab_string = create_table_param(buffer);
+				strcpy(msg->room, tab_string[1]);
+				
+				for (i=2; i<len(tab_string); i++) {
+					strcat(buff, tab_string[i]);
+				    strcat(buff, " ");
+				}
+				
+				strcpy(msg->mess, buff);
+				send_command (msg->code, msg->mess);
+				break;
 		}
-        
-    } else {
-        //envoyer un message classique sur le salon general su server
-    }
-
-    return 0;
+	}
+	return 0;
 }
 
 int disconnect() {

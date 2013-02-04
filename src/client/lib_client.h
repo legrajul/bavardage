@@ -20,13 +20,25 @@ char *str_sub (const char *s, unsigned int start, unsigned int end);
 */
 int send_message (const char *mess);
 
+/** creez un tableau a partir d'une chaine 
+ *  @param une chaine de caractere
+ *  @return un tableau de chaine de caractere
+ */
+char **create_table_param(const char *string);
+
+/** retourne la longueur d'un tableau
+ *  @param un tableau de pointeur
+ *  @return la longueur du tableau
+ */
+int len (char **tab);
+
 /**
 *	Envoi une commande au serveur
 *	@param code numéro de la commande
 *	@param param paramètre de la commande
 *	@return 0 ou -1 en cas d'erreur
 */
-int send_command (const int code, const char *param);
+int send_command (const int code,const char *param);
 
 /**
 *	Ce connecte au serveur

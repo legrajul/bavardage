@@ -62,6 +62,7 @@ void *handle_connexion(void *param) {
 	clear_message (&buffer);
 	clear_message (&response);
 	receive = readSocketTCP(s, (char *) &buffer, sizeof (message));
+	printf ("message received, taille %d\n", receive);
 	if (receive > 0) {
 		if(buffer.code != CONNECT && u == NULL) {
 			strcpy(response.mess, "Error");
@@ -218,15 +219,18 @@ void *handle_connexion(void *param) {
 					strcpy(response.mess, "This room does not exist");
 					break;
 				}
-				response.code = OK;
+				response.code = MESSAGE;
 				strcpy(response.room, buffer.room);
 				strcpy(response.mess, buffer.mess);
 				user_list l = get_users(buffer.room);
+				printf("avant: envoye a\n");
 				user_list t;
 				for (t = l; t != NULL; t = t->next) {
+					printf("envoye a %s\n",t->current_user->name);
 					strcpy(response.name, t->current_user->name);
 					writeSocketTCP(t->current_user->socket, (char *) &response, sizeof(message));
 				}
+				printf("apres: envoye a\n");
 			    break;
             
             case MP:

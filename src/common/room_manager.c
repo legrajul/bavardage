@@ -199,10 +199,12 @@ user_list get_users (char *room_name) {
     
 	user_list last = NULL;
 	user_list tmp = NULL;
-	for (int i = 0; i < HASH_USER_MAP_SIZE; i++) {
+	int i;
+	for (i = 0; i < HASH_USER_MAP_SIZE; i++) {
 	    if (map[i] != NULL) {
 		user_list list = map[i];
-		for (user_list l = list; l != NULL; l = l->next) {
+		user_list l;
+		for (l = list; l != NULL; l = l->next) {
 		    tmp = (user_list) malloc (sizeof (struct USER_LIST));
 		    tmp->current_user = l->current_user;
 		    if (last == NULL) {
