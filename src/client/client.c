@@ -246,7 +246,6 @@ int send_message (const char *mess) {
             perror("extract_code");
             return -1;
         }
-        
         msg->code = code;
 		char *tmp, buff[MAX_MESS_SIZE] = "";
 		int i;
