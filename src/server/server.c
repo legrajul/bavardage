@@ -62,202 +62,199 @@ void *handle_connexion(void *param) {
 	clear_message (&response);
 	receive = readSocketTCP(s, (char *) &buffer, sizeof (message));
 	if (receive > 0) {
-		if(buffer.code != CONNECT && u == NULL) {
-			strcpy(response.content, "Error");
-			response.code = KO; 
-		} else {
-			pthread_mutex_lock(&mutex);
-			switch (buffer.code) {
-			case CREATE_ROOM:
-			if (is_room_used (buffer.content)) {
-				response.code = KO;
-				strcpy (response.content, "This room name is already in use");
-			} else {
-				add_room (buffer.content, u); 
-				add_user_in_room (u, buffer.content);
-				response.code = OK;
+	    if(buffer.code != CONNECT && u == NULL) {
+		strcpy(response.content, "Error");
+		response.code = KO; 
+	    } else {
+		pthread_mutex_lock(&mutex);
+		switch (buffer.code) {
+		case CREATE_ROOM:
+		    if (is_room_used (buffer.content)) {
+			response.code = KO;
+			strcpy (response.content, "This room name is already in use");
+		    } else {
+			sprintf (response.content, "Room created: %s", buffer.content);
+			add_room (buffer.content, u); 
+			add_user_in_room (u, buffer.content);
+			response.code = OK;
+		    }
+		    break;
+		    
+		case JOIN_ROOM:				
+		    if(is_room_used(buffer.content)) {
+			strcpy (response.content, buffer.content);
+			// On envoie la liste des clients connectés à tous les clients connectés au salon	
+			user_list users = get_users (buffer.sender);
+			user_list t, l;
+			message m;									
+			m.code = USER_LIST_CHUNK;					
+			for (l = users; l != NULL; l = l->next) {
+			    strcpy(m.content, l->current_user->name);
+			    writeSocketTCP (u->socket, (char *) &m, sizeof (message));
+			}
+			m.code = USER_LIST_END;
+			strcpy(m.sender, u->name);
+			for (t = users; t != NULL; t = t->next) {		
+			    writeSocketTCP (t->current_user->socket, (char *) &m, sizeof (message));
+			}
+			
+			add_user_in_room (u, buffer.content);
+			sprintf(response.content, "You joined the room: %s", buffer.content);
+			response.code = OK;
+			printf("User added successfully to room\n");	
+			
+		    } else {			
+			strcpy(response.content, "The room does not exist");
+			response.code = KO;
+			printf("The room does not exist\n");
+		    }       		       	
+		    break;  
+		    
+		case QUIT_ROOM:
+		    if(u != get_admin (buffer.content)) {					
+			remove_user_from_room (u, buffer.content);
+			sprintf(response.content, "You left the room: %s", buffer.content);
+			response.code = OK;  
+			printf("User successfully deleted");
+			
+			// On envoie la liste des clients connectés à tous les clients connectés au salon
+			user_list users = get_users (buffer.content);
+			user_list t, u;
+			message m;	
+			m.code = USER_LIST_CHUNK;									  						
+			for (t = users; t != NULL; t = t->next) {	
+			    strcpy(m.content, u->current_user->name);
+			    writeSocketTCP (t->current_user->socket, (char *) &m, sizeof (message));
+			}
+			
+			m.code = USER_LIST_END;
+			strcpy(m.sender, buffer.sender);
+			for (t = users; t != NULL; t = t->next) {							
+			    writeSocketTCP (t->current_user->socket, (char *) &m, sizeof (message));
 			}
 			break;
-
-			case JOIN_ROOM:				
-				if(is_room_used(buffer.content)) {
-					// On envoie la liste des clients connectés à tous les clients connectés au salon	
-					user_list users = get_users (buffer.sender);
-					user_list t, l;
-					message m;									
-					m.code = USER_LIST_CHUNK;					
-				    for (l = users; l != NULL; l = l->next) {
-						strcpy(m.content, l->current_user->name);
-						writeSocketTCP (u->socket, (char *) &m, sizeof (message));
-					}
-					m.code = USER_LIST_END;
-					strcpy(m.sender, u->name);
-					for (t = users; t != NULL; t = t->next) {							
-						writeSocketTCP (t->current_user->socket, (char *) &m, sizeof (message));
-					}
-					
-					add_user_in_room (u, buffer.content);
-					strcpy(response.content, "User added successfully to room");
-					response.code = OK;
-					printf("User added successfully to room\n");	
-					
-				} else {											
-					strcpy(response.content, "The room does not exist");
-					response.code = KO;
-					printf("The room does not exist\n");
-				}       		       	
-				break;  
-				
-			case QUIT_ROOM:
-				if(u != get_admin (buffer.content)) {					
-					remove_user_from_room (u, buffer.content);
-					strcpy(response.content, "User successfully deleted");
-					response.code = OK;  
-					printf("User successfully deleted");
-					
-					// On envoie la liste des clients connectés à tous les clients connectés au salon
-					user_list users = get_users (buffer.content);
-					user_list t, u;
-					message m;	
-					m.code = USER_LIST_CHUNK;									  						
-					for (t = users; t != NULL; t = t->next) {	
-						strcpy(m.content, u->current_user->name);
-						writeSocketTCP (t->current_user->socket, (char *) &m, sizeof (message));
-					}
-				    
-					m.code = USER_LIST_END;
-					strcpy(m.sender, buffer.sender);
-					for (t = users; t != NULL; t = t->next) {							
-						writeSocketTCP (t->current_user->socket, (char *) &m, sizeof (message));
-					}
-					break;
-				}
-				remove_user_from_room (u, buffer.content);
-				
-			case DELETE_ROOM:
-			// TODO: Tester si le user demandeur est admin
-			printf ("Room deletion request with name %s by %s\n", buffer.content, buffer.sender);
-			if (!is_room_used (buffer.content)) {
-				response.code = KO;
-				strcpy (response.content, "This room doesn\'t exist");
+		    }
+		    remove_user_from_room (u, buffer.content);
+		    
+		case DELETE_ROOM:
+		    printf ("Room deletion request with name %s by %s\n", buffer.content, buffer.sender);
+		    if (!is_room_used (buffer.content)) {
+			response.code = KO;
+			strcpy (response.content, "This room doesn\'t exist");
+		    } else {
+			if (u != get_admin (buffer.content)) {
+			    response.code = KO;
+			    strcpy (response.content, "You're not admin, you can't delete this room");
 			} else {
-				if (u != get_admin (buffer.content)) {
-				response.code = KO;
-				strcpy (response.content, "You're not admin, you can't delete this room");
-				} else {
-				user_list users = get_users (buffer.content);
-				user_list t;
-				// On demande à tous les clients connectés au salon de le supprimer
-				message m;
-				m.code = DELETE_ROOM;
-				strcpy (m.content, buffer.content);
-				for (t = users; t != NULL; t = t->next) {
-					writeSocketTCP (t->current_user->socket, (char *) &m, sizeof (message));
-				}
-								
-				remove_room (buffer.content);
+			    user_list users = get_users (buffer.content);
+			    user_list t;
+			    // On demande à tous les clients connectés au salon de le supprimer
+			    message m;
+			    m.code = DELETE_ROOM;
+			    strcpy (m.content, buffer.content);
+			    for (t = users; t != NULL; t = t->next) {
+				writeSocketTCP (t->current_user->socket, (char *) &m, sizeof (message));
+			    }
+			    sprintf (response.content, "You deleted the room: %s\n", buffer.content);
+			    remove_room (buffer.content);
 			}
 			break;
-				
-			case DISCONNECT:	
-				//TODO retirer le user de tous les salons où il est connecté
-				printf("Disconnection\n");
-				response.code = OK;
-				if (is_connected) {
-				remove_user(u, server_user_map);
-				remove_user_from_room(u, home_room);
-				}
-				writeSocketTCP(s, (char *) &response, sizeof(message));
-				pthread_mutex_unlock(&mutex);
-				closeSocketTCP(s);                        
-				pthread_exit(0);
-				break;                        
-																					 
-			case CONNECT:
-				if (!is_login_valid (buffer.sender)) {
-				response.code = KO;
-				strcpy (response.content, "Login not acceptable");
-				} else if (is_login_used(buffer.sender, server_user_map) == 1) {
-				printf ("login already in use : %s\n", buffer.sender);
-				response.code = KO;
-				strcpy (response.content, "Login already in use, change your login");
-				} else {
-				printf ("successful connection : %s\n", buffer.sender);
-				strcpy(response.sender, buffer.sender);
-				response.code = OK;
-				strcpy(response.content, "Successful connection");
-				is_connected = 1;
-				u = (user) malloc(sizeof(struct USER));
-				strcpy(u->name, buffer.sender);
-				u->socket = s;
-				add_user(u, server_user_map);
-				add_user_in_room(u, home_room);
-				}
-
-				break;
-
-			case MESSAGE:
-				if (buffer.receiver == NULL) {
-					response.code = KO;
-					strcpy(response.content, "Error this command is not allowed");
-					break;
-				}
-				if (buffer.content == NULL) {
-					response.code = KO;
-					strcpy(response.content, "You can not send an empty message");
-					break;
-				}
-				if (is_room_used(buffer.receiver) != 1) {
-					response.code = KO;
-					strcpy(response.content, "This room does not exist");
-					break;
-				}
-				response.code = OK;
-				user_list l = get_users(buffer.receiver);
-				if (l == NULL) {
-					printf ("personne dans le salon %s\n", buffer.receiver);
-				}
-				user_list t;
-				for (t = l; t != NULL; t = t->next) {
-					printf ("transfert du message à %s\n", t->current_user->name);
-					writeSocketTCP(t->current_user->socket, (char *) &buffer, sizeof(message));
-				}
-			    break;
-            
-            case MP:
-                if (!is_login_used (buffer.receiver, server_user_map)) {
-                    response.code = KO;
-                    strcpy (response.content, "You can not send a message to an non-existing user");
-                    break;
-			    }
-			    if (buffer.content == NULL) {
-				    response.code = KO;
-				    strcpy (response.content, "You can not send an empty message");
-				    break;
-			    }
-			    
-			    
-			    user receiver = get_user (buffer.receiver , server_user_map);
-			    writeSocketTCP( receiver->socket, (char *) &buffer, sizeof (message));
-			    
-			    response = buffer;
-			    break;
-			    
-			default:
-				break;
+			
+		    case DISCONNECT:	
+			//TODO retirer le user de tous les salons où il est connecté
+			printf("Disconnection\n");
+			response.code = OK;
+			if (is_connected) {
+			    remove_user(u, server_user_map);
+			    remove_user_from_room(u, home_room);
 			}
-			}
-			pthread_mutex_unlock(&mutex);
 			writeSocketTCP(s, (char *) &response, sizeof(message));
+			pthread_mutex_unlock(&mutex);
+			closeSocketTCP(s);                        
+			pthread_exit(0);
+			break;                        
+			
+		    case CONNECT:
+			if (!is_login_valid (buffer.sender)) {
+			    response.code = KO;
+			    strcpy (response.content, "Login not acceptable");
+			} else if (is_login_used(buffer.sender, server_user_map) == 1) {
+			    printf ("login already in use : %s\n", buffer.sender);
+			    response.code = KO;
+			    strcpy (response.content, "Login already in use, change your login");
+			} else {
+			    printf ("successful connection : %s\n", buffer.sender);
+			    strcpy(response.sender, buffer.sender);
+			    response.code = OK;
+			    sprintf(response.content, "You're now connected with the login: %s", buffer.sender);
+			    is_connected = 1;
+			    u = (user) malloc(sizeof(struct USER));
+			    strcpy(u->name, buffer.sender);
+			    u->socket = s;
+			    add_user(u, server_user_map);
+			    add_user_in_room(u, home_room);
+			}
+			
+			break;
+			
+		    case MESSAGE:
+			if (buffer.receiver == NULL) {
+			    response.code = KO;
+			    strcpy(response.content, "Error this command is not allowed");
+			    break;
+			}
+			if (buffer.content == NULL) {
+			    response.code = KO;
+			    strcpy(response.content, "You can not send an empty message");
+			    break;
+			}
+			if (is_room_used(buffer.receiver) != 1) {
+			    response.code = KO;
+			    strcpy(response.content, "This room does not exist");
+			    break;
+			}
+			response.code = OK;
+			user_list l = get_users(buffer.receiver);
+			user_list t;
+			for (t = l; t != NULL; t = t->next) {
+			    writeSocketTCP(t->current_user->socket, (char *) &buffer, sizeof(message));
+			}
+			break;
+			
+		    case MP:
+			if (!is_login_used (buffer.receiver, server_user_map)) {
+			    response.code = KO;
+			    strcpy (response.content, "You can not send a message to an non-existing user");
+			    break;
+			}
+			if (buffer.content == NULL) {
+			    response.code = KO;
+			    strcpy (response.content, "You can not send an empty message");
+			    break;
+			}
+			
+			
+			user receiver = get_user (buffer.receiver , server_user_map);
+			writeSocketTCP (receiver->socket, (char *) &buffer, sizeof (message));
+			
+			response = buffer;
+			break;
+			
+		    default:
+			break;
+		    }
 		}
+		pthread_mutex_unlock(&mutex);
+		writeSocketTCP(s, (char *) &response, sizeof(message));
+	    }
 	} else if (receive == -1) {
 	    printf ("Error: exiting thread...\n");
 	    pthread_exit (0);
 	}
-    
+	
     } 
     return NULL;
-
+    
 }
 
 

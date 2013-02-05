@@ -1,6 +1,8 @@
 #ifndef LIB_CLIENT
 #define LIB_CLIENT
 
+#include "../common/common.h"
+
 int extract_code (const char *str);
 
 /**
@@ -48,32 +50,12 @@ int send_command ();
 */
 int connect_socket (const char *addr, const int port);
 
-/**
-*	Ce charge de l'envoi des requetes au serveur
-*/
-void *traitement_send(void *param);
-
-/**
-*	Ce charge de la réception des réponses du serveur
-*/
-void *traitement_recv(void *param);
-
 int disconnect ();
 
-/**
-*	Débute la communication avec le serveur en lancant les threads
-*	pour envoyer de requetes et lire les réponses du serveur 
-*/
-int start_communication ();
+int get_last_request_code ();
 
-int switch_to_room (const char *room_name);
+int is_connected ();
 
-int ask_to_join_room (const char *room_name);
-
-/* struct rooms
-	char** rooms
-	char* current_room
-	char* login 
-*/
+int receive_message (message *m);
 
 #endif
