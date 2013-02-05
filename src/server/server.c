@@ -61,7 +61,6 @@ void *handle_connexion(void *param) {
 	clear_message (&buffer);
 	clear_message (&response);
 	receive = readSocketTCP(s, (char *) &buffer, sizeof (message));
-	printf ("message received, taille %d\n", receive);
 	if (receive > 0) {
 		if(buffer.code != CONNECT && u == NULL) {
 			strcpy(response.content, "Error");
@@ -70,7 +69,6 @@ void *handle_connexion(void *param) {
 			pthread_mutex_lock(&mutex);
 			switch (buffer.code) {
 			case CREATE_ROOM:
-			printf ("Room creation request with name %s by %s\n", buffer.content, buffer.sender);
 			if (is_room_used (buffer.content)) {
 				response.code = KO;
 				strcpy (response.content, "This room name is already in use");
@@ -95,8 +93,8 @@ void *handle_connexion(void *param) {
 					m.code = USER_LIST_END;
 					strcpy(m.sender, u->name);
 					for (t = users; t != NULL; t = t->next) {							
-							writeSocketTCP (t->current_user->socket, (char *) &m, sizeof (message));
-						}
+						writeSocketTCP (t->current_user->socket, (char *) &m, sizeof (message));
+					}
 					
 					add_user_in_room (u, buffer.content);
 					strcpy(response.content, "User added successfully to room");
@@ -125,13 +123,13 @@ void *handle_connexion(void *param) {
 					for (t = users; t != NULL; t = t->next) {	
 						strcpy(m.content, u->current_user->name);
 						writeSocketTCP (t->current_user->socket, (char *) &m, sizeof (message));
-						}
+					}
 				    
 					m.code = USER_LIST_END;
 					strcpy(m.sender, buffer.sender);
 					for (t = users; t != NULL; t = t->next) {							
-							writeSocketTCP (t->current_user->socket, (char *) &m, sizeof (message));
-						}
+						writeSocketTCP (t->current_user->socket, (char *) &m, sizeof (message));
+					}
 					break;
 				}
 				remove_user_from_room (u, buffer.content);
@@ -154,11 +152,12 @@ void *handle_connexion(void *param) {
 				m.code = DELETE_ROOM;
 				strcpy (m.content, buffer.content);
 				for (t = users; t != NULL; t = t->next) {
-					writeSocketTCP (s, (char *) &m, sizeof (message));
+					writeSocketTCP (t->current_user->socket, (char *) &m, sizeof (message));
 				}
 								
 				remove_room (buffer.content);
-				}
+			}
+			break;
 				
 			case DISCONNECT:	
 				//TODO retirer le user de tous les salons où il est connecté
@@ -213,14 +212,15 @@ void *handle_connexion(void *param) {
 					strcpy(response.content, "This room does not exist");
 					break;
 				}
-				response.code = MESSAGE;
-				strcpy(response.receiver, buffer.receiver);
-				strcpy(response.content, buffer.content);
+				response.code = OK;
 				user_list l = get_users(buffer.receiver);
+				if (l == NULL) {
+					printf ("personne dans le salon %s\n", buffer.receiver);
+				}
 				user_list t;
 				for (t = l; t != NULL; t = t->next) {
-					strcpy(response.sender, t->current_user->name);
-					writeSocketTCP(t->current_user->socket, (char *) &response, sizeof(message));
+					printf ("transfert du message à %s\n", t->current_user->name);
+					writeSocketTCP(t->current_user->socket, (char *) &buffer, sizeof(message));
 				}
 			    break;
             
@@ -236,11 +236,13 @@ void *handle_connexion(void *param) {
 				    break;
 			    }
 			    
-			    response.code = OK;
-			    strcpy (response.content, buffer.content);
-			    strcpy (response.sender, buffer.sender);
-			    strcpy (response.receiver, buffer.receiver);
+			    
+			    user receiver = get_user (buffer.receiver , server_user_map);
+			    writeSocketTCP( receiver->socket, (char *) &buffer, sizeof (message));
+			    
+			    response = buffer;
 			    break;
+			    
 			default:
 				break;
 			}

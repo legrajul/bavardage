@@ -82,3 +82,16 @@ int remove_user (user u, user_map map) {
 	return -1;
 }
 
+user get_user (char *login, user_map map) {
+	int index = hash_user(login);
+	user_list l = map [index];
+	user_list t;
+	
+	for (t=l; t!= NULL ; t = t->next) {
+		if (strcmp (t->current_user->name, login)== 0) {
+			return t->current_user;
+		}
+	}
+	return t->current_user;
+}
+

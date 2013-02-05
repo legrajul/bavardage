@@ -27,4 +27,6 @@ int add_user (user u, user_map map);
 
 int remove_user (user u, user_map map);
 
+user get_user (char *login, user_map map);
+
 #endif

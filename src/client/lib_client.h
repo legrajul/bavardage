@@ -38,7 +38,7 @@ int len (char **tab);
 *	@param param paramètre de la commande
 *	@return 0 ou -1 en cas d'erreur
 */
-int send_command (const int code,const char *param);
+int send_command ();
 
 /**
 *	Ce connecte au serveur

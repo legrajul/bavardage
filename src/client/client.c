@@ -113,6 +113,9 @@ void *traitement_recv(void *param) {
 	
 	if (readSocketTCP(client_sock, (char*) &mess, sizeof(message)) > 0) {
 		//~ printf ("message recieved, code = %d, mess = %s, asked_code = %d, status = %d\n", mess.code, mess.mess, msg->code, status);
+	} else {
+		perror ("readSocketTCP");
+		break;
 	}
 
 	if (msg->code == CONNECT && mess.code == OK && status == NOT_CONNECTED) {
@@ -136,12 +139,24 @@ void *traitement_recv(void *param) {
 	    printf ("You've successfully joined a room named: %s\n", msg->content);
 	}
 	
-	if (mess.code == MESSAGE && status == CONNECTED) {
+	if (msg->code ==  MESSAGE && mess.code == KO) {
+	    printf ("Error : %s\n", mess.content);
+	}
+	
+	if (msg->code ==  MESSAGE && mess.code == OK && status == CONNECTED) {
 	    printf ("You've successfully send a public message \"%s\"\n", msg->content);
 	}
 	
+	if (mess.code == MESSAGE && status == CONNECTED) {
+		printf ("[%s @ %s] %s\n", mess.sender, mess.receiver, mess.content);
+	}
+	
+	if (msg->code ==  MP && mess.code == KO) {
+	    printf ("Error : %s\n", mess.content);
+	}
+	
 	if (mess.code == MP && status == CONNECTED) {
-	    printf ("You've successfully send a private message \"%s\"\n", msg->content);
+		printf ("[%s > %s] %s\n", mess.sender, mess.receiver, mess.content);
 	}
 	
 	if (msg->code ==  JOIN_ROOM && mess.code == KO) {
@@ -203,19 +218,13 @@ int len (char **tab) {
 	}
 }
 
-int send_command (const int code, const char *param) {
+int send_command () {
 	if (msg == NULL) {
 		msg = (message*) malloc(sizeof(message));
 	}
-    message mess;
-    mess.code = code;
     if (login != NULL)
-		strcpy(mess.sender, login);
-    if (param != NULL)
-        strcpy(mess.content, param);
-    strcpy(mess.receiver, "");
-    msg->code = mess.code;
-    writeSocketTCP(client_sock, (char*) &mess, sizeof(message));
+		strcpy(msg->sender, login);
+    writeSocketTCP(client_sock, (char*) msg, sizeof(message));
     
     return 0;
 }
@@ -260,7 +269,7 @@ int send_message (const char *mess) {
 					printf ("login null\n");
 				}
 				strcpy(msg->sender, login);
-				send_command (msg->code, msg->sender);
+				send_command ();
 				}         
 				break;
 	
@@ -274,14 +283,14 @@ int send_message (const char *mess) {
 				if (tmp != NULL) {
 				strcpy (msg->content, tmp);
 				}
-				send_command (msg->code, msg->content);
+				send_command ();
 				break;
 			case DELETE_ROOM:
 				tmp = strtok (NULL, " ");
 				if (tmp != NULL) {
 				strcpy (msg->content, tmp);
 				}
-				send_command (msg->code, msg->content);
+				send_command ();
 				break;
 			case QUIT_ROOM:		// Cas d'une demande pour quitter une room
 				tmp = strtok (NULL, " ");
@@ -289,7 +298,7 @@ int send_message (const char *mess) {
 				strcpy (msg->content, tmp);
 				}
 				strcpy(msg->sender, login);
-				send_command (msg->code, msg->sender);
+				send_command ();
 	
 			  break;
 	
@@ -298,34 +307,32 @@ int send_message (const char *mess) {
 				if (tmp != NULL) {
 					strcpy (msg->content, tmp);
 				}
-				send_command (msg->code, msg->content);
+				send_command ();
 				break;
 	
 				
 			case MESSAGE:  // Cas d'envoi de message
 				tab_string = create_table_param(buffer);
 				strcpy(msg->receiver, tab_string[1]);
-				
 				for (i=2; i<len(tab_string); i++) {
 					strcat(buff, tab_string[i]);
 				    strcat(buff, " ");
 				}
 				
 				strcpy(msg->content, buff);
-				send_command (msg->code, msg->content);
+				send_command ();
 				break;
 				
 			case MP:  // Cas d'envoi de message prive
 				tab_string = create_table_param(buffer);
 				strcpy(msg->receiver, tab_string[1]);
-				
 				for (i=2; i<len(tab_string); i++) {
 					strcat(buff, tab_string[i]);
 				    strcat(buff, " ");
 				}
 				
 				strcpy(msg->content, buff);
-				send_command (msg->code, msg->content);
+				send_command ();
 				break;
 		}
 	}
@@ -333,7 +340,8 @@ int send_message (const char *mess) {
 }
 
 int disconnect() {
-    send_command(DISCONNECT, "");
+	msg->code = DISCONNECT;
+    send_command();
     return 0;
 }
 
