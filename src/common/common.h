@@ -25,9 +25,9 @@
 
 typedef struct {
 	int code;
-	char sender[MAX_NAME_SIZE]; //name
-	char content[MAX_MESS_SIZE]; //mess
-	char receiver[MAX_ROOM_NAME_SIZE]; //room
+	char sender[MAX_NAME_SIZE];
+	char content[MAX_MESS_SIZE];
+	char receiver[MAX_ROOM_NAME_SIZE];
 } message;
 
 #endif
