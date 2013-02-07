@@ -1,4 +1,4 @@
-/*
+ /*
  * Client.vala
  * 
  * Copyright 2013 Charles Ango, Julien Legras
@@ -6,7 +6,7 @@
  */
 using Gtk;
 using Gee;
-
+using Bavardage.ClientCore;
 
 namespace Bavardage {
 	public class Client: Gtk.Application {
@@ -163,11 +163,11 @@ namespace Bavardage {
 				
 				content.add (grid);
 				dialog.response.connect ((response_id) => {
-					if (response_id == Gtk.ResponseType.CANCEL || response_id == Gtk.ResponseType.DELETE_EVENT) {
-						dialog.hide_on_delete ();
-					} else if (response_id == Gtk.ResponseType.ACCEPT) {
+					if (response_id == Gtk.ResponseType.ACCEPT) {
 						// demander à créer le salon
+                        send_message ("/CREATE_ROOM " + entry_room_name.get_text ());
 					}
+                    dialog.hide_on_delete ();
 				});
 				dialog.show_all ();
 			});
@@ -193,6 +193,7 @@ namespace Bavardage {
 			send_button.clicked.connect ( () => {
 				var msg = message.get_text ();
 				stdout.printf ("message à envoyer : %s\n", msg);
+                send_message (msg);
 				message.set_text("");
 			});
 			
@@ -236,7 +237,8 @@ namespace Bavardage {
 						dialog.hide_on_delete ();
 					} else if (response_id == Gtk.ResponseType.ACCEPT) {
 						// établir la connexion
-
+						connect_socket (entry_server_ip.get_text (), int.parse (entry_server_port.get_text ()));
+						send_message ("/CONNECT " + entry_login.get_text ());
 						update_connected (true);
 						dialog.hide_on_delete ();
 					}
@@ -348,7 +350,7 @@ namespace Bavardage {
 	int main (string[] args) {
 		Gtk.init (ref args);
 		var c = new Bavardage.Client ();
-		c.setup_test ();
+		//c.setup_test ();
 		Gtk.main ();
 		return 0;
 	}

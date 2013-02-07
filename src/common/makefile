@@ -1,6 +1,9 @@
 FLAGS = -Wall -std=c99
 
-all: SocketTCP.o user_manager.o room_manager.o test_rooms
+all: SocketTCP.o user_manager.o room_manager.o test_rooms libsockettcp.o
+
+libsockettcp.o: SocketTCP.c SocketTCP.h
+	gcc -c -fPIC SocketTCP.c -o libsockettcp.o
 
 test_rooms.o: test_rooms.c
 	gcc $< -c $(FLAGS)

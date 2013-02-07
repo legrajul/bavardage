@@ -3,10 +3,22 @@ PKGS= --pkg gtk+-3.0 --pkg gmodule-2.0 --pkg gee-1.0
 CC=gcc
 OPTS= -Wall -pthread -std=gnu99
 
-all: client-cli
+all: client-cli Client
 
-Client: Client.vala interface.ui
-	$(VALAC) $(PKGS) Client.vala -o $@ -X -w
+Client: Client.vala interface.ui libclient.so
+	$(VALAC)  -X -w -X -I. -X -L. -X -lclient $(PKGS) -o $@ Client.vala libclient.vapi --basedir ./
+
+libclient.so: libclient.o ../common/libsockettcp.o
+	gcc -shared -o libclient.so ../common/libsockettcp.o libclient.o
+
+libclient.o: libclient.c libclient.h
+	gcc -c -fPIC libclient.c -o libclient.o
+
+libtest.so: test_vapi.o
+	gcc -shared -o libtest.so test_vapi.o
+
+test_vapi.o: test_vapi.c test_vapi.h
+	gcc -c -fPIC test_vapi.c -o test_vapi.o
 
 client-cli: ../common/SocketTCP.o lib_client.o client-cli.o
 	$(CC) $(OPTS) $^ -pthread -o $@
