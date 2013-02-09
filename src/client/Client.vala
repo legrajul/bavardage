@@ -7,8 +7,17 @@
 using Gtk;
 using Gee;
 using Bavardage.ClientCore;
+using Bavardage.Common;
+using Pango;
 
 namespace Bavardage {
+    public struct Message {
+        int code;
+        uint8 sender[64];
+        uint8 content[512];
+        uint8 receiver[64];
+    }
+    
 	public class Client: Gtk.Application {
 		private Gtk.Builder builder;
 		private static HashMap<string, ListStore> rooms_map_users = new HashMap<string, ListStore> ();
@@ -16,13 +25,11 @@ namespace Bavardage {
 		private HashMap<string, EntryBuffer> rooms_map_entries = new HashMap<string, EntryBuffer> ();
 		private Gtk.Window window;
 		private TreeView open_rooms;
-		private TreeView invited_rooms;
 		private TreeView connected_users;
 		private TextView chat;
 		private Entry message;
 		private Button create_room_button;
 		private Button quit_room_button;
-		private Button send_button;
 		private Gtk.MenuItem connect_item;
 		private Gtk.MenuItem disconnect_item;
 		private Gtk.MenuItem quit_item;
@@ -66,23 +73,19 @@ namespace Bavardage {
 				open_rooms = builder.get_object ("open_rooms") as TreeView;
 				open_rooms.set_model (new ListStore (1, typeof (string)));
 				open_rooms.insert_column_with_attributes (-1, "Salons ouverts", new CellRendererText (), "text", 0);
-				invited_rooms = builder.get_object ("invited_rooms") as TreeView;
-				invited_rooms.set_model (new ListStore (1, typeof (string)));
-				invited_rooms.insert_column_with_attributes (-1, "Invitations", new CellRendererText (), "text", 0);
 				
 				chat = builder.get_object ("chat_view") as TextView;
 				message = builder.get_object ("message_entry") as Entry;
 
 				create_room_button = builder.get_object ("button_create_room") as Button;
 				quit_room_button = builder.get_object ("button_quit_room") as Button;
-				send_button = builder.get_object ("send_button") as Button;
 				connect_item = builder.get_object ("imagemenuitem2") as Gtk.MenuItem;
 				disconnect_item = builder.get_object ("imagemenuitem1") as Gtk.MenuItem;
 				quit_item = builder.get_object ("imagemenuitem5") as Gtk.MenuItem;
 				about_item = builder.get_object ("imagemenuitem10") as Gtk.MenuItem;
 
-				
 				window.set_application (this);
+
 			} catch (Error e) {
 			 	stderr.printf ("Could not load UI: %s\n", e.message);
 			}
@@ -95,12 +98,18 @@ namespace Bavardage {
 			// On clique sur la croix de la fenêtre
 			window.destroy.connect ( () => {
 				// se déconnecter du serveur
+                if (disconnect_item.get_sensitive ()) {
+                    ClientCore.disconnect ();
+                }
 				Gtk.main_quit ();
 			});
 
 			// On clique sur Fichier > Quitter
 			quit_item.activate.connect ( () => {
 				// se déconnecter du serveur
+                if (disconnect_item.get_sensitive ()) {
+                    ClientCore.disconnect ();
+                }
 				Gtk.main_quit ();
 			});
 
@@ -120,34 +129,6 @@ namespace Bavardage {
 						var entry_model = rooms_map_entries.get ((string) v) as EntryBuffer;
 						message.set_buffer (entry_model);
 					}
-				}
-			});
-			
-			
-			// On clique sur une invitation, demande une confirmation
-			invited_rooms.cursor_changed.connect ( () => {
-				TreeModel m;
-				TreeIter iter;
-				var select = invited_rooms.get_selection ();
-				if (select.get_selected (out m, out iter)) {
-					Value v;
-					m.get_value (iter, 0, out v);
-					var dialog = new Gtk.MessageDialog (window, Gtk.DialogFlags.MODAL, Gtk.MessageType.QUESTION, Gtk.ButtonsType.YES_NO, "Voulez-vous rejoindre le salon %s ?", (string) v);
-					dialog.response.connect ( (response_id) => {
-						if (response_id == Gtk.ResponseType.YES) {
-							var list_rooms = open_rooms.get_model () as ListStore;
-							TreeIter iter2;
-							list_rooms.append (out iter2);
-							list_rooms.set (iter2, 0, (string) v);
-
-							var list_invitations = invited_rooms.get_model () as ListStore;
-							select.set_mode (Gtk.SelectionMode.NONE);
-							list_invitations.remove (iter);
-							select.set_mode (Gtk.SelectionMode.SINGLE);
-						}
-						dialog.destroy ();
-					});
-					dialog.show ();
 				}
 			});
 
@@ -174,42 +155,26 @@ namespace Bavardage {
 
 			// On clique sur le bouton "Quitter le salon"
 			quit_room_button.clicked.connect ( () => {
-				TreeModel m;
-				TreeIter iter;
-				ListStore list;
-				Value v;
-				var select = open_rooms.get_selection ();
-				if (select.get_selected (out m, out iter)) {
-					m.get_value (iter, 0,out v); // On récupère le nom du salon qu'on a choisi
-					var salon = (string) v; 
-					if (salon != "accueil") {	// on vérifie que ce n'est pas le salon principal
-					list = (m) as ListStore;	// on cast le Model reçu en listStore
-					list.remove(iter);			// On supprime le salon de la liste des salons
-					}
-				}
+                TreeModel m;
+                TreeIter iter;
+                var select = open_rooms.get_selection ();
+                if (select.get_selected (out m, out iter)) {
+                    Value v;
+                    m.get_value (iter, 0, out v);
+                    string s = (string) v;
+                    send_message ("/QUIT_ROOM " + s);
+                }
 			});
 
+            message.activate.connect ( () => {
+                send_message_entry ();
+            });
+            
 			// On clique sur le bouton "Envoyer"
-			send_button.clicked.connect ( () => {
-				var msg = message.get_text ();
-				stdout.printf ("message à envoyer : %s\n", msg);
-                send_message (msg);
-				message.set_text("");
+			message.icon_press.connect ( (p0, p1) => {
+				send_message_entry ();
 			});
-			
-			// On appuie sur la touche "Entrée"
-			message.key_press_event.connect( (e)=> {
-				//e = new Gdk.Event(Gdk.EventType.KEY_PRESS);
-				if (e.keyval == Gdk.Key.Return){
-					var msg = message.get_text();
-					stdout.printf ("message à envoyer: %u\n",e.keyval);
-					stdout.printf ("message à envoyer: %s\n", msg);
-					message.set_text("");
-					return true;
-				} else {
-					return false;
-				}
-			});
+
 			
 			// On clique sur Fichier > Connexion
 			connect_item.activate.connect ( () => {
@@ -240,6 +205,7 @@ namespace Bavardage {
 						connect_socket (entry_server_ip.get_text (), int.parse (entry_server_port.get_text ()));
 						send_message ("/CONNECT " + entry_login.get_text ());
 						update_connected (true);
+                        Thread.create<void *>(receive_thread, false);
 						dialog.hide_on_delete ();
 					}
 				});
@@ -249,7 +215,8 @@ namespace Bavardage {
 			// On clique sur Fichier > Déconnexion
 			disconnect_item.activate.connect ( () => {
 				// démander déconnexion
-					update_connected (false);
+                ClientCore.disconnect ();
+                update_connected (false);
 			});
 
 			// On clique sur Fichier > À propos
@@ -286,6 +253,127 @@ namespace Bavardage {
 			});
 		}
 
+
+        private void *receive_thread () {
+            Message m = { -1, "".data, "".data, "".data };
+            TreeIter tree_iter;
+            TextIter text_iter;
+            while (true) {
+                m = { -1, "".data, "".data, "".data };
+                if (receive_message (out m) == 0) {
+                    var sender = new StringBuilder ("");
+                    for (int i = 0; i < m.sender.length; i++) {
+                        sender.append_c((char) m.sender[i]);
+                    }
+                    var content = new StringBuilder ("");
+                    for (int i = 0; i < m.content.length; i++) {
+                        content.append_c ((char) m.content[i]);
+                    }
+                    var receiver = new StringBuilder ("");
+                    for (int i = 0; i < m.receiver.length; i++) {
+                        receiver.append_c ((char) m.receiver[i]);
+                    }
+                    switch (m.code) {
+                    case KO:
+                        var dialog =  new Gtk.MessageDialog (window, Gtk.DialogFlags.MODAL, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK, content.str);
+                        dialog.response.connect ((response_id) => {
+                            dialog.destroy ();
+                        });
+                        dialog.show ();
+                        stdout.printf ("Error: %s\n", content.str);
+                        break;
+                    case OK:
+                        
+                        break;
+                    case CREATE_ROOM:
+                        var rooms = open_rooms.get_model () as ListStore;
+                        rooms.append (out tree_iter);
+                        rooms.set (tree_iter, 0, content.str, -1);
+
+                        rooms_map_users.set (content.str, new ListStore (1, typeof (string)));
+                        rooms_map_chats.set (content.str, new TextBuffer (new TextTagTable ()));
+                        rooms_map_entries.set (content.str, new EntryBuffer ("".data));
+                        
+                        break;
+                    case QUIT_ROOM:
+                        Value v;
+                        var model = open_rooms.get_model () as ListStore;
+                        model.get_iter_first (out tree_iter);
+                        do {
+                            model.get_value (tree_iter, 0, out v);
+                            if (content.str == (string) v) {
+                                break;
+                            }
+                        } while (model.iter_next (ref tree_iter));
+                        model.remove (tree_iter);
+                        break;
+                    case MESSAGE:
+                        string s = "<" + sender.str + "> " + content.str + "\n";
+                        TextIter iter;
+                        rooms_map_chats.get (receiver.str).get_end_iter (out iter);
+                        rooms_map_chats.get (receiver.str).insert_text (ref iter, s, s.length);
+                        break;
+
+                    case MP:
+                        stdout.printf ("MP reçu : %s\n", content.str);
+                        string s = "[" + sender.str + "] " + content.str + "\n";
+                        //rooms_map_chats.get (receiver.str).insert_at_cursor (s, s.length);
+                        TextIter iter;
+                        string room_name = "[" + sender.str + "]";
+                        if (sender.str == ClientCore.get_login ()) {
+                            room_name = "[" + receiver.str + "]";
+                        }
+                        stdout.printf ("salon : %s\n", room_name);
+                        if (rooms_map_chats.get (room_name) == null ) {
+                            var rooms = open_rooms.get_model () as ListStore;
+                            rooms.append (out tree_iter);
+                            rooms.set (tree_iter, 0, room_name, -1);
+
+                            rooms_map_users.set (room_name, new ListStore (1, typeof (string)));
+                            rooms_map_chats.set (room_name, new TextBuffer (new TextTagTable ()));
+                            rooms_map_entries.set (room_name, new EntryBuffer ("".data));
+                        }
+                        rooms_map_chats.get (room_name).get_end_iter (out iter);
+                        rooms_map_chats.get (room_name).insert_text (ref iter, s, s.length);
+                        //rooms_map_chats.get (room_name).get_iter_at_line (out iter, chat.get_buffer ().get_line_count ());
+                        // chat.scroll_to_iter (iter, 0.0, false, 0.0, 1.0);
+                        //rooms_map_chats.get (room_name).set_modified (true);
+                        break;
+                    default:
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void send_message_entry () {
+            stdout.printf ("send_message_entry ()\n");
+            var msg = message.get_text ();
+            stdout.printf ("message à envoyer : %s\n", msg);
+
+            if (msg[0] != '/') {
+                TreeModel m;
+                TreeIter iter;
+                var select = open_rooms.get_selection ();
+                if (select.get_selected (out m, out iter)) {
+                    Value v;
+                    m.get_value (iter, 0, out v);
+                    if (((string) v)[0] == '[') {
+                        StringBuilder recv_name = new StringBuilder ("");
+                        for (int i = 1; i < ((string) v).length - 1; i++) {
+                            recv_name.append_c ((char) ((string) v).data[i]);
+                        }
+                        send_message ("/MP " + recv_name.str + " " + msg);
+                    } else {
+                        send_message ("/MESSAGE " + (string) v + " " + msg);
+                    }
+                    
+                }
+            } else {
+                send_message (msg);
+            }
+            message.set_text("");
+        }
 		/*
 		 * Fonction qui met des valeurs dans les différents éléments
 		 * graphiques pour tester l'application
@@ -335,11 +423,6 @@ namespace Bavardage {
 			rooms_map_entries.set ("salon 2", entry2);
 			rooms_map_entries.set ("accueil", new EntryBuffer ({}));
 
-			var invitations = invited_rooms.get_model () as ListStore;
-			invitations.append (out iter);
-			invitations.set (iter, 0, "Super salon");
-			invitations.append (out iter);
-			invitations.set (iter, 0, "Table ronde");
 		}
 		
 	}
@@ -350,7 +433,7 @@ namespace Bavardage {
 	int main (string[] args) {
 		Gtk.init (ref args);
 		var c = new Bavardage.Client ();
-		//c.setup_test ();
+		// c.setup_test ();
 		Gtk.main ();
 		return 0;
 	}
