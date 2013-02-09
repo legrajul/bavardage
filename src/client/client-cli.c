@@ -68,10 +68,13 @@ void *traitement_recv(void *param) {
 			printf("%s", res);
 			break;
 
-		case USER_LIST_END:
-			printf("The user %s joined the room \n", mess.sender);
+		case NEW_USER:
+			printf("The user %s joined the room %s\n", mess.sender, mess.content);
 			break;
-
+        case ADD_USER:
+			printf("USER %s in %s \n", mess.sender, mess.content);
+			break;
+            
 		case DELETE_ROOM:
 			printf("The room %s has been deleted\n", mess.content);
 			break;

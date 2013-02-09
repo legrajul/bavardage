@@ -111,11 +111,7 @@ int writeSocketTCP(SocketTCP *socket, const char *buffer, int length) {
 }
 
 int readSocketTCP(SocketTCP *socket, char *buffer, int length) {
-	int ret = recv(socket->socket, buffer, length, 0);
-	if (ret < 0) {
-		perror("recv");
-	}
-	return ret;
+	return read(socket->socket, buffer, length);
 }
 
 int closeSocketTCP(SocketTCP *socket) {

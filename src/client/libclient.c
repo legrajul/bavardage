@@ -86,13 +86,11 @@ int connect_socket(const char *addr, const int port) {
 }
 
 int receive_message(message *m) {
-	while (readSocketTCP(client_sock, (char *) m, sizeof(message)) == 0)
-		;
-	if (m == NULL) {
+	int ret = readSocketTCP(client_sock, (char *) m, sizeof(message));
+	if (ret == 0) {
 		perror("receive_message");
 		return -1;
 	} else {
-
 		return 0;
 	}
 }

@@ -19,6 +19,9 @@ namespace Bavardage {
         public const int USER_LIST_CHUNK;
         public const int USER_LIST_END;
         public const int MP;
+        public const int ADD_USER;
+        public const int RM_USER;
+        public const int NEW_USER;
     }
 
     

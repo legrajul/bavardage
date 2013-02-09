@@ -173,8 +173,8 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="button_ask_join_room">
-                        <property name="label" translatable="yes">Demander à rejoindre un salon</property>
+                      <object class="GtkButton" id="button_join_room">
+                        <property name="label" translatable="yes">Rejoindre un salon</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                       </object>

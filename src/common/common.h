@@ -20,6 +20,9 @@
 #define USER_LIST_CHUNK 13
 #define USER_LIST_END 14
 #define MP 15
+#define ADD_USER 16
+#define RM_USER 17
+#define NEW_USER 18
 
 typedef struct {
 	int code;
