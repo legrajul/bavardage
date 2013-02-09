@@ -12,18 +12,18 @@
  * users : liste des utilisateurs du salon
  */
 typedef struct ROOM {
-    char name[MAX_ROOM_NAME_SIZE];
-    user admin;
-    user_map users;
-} *room;
+	char name[MAX_ROOM_NAME_SIZE];
+	user admin;
+	user_map users;
+}*room;
 
 /**
  * Structure représentant une liste chaînée de salons
  */
 typedef struct ROOM_LIST {
-    room current;
-    struct ROOM_LIST *next;
-} *room_list;
+	room current;
+	struct ROOM_LIST *next;
+}*room_list;
 
 /**
  * Structure représentant une table de hachage de salons
@@ -34,7 +34,7 @@ typedef room_list *room_map;
  * Fonction qui initialise la table des salons
  * @return -1 si cette table existe déjà, 0 sinon
  */
-int init_rooms ();
+int init_rooms();
 
 /**
  * Fonction qui calcule le haché d'un nom de salon 
@@ -51,14 +51,14 @@ int init_rooms ();
  * @param room_name le nom du salon à hacher
  * @return -1 si erreur, le haché du nom du salon sinon
  */
-int hash_room_name (char *room_name);
+int hash_room_name(char *room_name);
 
 /**
  * Vérifie si le nom de salon est disponible
  * @param room_name le nom du salon
  * @return -1 s'il y a une erreur, 0 si le nom est libre, 1 sinon
  */
-int is_room_used (char *room_name);
+int is_room_used(char *room_name);
 
 /**
  * Ajoute un salon
@@ -68,7 +68,7 @@ int is_room_used (char *room_name);
  * @param admin le créateur du salon
  * @return -1 si erreur, 0 sinon
  */
-int add_room (char *room_name, user admin);
+int add_room(char *room_name, user admin);
 
 /**
  * Supprime un salon
@@ -77,7 +77,7 @@ int add_room (char *room_name, user admin);
  * @param room_name le nom du salon à supprimer
  * @return -1 si erreur, 0 sinon
  */
-int remove_room (char *room_name);
+int remove_room(char *room_name);
 
 /**
  * Récupère l'administrateur du salon
@@ -85,7 +85,7 @@ int remove_room (char *room_name);
  * @param room_name le nom du salon
  * @return NULL si erreur, l'administrateur du salon sinon
  */
-user get_admin (char *room_name);
+user get_admin(char *room_name);
 
 /**
  * Ajoute un utilisateur dans un salon
@@ -93,7 +93,7 @@ user get_admin (char *room_name);
  * @param room_nam nom du salon
  * @return -1 si erreur, 0 sinon
  */
-int add_user_in_room (user u, char *room_name);
+int add_user_in_room(user u, char *room_name);
 
 /**
  * Retire un utilisateur d'un salon
@@ -101,15 +101,15 @@ int add_user_in_room (user u, char *room_name);
  * @param room_name nom du salon
  * @return -1 si erreur, 0 sinon
  */
-int remove_user_from_room (user u, char *room_name);
+int remove_user_from_room(user u, char *room_name);
 
 /**
  * Récupère la liste des utilisateurs d'un salon
  * @param room_name nom du salon
  * @return la liste des utilsateurs du salon
  */
-user_list get_users (char *room_name);
+user_list get_users(char *room_name);
 
-int is_user_in_room (user u, char *room_name);
+int is_user_in_room(user u, char *room_name);
 
 #endif

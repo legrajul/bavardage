@@ -21,8 +21,6 @@
 #define USER_LIST_END 14
 #define MP 15
 
-
-
 typedef struct {
 	int code;
 	char sender[MAX_NAME_SIZE];

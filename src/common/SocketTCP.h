@@ -1,4 +1,3 @@
-
 #ifndef SOCKET_TCP
 #define SOCKET_TCP
 
@@ -6,7 +5,7 @@
  *  SocketTCP.h
  *
  */
- 
+
 #define SIZE_QUEUE 100
 
 typedef struct {
