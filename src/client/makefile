@@ -1,5 +1,5 @@
 VALAC=valac
-PKGS= --pkg gtk+-3.0 --pkg gmodule-2.0 --pkg gee-1.0 --pkg pango --thread
+PKGS= --pkg gtk+-3.0 --pkg gmodule-2.0 --pkg gee-1.0 --thread
 CC=gcc
 OPTS= -Wall -pthread -std=gnu99
 
