@@ -172,8 +172,9 @@ void *handle_connexion(void *param) {
                         }
                     }
                     break;
-
+		    
                 case DISCONNECT:
+		    // TODO retirer user des salons où il est connecté
                     printf("Disconnection\n");
                     response.code = OK;
                     if (is_connected) {

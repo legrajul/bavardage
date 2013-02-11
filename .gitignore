@@ -7,3 +7,4 @@ src/server/server_database.db
 src/server/server
 src/client/client
 src/client/Client
+src/build
