@@ -50,7 +50,6 @@ int clear_message(message *m) {
 }
 
 void *handle_connexion(void *param) {
-
     SocketTCP *s = (SocketTCP *) param;
     int receive;
     message buffer, response;
@@ -176,7 +175,7 @@ void *handle_connexion(void *param) {
                 case DISCONNECT:
 		    // TODO retirer user des salons où il est connecté
                     printf("Disconnection\n");
-                    response.code = OK;
+                    response.code = DISCONNECT;
                     if (is_connected) {
                         remove_user(u, server_user_map);
                         remove_user_from_room(u, home_room);
@@ -201,6 +200,9 @@ void *handle_connexion(void *param) {
                     } else {
                         printf("successful connection : %s\n",
                                buffer.sender);
+			response.code = CONNECT;
+			writeSocketTCP (s, (char *) &response, sizeof (message));
+
                         strcpy(response.sender, buffer.sender);
                         response.code = CREATE_ROOM;
                         strcpy(response.content, home_room);
