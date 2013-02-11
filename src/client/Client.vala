@@ -187,6 +187,10 @@ namespace Bavardage {
                             rooms_map_chats.unset (s);
                             rooms_map_entries.unset (s);
                             rooms_map_users.unset (s);
+
+                            model2.get_iter_first (out iter);
+                            open_rooms.get_selection ().select_iter (iter);
+                            open_rooms.cursor_changed ();
                         }
                     }
                 });
@@ -312,6 +316,10 @@ namespace Bavardage {
             this.update_connected.connect ( (is_connected) => {
                     connect_item.set_sensitive (!is_connected);
                     disconnect_item.set_sensitive (is_connected);
+                    create_room_button.set_sensitive (is_connected);
+                    quit_room_button.set_sensitive (is_connected);
+                    join_room_button.set_sensitive (is_connected);
+                    message.set_sensitive (is_connected);
                 });
         }
 
@@ -353,7 +361,9 @@ namespace Bavardage {
                         rooms_map_users.set (content.str, new ListStore (1, typeof (string)));
                         rooms_map_chats.set (content.str, new TextBuffer (new TextTagTable ()));
                         rooms_map_entries.set (content.str, new EntryBuffer ("".data));
-
+                        
+                        open_rooms.get_selection ().select_iter (tree_iter);
+                        open_rooms.cursor_changed ();
                         break;
                     case DELETE_ROOM:
                         Value v;
@@ -369,6 +379,9 @@ namespace Bavardage {
                         rooms_map_chats.unset (content.str);
                         rooms_map_entries.unset (content.str);
                         rooms_map_users.unset (content.str);
+                        model.get_iter_first (out tree_iter);
+                        open_rooms.get_selection ().select_iter (tree_iter);
+                        open_rooms.cursor_changed ();
                         break;
                     case MESSAGE:
                         string s = "<" + sender.str + "> " + content.str + "\n";
@@ -392,6 +405,8 @@ namespace Bavardage {
                             rooms_map_users.set (room_name, new ListStore (1, typeof (string)));
                             rooms_map_chats.set (room_name, new TextBuffer (new TextTagTable ()));
                             rooms_map_entries.set (room_name, new EntryBuffer ("".data));
+                            open_rooms.get_selection ().select_iter (tree_iter);
+                            open_rooms.cursor_changed ();
                         }
                         rooms_map_chats.get (room_name).get_end_iter (out iter);
                         rooms_map_chats.get (room_name).insert_text (ref iter, s, s.length);
@@ -430,6 +445,13 @@ namespace Bavardage {
 
                         break;
                     case DISCONNECT:
+                        rooms_map_chats.clear ();
+                        rooms_map_entries.clear ();
+                        rooms_map_users.clear ();
+                        open_rooms.set_model (new ListStore (1, typeof (string)));
+                        chat.set_buffer (new TextBuffer (new TextTagTable ()));
+                        message.set_buffer (new EntryBuffer ("".data));
+                        connected_users.set_model (new ListStore (1, typeof (string)));
                         update_connected (false);
                         Thread.exit (null);
                         break;
