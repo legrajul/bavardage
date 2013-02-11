@@ -15,6 +15,5 @@ set (CMAKE_C_FLAGS "-ggdb")
 set (PREFIX ${CMAKE_INSTALL_PREFIX})
 set (DOLLAR "$")
 
-add_subdirectory (common)
 add_subdirectory (server)
 add_subdirectory (client)
