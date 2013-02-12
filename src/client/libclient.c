@@ -181,21 +181,30 @@ int send_message(const char *mess) {
             tmp = strtok(NULL, " ");
             if (tmp != NULL) {
                 strcpy(msg->content, tmp);
-            }
+            } else {
+		printf ("CREATE_ROOM a besoin d'un paramètre\n");
+		return -1;
+	    }
             return send_command();
             break;
         case DELETE_ROOM:
             tmp = strtok(NULL, " ");
             if (tmp != NULL) {
                 strcpy(msg->content, tmp);
-            }
+            } else {
+		printf ("DELETE_ROOM a besoin d'un paramètre\n");
+		return -1;
+	    }
             return send_command();
             break;
         case QUIT_ROOM:         // Cas d'une demande pour quitter une room
             tmp = strtok(NULL, " ");
             if (tmp != NULL) {
                 strcpy(msg->content, tmp);
-            }
+            } else {
+		printf ("QUIT_ROOM a besoin d'un paramètre\n");
+		return -1;
+	    }
             strcpy(msg->sender, login);
             return send_command();
 
@@ -205,12 +214,19 @@ int send_message(const char *mess) {
             tmp = strtok(NULL, " ");
             if (tmp != NULL) {
                 strcpy(msg->content, tmp);
-            }
+            } else {
+		printf ("JOIN_ROOM a besoin d'un paramètre\n");
+		return -1;
+	    }
             return send_command();
             break;
 
         case MESSAGE:  // Cas d'envoi de message
             tab_string = create_table_param(buffer);
+	    if (len (tab_string) < 3) {
+		printf ("MESSAGE doit avoir 2 paramètres : /MESSAGE salon mon super message\n");
+		return -1;
+	    }
             strcpy(msg->receiver, tab_string[1]);
             for (i = 2; i < len(tab_string); i++) {
                 strcat(buff, tab_string[i]);
@@ -223,6 +239,10 @@ int send_message(const char *mess) {
 
         case MP:  // Cas d'envoi de message prive
             tab_string = create_table_param(buffer);
+	    if (len (tab_string) < 3) {
+		printf ("MP doit avoir 2 paramètres : /MP toto mon super message privé\n");
+		return -1;
+	    }
             strcpy(msg->receiver, tab_string[1]);
             strcpy (buff, "");
             for (i = 2; i < len(tab_string); i++) {
