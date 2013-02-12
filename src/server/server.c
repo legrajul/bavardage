@@ -258,6 +258,14 @@ void *handle_connexion(void *param) {
                                "This room does not exist");
                         break;
                     }
+                    user sender = (user) malloc(sizeof(USER));;
+                    strcpy(sender->name, buffer.sender);
+                    if (is_user_in_room(buffer.sender, buffer.content) == 1) {
+                        response.code = KO;
+                        strcpy(response.content,
+                                "You are not allowed to send a message to this room");
+                        break;
+                    }
                     response.code = OK;
                     user_list l = get_users(buffer.receiver);
                     user_list t;

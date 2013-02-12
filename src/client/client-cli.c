@@ -16,7 +16,10 @@ void *traitement_send(void *param) {
 	char mess[MAX_MESS_SIZE] = "";
 	while (fgets(mess, MAX_MESS_SIZE, stdin) != NULL) {
 		mess[strlen(mess) - 1] = '\0';
-		send_message(mess);
+		if (send_message(mess) == -1) {
+			pthread_exit(NULL);
+			exit(EXIT_FAILURE);
+		}
 	}
 	pthread_exit(0);
 }
@@ -26,6 +29,9 @@ void *traitement_recv(void *param) {
 	while (1) {
 		if (receive_message(&mess) < 0) {
 			perror("readSocketTCP");
+			pthread_detach(thread_recv);
+			pthread_detach(thread_send);
+			exit(EXIT_FAILURE);
 		}
 
 		if (mess.code == KO) {
