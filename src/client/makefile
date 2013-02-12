@@ -24,14 +24,8 @@ test_vapi.o: test_vapi.c test_vapi.h
 client-cli: ../common/SocketTCP.o libclient.o client-cli.o
 	$(CC) $(OPTS) $^ -pthread -o $@
 
-client-cli.o: client-cli.c lib_client.h
+client-cli.o: client-cli.c libclient.h
 	$(CC) -c $< $(OPTS)
-
-#test_server: ../common/SocketTCP.o test_server.o
-#	$(CC) $(OPTS) $^ -o $@
-
-#test_server.o: test_server.c
-#	$(CC) -c $< $(OPTS)
 
 clean:
 	rm Client client-cli libclient.so
