@@ -5,21 +5,14 @@ OPTS= -Wall -pthread -std=gnu99
 
 all: client-cli Client
 
-Client: Client.vala interface.ui libclient.so
-	$(VALAC)  -X -w -X -I. -X -L. -X -lclient $(PKGS) -o $@ Client.vala libclient.vapi --basedir ./
+Client: Client.vala interface.ui libclient.a
+	$(VALAC)  -X -w -X -I. -X -L. -X -lclient $(PKGS) -o $@ Client.vala libclient.vapi --basedir ./ --target-glib=2.32
 
-libclient.so: libclient.o ../common/libsockettcp.o
-	gcc -shared -o libclient.so ../common/libsockettcp.o libclient.o
-	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD
+libclient.a: libclient.o ../common/libsockettcp.o
+	ar rcs libclient.a ../common/libsockettcp.o libclient.o
 
 libclient.o: libclient.c libclient.h
 	gcc -c -fPIC libclient.c -o libclient.o
-
-libtest.so: test_vapi.o
-	gcc -shared -o libtest.so test_vapi.o
-
-test_vapi.o: test_vapi.c test_vapi.h
-	gcc -c -fPIC test_vapi.c -o test_vapi.o
 
 client-cli: ../common/SocketTCP.o libclient.o client-cli.o
 	$(CC) $(OPTS) $^ -pthread -o $@
