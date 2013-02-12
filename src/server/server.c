@@ -258,7 +258,7 @@ void *handle_connexion(void *param) {
                                "This room does not exist");
                         break;
                     }
-                    user sender = (user) malloc(sizeof(USER));;
+                    user sender = (user) malloc(sizeof(struct USER));;
                     strcpy(sender->name, buffer.sender);
                     if (is_user_in_room(buffer.sender, buffer.content) == 1) {
                         response.code = KO;
