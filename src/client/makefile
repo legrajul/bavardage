@@ -1,7 +1,7 @@
 VALAC=valac
-PKGS= --pkg gtk+-3.0 --pkg gmodule-2.0 --pkg gee-1.0 --thread
+PKGS= --pkg gtk+-3.0 --pkg gmodule-2.0 --pkg gee-1.0 --pkg glib-2.0 --thread
 CC=gcc
-OPTS= -Wall -pthread -std=gnu99
+OPTS= -Wall -pthread -std=c99
 
 all: client-cli Client
 
@@ -21,4 +21,4 @@ client-cli.o: client-cli.c libclient.h
 	$(CC) -c $< $(OPTS)
 
 clean:
-	rm Client client-cli libclient.so
+	rm Client client-cli libclient.a

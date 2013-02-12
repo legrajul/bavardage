@@ -61,7 +61,7 @@ void *handle_connexion(void *param) {
         receive = readSocketTCP(s, (char *) &buffer, sizeof(message));
         if (receive > 0) {
             printf("Message received with code %d\n", buffer.code);
-            if (buffer.code != CONNECT && u == NULL) {
+            if (buffer.code != CONNECT && buffer.code != DISCONNECT && u == NULL) {
                 strcpy(response.content, "Error");
                 response.code = KO;
             } else {

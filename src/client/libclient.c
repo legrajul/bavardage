@@ -115,6 +115,7 @@ int send_command() {
         strcpy(msg->sender, login);
     if (writeSocketTCP(client_sock, (char *) msg, sizeof(message)) < 0) {
         perror("writeSocketTCP");
+	return (1);
     }
 
     return 0;
@@ -158,17 +159,17 @@ int send_message(const char *mess) {
 
         switch (code) {
         case CONNECT:   // Cas d'une demande de connexion
-            if (status == NOT_CONNECTED) {
-                tmp = strtok(NULL, " ");
-                if (tmp != NULL) {
-                    login = strdup(tmp);
-                }
-                if (login == NULL) {
-                    printf("login null\n");
-                }
-                strcpy(msg->sender, login);
-                send_command();
-            }
+	    tmp = strtok(NULL, " ");
+	    if (tmp != NULL) {
+		login = strdup(tmp);
+	    }
+	    if (login == NULL) {
+		printf("login null\n");
+		return -1;
+	    } else {
+		strcpy(msg->sender, login);
+		return send_command();
+	    }
             break;
 
         case DISCONNECT:        // Cas d'une demande de déconnexion
@@ -181,14 +182,14 @@ int send_message(const char *mess) {
             if (tmp != NULL) {
                 strcpy(msg->content, tmp);
             }
-            send_command();
+            return send_command();
             break;
         case DELETE_ROOM:
             tmp = strtok(NULL, " ");
             if (tmp != NULL) {
                 strcpy(msg->content, tmp);
             }
-            send_command();
+            return send_command();
             break;
         case QUIT_ROOM:         // Cas d'une demande pour quitter une room
             tmp = strtok(NULL, " ");
@@ -196,7 +197,7 @@ int send_message(const char *mess) {
                 strcpy(msg->content, tmp);
             }
             strcpy(msg->sender, login);
-            send_command();
+            return send_command();
 
             break;
 
@@ -205,7 +206,7 @@ int send_message(const char *mess) {
             if (tmp != NULL) {
                 strcpy(msg->content, tmp);
             }
-            send_command();
+            return send_command();
             break;
 
         case MESSAGE:  // Cas d'envoi de message
@@ -217,7 +218,7 @@ int send_message(const char *mess) {
             }
 
             strcpy(msg->content, buff);
-            send_command();
+            return send_command();
             break;
 
         case MP:  // Cas d'envoi de message prive
@@ -230,7 +231,7 @@ int send_message(const char *mess) {
             }
 
             strcpy(msg->content, buff);
-            send_command();
+            return send_command();
             break;
         }
     }
@@ -238,8 +239,10 @@ int send_message(const char *mess) {
 }
 
 int disconnect() {
-    msg->code = DISCONNECT;
-    send_command();
+    if (client_sock != NULL) {
+	msg->code = DISCONNECT;
+	send_command ();
+    }
     return 0;
 }
 

@@ -250,24 +250,39 @@ namespace Bavardage {
                             if (response_id == Gtk.ResponseType.CANCEL || response_id == Gtk.ResponseType.DELETE_EVENT) {
                                 dialog.hide_on_delete ();
                             } else if (response_id == Gtk.ResponseType.ACCEPT) {
-                                connect_socket (entry_server_ip.get_text (), int.parse (entry_server_port.get_text ()));
-                                send_message ("/CONNECT " + entry_login.get_text ());
-                                Message m;
-                                receive_message (out m);
-                                if (m.code == KO) {
-                                    var content_str = new StringBuilder ("");
-                                    for (int i = 0; i < m.content.length; i++) {
-                                        content_str.append_c ((char) m.content[i]);
-                                    }
-                                    var msg = new MessageDialog (window, DialogFlags.MODAL | DialogFlags.DESTROY_WITH_PARENT, MessageType.ERROR, ButtonsType.OK, content_str.str);
-                                    msg.response.connect ((response_id2) => {
+                                ClientCore.disconnect ();
+                                if (connect_socket (entry_server_ip.get_text (), int.parse (entry_server_port.get_text ())) == -1) {
+                                    var msg = new MessageDialog (window, DialogFlags.MODAL | DialogFlags.DESTROY_WITH_PARENT, MessageType.ERROR, ButtonsType.OK, "Le serveur indiqué ne répond pas");
+                                    msg.response.connect ((response_id3) => {
                                             msg.hide_on_delete ();
                                         });
                                     msg.present ();
                                 } else {
-                                    dialog.hide_on_delete ();
-                                    update_connected (true);
-                                    thread_receive = new Thread<void *>.try ("recv thread", this.receive_thread);
+                                    if (send_message ("/CONNECT " + entry_login.get_text ()) == -1) {
+                                        var msg = new MessageDialog (window, DialogFlags.MODAL | DialogFlags.DESTROY_WITH_PARENT, MessageType.ERROR, ButtonsType.OK, "Login vide");
+                                        msg.response.connect ((response_id3) => {
+                                                msg.hide_on_delete ();
+                                            });
+                                        msg.present ();
+                                    } else {
+                                        Message m;
+                                        receive_message (out m);
+                                        if (m.code == KO) {
+                                            var content_str = new StringBuilder ("");
+                                            for (int i = 0; i < m.content.length; i++) {
+                                                content_str.append_c ((char) m.content[i]);
+                                            }
+                                            var msg = new MessageDialog (window, DialogFlags.MODAL | DialogFlags.DESTROY_WITH_PARENT, MessageType.ERROR, ButtonsType.OK, content_str.str);
+                                            msg.response.connect ((response_id2) => {
+                                                    msg.hide_on_delete ();
+                                                });
+                                            msg.present ();
+                                        } else {
+                                            dialog.hide_on_delete ();
+                                            update_connected (true);
+                                            thread_receive = new Thread<void *>.try ("recv thread", this.receive_thread);
+                                        }
+                                    }
                                 }
                                 
                             }
