@@ -12,17 +12,17 @@
  * users : liste des utilisateurs du salon
  */
 typedef struct ROOM {
-	char name[MAX_ROOM_NAME_SIZE];
-	user admin;
-	user_map users;
+    char name[MAX_ROOM_NAME_SIZE];
+    user admin;
+    user_map users;
 }*room;
 
 /**
  * Structure représentant une liste chaînée de salons
  */
 typedef struct ROOM_LIST {
-	room current;
-	struct ROOM_LIST *next;
+    room current;
+    struct ROOM_LIST *next;
 }*room_list;
 
 /**
@@ -37,8 +37,8 @@ typedef room_list *room_map;
 int init_rooms();
 
 /**
- * Fonction qui calcule le haché d'un nom de salon 
- * ne contenant que des caractères alphanumériques 
+ * Fonction qui calcule le haché d'un nom de salon
+ * ne contenant que des caractères alphanumériques
  * transformés en entiers comme suit :
  *   '0'..'9' -> 0..9
  *   'A'..'Z' -> 10..35
@@ -111,5 +111,7 @@ int remove_user_from_room(user u, char *room_name);
 user_list get_users(char *room_name);
 
 int is_user_in_room(user u, char *room_name);
+
+room_list get_user_rooms (user u);
 
 #endif

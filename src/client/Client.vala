@@ -34,6 +34,7 @@ namespace Bavardage {
         private Gtk.MenuItem disconnect_item;
         private Gtk.MenuItem quit_item;
         private Gtk.MenuItem about_item;
+        private Statusbar statusbar;
         private Thread<void *> thread_receive;
 
         private signal void update_connected (bool is_connected);
@@ -86,7 +87,9 @@ namespace Bavardage {
                 disconnect_item = builder.get_object ("imagemenuitem1") as Gtk.MenuItem;
                 quit_item = builder.get_object ("imagemenuitem5") as Gtk.MenuItem;
                 about_item = builder.get_object ("imagemenuitem10") as Gtk.MenuItem;
-
+                
+                statusbar = builder.get_object ("statusbar") as Statusbar;
+                statusbar.push (statusbar.get_context_id ("status"), "Déconnecté");
                 window.set_application (this);
 
             } catch (Error e) {
@@ -278,8 +281,10 @@ namespace Bavardage {
                                                 });
                                             msg.present ();
                                         } else {
-                                            dialog.hide_on_delete ();
+                                            statusbar.pop (statusbar.get_context_id ("status"));
+                                            statusbar.push (statusbar.get_context_id ("status"), "Connecté au serveur " + entry_server_ip.get_text () + ":" + entry_server_port.get_text () + " avec le login : " + entry_login.get_text ());
                                             update_connected (true);
+                                            dialog.hide_on_delete ();
                                             thread_receive = new Thread<void *>.try ("recv thread", this.receive_thread);
                                         }
                                     }
@@ -329,6 +334,10 @@ namespace Bavardage {
 
             // Écoute les changements d'état connecté/déconnecté
             this.update_connected.connect ( (is_connected) => {
+                    if (!is_connected) {
+                        statusbar.pop (statusbar.get_context_id ("status"));
+                        statusbar.push (statusbar.get_context_id ("status"), "Déconnecté");
+                    }
                     connect_item.set_sensitive (!is_connected);
                     disconnect_item.set_sensitive (is_connected);
                     create_room_button.set_sensitive (is_connected);

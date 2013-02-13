@@ -9,6 +9,9 @@ room_map rooms;
 
 int init_rooms() {
     rooms = (room_map) malloc(HASH_ROOM_SIZE * sizeof(room_list));
+    for (int i = 0; i < HASH_ROOM_SIZE; i++) {
+	rooms[i] = NULL;
+    }
     // Créer le salon d'accueil
     if (rooms == NULL) {
         return -1;
@@ -228,7 +231,7 @@ user_list get_users(char *room_name) {
 }
 
 int is_user_in_room(user u, char *room_name) {
-    /* printf ("---- BEGIN is_user_in_room ----\n"); */
+    printf ("---- BEGIN is_user_in_room ----\n");
     user_list l = get_users(room_name);
     for (; l != NULL; l = l->next) {
         if (strcmp(l->current_user->name, u->name) == 0) {
@@ -236,6 +239,31 @@ int is_user_in_room(user u, char *room_name) {
         }
     }
 
-    /* printf ("---- END is_user_in_room ----\n"); */
+    printf ("---- END is_user_in_room ----\n");
     return 0;
+}
+
+room_list get_user_rooms (user u) {
+    room_list res = NULL;
+    room_list prec;
+    for (int i = 0; i < HASH_ROOM_SIZE; i++) {
+	for (room_list l = rooms[i]; l != NULL && l->current != NULL && l->current->name != NULL; l = l->next) {
+	    if (is_user_in_room (u, l->current->name)) {
+		if (res == NULL) {
+		    res = (room_list) malloc (sizeof (struct ROOM_LIST));
+		    res->current = l->current;
+		    res->next = NULL;
+		    prec = res;
+		} else {
+		    room_list tmp;
+		    tmp = (room_list) malloc (sizeof (struct ROOM_LIST));
+		    tmp->current = l->current;
+		    tmp->next = NULL;
+		    prec->next = tmp;
+		    prec = tmp;
+		}
+	    }
+	}
+    }
+    return res;
 }
