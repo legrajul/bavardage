@@ -13,7 +13,7 @@ target_link_libraries(client-cli ${CMAKE_THREAD_LIBS_INIT} client)
 # Partie Client graphique
 find_package(Vala REQUIRED)
 include(ValaVersion)
-ensure_vala_version("0.16.0" MINIMUM)
+ensure_vala_version("0.18.0" MINIMUM)
 include(ValaPrecompile)
 vala_precompile(VALA_C 
   Client.vala
