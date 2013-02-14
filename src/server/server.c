@@ -46,7 +46,7 @@ int clear_message(message *m) {
     strcpy(m->content, "");
     strcpy(m->receiver, "");
     m->code = -1;
-
+    return 0;
 }
 
 int join_room (user u, char *room_name) {
@@ -75,6 +75,7 @@ int join_room (user u, char *room_name) {
         writeSocketTCP(u->socket, (char *) &m,
                        sizeof(message));
     }
+    return 0;
 }
 
 int quit_room (user u, char *room_name) {
@@ -89,6 +90,7 @@ int quit_room (user u, char *room_name) {
         writeSocketTCP(t->current_user->socket, (char *) &m,
                        sizeof(message));
     }
+    return 0;
 }
 
 int delete_room (user u, char *room_name) {
@@ -103,6 +105,7 @@ int delete_room (user u, char *room_name) {
                        (char *) &m, sizeof(message));
     }
     remove_room (room_name);
+    return 0;
 }
 
 
@@ -110,14 +113,12 @@ void *handle_connexion(void *param) {
     SocketTCP *s = (SocketTCP *) param;
     int receive;
     message buffer, response;
-    int is_connected = 0;
     user u;
     while (1) {
         clear_message(&buffer);
         clear_message(&response);
         receive = readSocketTCP(s, (char *) &buffer, sizeof(message));
         if (receive > 0) {
-            printf("Message received with code %d\n", buffer.code);
             if (buffer.code != CONNECT && buffer.code != DISCONNECT && u == NULL) {
                 strcpy(response.content, "Error");
                 response.code = KO;
@@ -172,6 +173,10 @@ void *handle_connexion(void *param) {
                         response.code = KO;
                         strcpy (response.content, "You are not in this room");
                         break;
+                    } else if (strcmp (home_room, buffer.content) == 0) {
+                        response.code = KO;
+                        strcpy (response.content, "You cannot leave the home room");
+                        break;
                     } else {
                         remove_user_from_room(u, buffer.content);
                     }
@@ -183,13 +188,13 @@ void *handle_connexion(void *param) {
                         response.code = KO;
                         strcpy(response.content, "This room doesn\'t exist");
                     } else if (u != get_admin(buffer.content)) {
-			response.code = KO;
-			strcpy(response.content,
-			       "You're not admin, you can't delete this room");
-		    } else {
-			delete_room (u, buffer.content);
-			response.code = DELETE_ROOM;
-			strcpy (response.content, buffer.content);
+                        response.code = KO;
+                        strcpy(response.content,
+                               "You're not admin, you can't delete this room");
+                    } else {
+                        delete_room (u, buffer.content);
+                        response.code = DELETE_ROOM;
+                        strcpy (response.content, buffer.content);
                     }
                     break;
 
@@ -198,15 +203,17 @@ void *handle_connexion(void *param) {
                     response.code = DISCONNECT;
                     if (u != NULL) {
                         for (room_list l = get_user_rooms (u); l != NULL; l = l->next) {
-			    if (u == get_admin (l->current->name)) {
-				delete_room (u, l->current->name);
-			    } else {
-				quit_room (u, l->current->name);
-				remove_user_from_room (u, l->current->name);
-			    }
+                            if (u == get_admin (l->current->name)) {
+                                delete_room (u, l->current->name);
+                            } else {
+
+                                remove_user_from_room (u, l->current->name);
+                                quit_room (u, l->current->name);
+                            }
                         }
-                        remove_user(u, server_user_map);
                         remove_user_from_room(u, home_room);
+                        remove_user(u, server_user_map);
+
                     }
                     response.code = DISCONNECT;
                     writeSocketTCP(s, (char *) &response, sizeof(message));
@@ -232,12 +239,11 @@ void *handle_connexion(void *param) {
                         response.code = CONNECT;
                         writeSocketTCP (s, (char *) &response, sizeof (message));
 
-                        is_connected = 1;
                         u = (user) malloc(sizeof(struct USER));
                         strcpy(u->name, buffer.sender);
                         u->socket = s;
                         add_user(u, server_user_map);
-			join_room (u, home_room);
+                        join_room (u, home_room);
                         response.code = OK;
 
                     }
@@ -308,7 +314,21 @@ void *handle_connexion(void *param) {
                 pthread_mutex_unlock(&mutex);
                 writeSocketTCP(s, (char *) &response, sizeof(message));
             }
-        } else if (receive == -1) {
+        } else {
+	    printf ("Error: the connection with the client just stopped\n");
+            if (u != NULL) {
+                for (room_list l = get_user_rooms (u); l != NULL; l = l->next) {
+                    if (u == get_admin (l->current->name)) {
+                        delete_room (u, l->current->name);
+                    } else {
+                        remove_user_from_room (u, l->current->name);
+                        quit_room (u, l->current->name);
+                    }
+                }
+                remove_user_from_room(u, home_room);
+                remove_user(u, server_user_map);
+
+            }
             printf("Error: exiting thread...\n");
             pthread_exit(0);
         }
@@ -352,6 +372,7 @@ int create_main_room() {
     init_rooms();
     add_room(home_room, NULL);
     server_user_map = (user_map) malloc(HASH_USER_MAP_SIZE * sizeof(user_list));
+    return 0;
 }
 
 int start_listening(const char *addr, int port) {

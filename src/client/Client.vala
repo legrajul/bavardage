@@ -87,7 +87,7 @@ namespace Bavardage {
                 disconnect_item = builder.get_object ("imagemenuitem1") as Gtk.MenuItem;
                 quit_item = builder.get_object ("imagemenuitem5") as Gtk.MenuItem;
                 about_item = builder.get_object ("imagemenuitem10") as Gtk.MenuItem;
-                
+
                 statusbar = builder.get_object ("statusbar") as Statusbar;
                 statusbar.push (statusbar.get_context_id ("status"), "Déconnecté");
                 window.set_application (this);
@@ -135,6 +135,10 @@ namespace Bavardage {
                             var entry_model = rooms_map_entries.get ((string) v) as EntryBuffer;
                             message.set_buffer (entry_model);
 
+                            TextIter text_iter;
+                            chat_model.get_iter_at_line (out text_iter, chat_model.get_line_count ());
+                            chat.scroll_to_iter (text_iter, 0.0, false, 0.0, 1.0);
+
                             if (((string) v)[0] == '[') {
                                 connected_users.get_parent ().hide ();
                             } else {
@@ -152,6 +156,7 @@ namespace Bavardage {
                     var label = new Gtk.Label ("Nom du salon :");
                     grid.attach (label, 0, 0, 1, 1);
                     var entry_room_name = new Gtk.Entry ();
+                    entry_room_name.set_max_length (Common.MAX_ROOM_NAME_SIZE);
                     grid.attach (entry_room_name, 1, 0, 1, 1);
 
                     content.add (grid);
@@ -205,6 +210,7 @@ namespace Bavardage {
                     var label = new Gtk.Label ("Nom du salon :");
                     grid.attach (label, 0, 0, 1, 1);
                     var entry_room_name = new Gtk.Entry ();
+                    entry_room_name.set_max_length (Common.MAX_ROOM_NAME_SIZE);
                     grid.attach (entry_room_name, 1, 0, 1, 1);
 
                     content.add (grid);
@@ -219,12 +225,12 @@ namespace Bavardage {
                 });
 
             message.activate.connect ( () => {
-                    send_message_entry ();
+                    send_message_entry.begin ();
                 });
 
             // On clique sur le bouton "Envoyer"
             message.icon_press.connect ( (p0, p1) => {
-                    send_message_entry ();
+                    send_message_entry.begin ();
                 });
 
 
@@ -246,6 +252,7 @@ namespace Bavardage {
                     label = new Gtk.Label ("Pseudo :");
                     grid.attach (label, 0, 2, 1, 1);
                     var entry_login = new Gtk.Entry ();
+                    entry_login.set_max_length (Common.MAX_NAME_SIZE);
                     grid.attach (entry_login, 1, 2, 1, 1);
 
                     content.add (grid);
@@ -285,11 +292,15 @@ namespace Bavardage {
                                             statusbar.push (statusbar.get_context_id ("status"), "Connecté au serveur " + entry_server_ip.get_text () + ":" + entry_server_port.get_text () + " avec le login : " + entry_login.get_text ());
                                             update_connected (true);
                                             dialog.hide_on_delete ();
-                                            thread_receive = new Thread<void *>.try ("recv thread", this.receive_thread);
+                                            try {
+                                                thread_receive = new Thread<void *>.try ("recv thread", this.receive_thread);
+                                            } catch (GLib.Error e) {
+                                                stderr.printf ("Error : %s\n", e.message);
+                                            }
                                         }
                                     }
                                 }
-                                
+
                             }
                         });
                     dialog.show_all ();
@@ -352,6 +363,7 @@ namespace Bavardage {
             Message m = { -1, "".data, "".data, "".data };
             TreeIter tree_iter;
             while (true) {
+                Thread.usleep (10000);
                 m = { -1, "".data, "".data, "".data };
                 if (receive_message (out m) == 0) {
                     var sender = new StringBuilder ("");
@@ -369,10 +381,11 @@ namespace Bavardage {
                     switch (m.code) {
                     case KO:
                         stdout.printf ("Error : %s\n", content.str);
-                        var dialog = new Window ();
-                        dialog.title = "Erreur";
-                        dialog.add (new Label (content.str));
-                        dialog.show_all ();
+                        var dialog = new MessageDialog (window, Gtk.DialogFlags.MODAL, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK, content.str);
+                        dialog.response.connect ( (response_id) => {
+                                dialog.hide_on_delete ();
+                            });
+                        dialog.present ();
                         break;
                     case OK:
 
@@ -385,7 +398,7 @@ namespace Bavardage {
                         rooms_map_users.set (content.str, new ListStore (1, typeof (string)));
                         rooms_map_chats.set (content.str, new TextBuffer (new TextTagTable ()));
                         rooms_map_entries.set (content.str, new EntryBuffer ("".data));
-                        
+
                         open_rooms.get_selection ().select_iter (tree_iter);
                         open_rooms.cursor_changed ();
                         break;
@@ -412,6 +425,11 @@ namespace Bavardage {
                         TextIter iter;
                         rooms_map_chats.get (receiver.str).get_end_iter (out iter);
                         rooms_map_chats.get (receiver.str).insert_text (ref iter, s, s.length);
+                        if (chat.get_buffer () == rooms_map_chats.get (receiver.str)) {
+                            chat.get_buffer ().get_iter_at_line (out iter, chat.get_buffer ().get_line_count ());
+                            chat.scroll_to_iter (iter, 0.0, false, 0.0, 1.0);
+                            chat.get_buffer ().set_modified (true);
+                        }
                         break;
 
                     case MP:
@@ -434,6 +452,11 @@ namespace Bavardage {
                         }
                         rooms_map_chats.get (room_name).get_end_iter (out iter);
                         rooms_map_chats.get (room_name).insert_text (ref iter, s, s.length);
+                        if (chat.get_buffer () == rooms_map_chats.get (receiver.str)) {
+                            chat.get_buffer ().get_iter_at_line (out iter, chat.get_buffer ().get_line_count ());
+                            chat.scroll_to_iter (iter, 0.0, false, 0.0, 1.0);
+                            chat.get_buffer ().set_modified (true);
+                        }
                         break;
                     case NEW_USER:
                         string s = sender.str + " vient de rejoindre le salon\n";
@@ -444,6 +467,11 @@ namespace Bavardage {
                         var users = rooms_map_users.get (content.str) as ListStore;
                         users.append (out tree_iter);
                         users.set (tree_iter, 0, sender.str, -1);
+                        if (chat.get_buffer () == rooms_map_chats.get (receiver.str)) {
+                            chat.get_buffer ().get_iter_at_line (out iter, chat.get_buffer ().get_line_count ());
+                            chat.scroll_to_iter (iter, 0.0, false, 0.0, 1.0);
+                            chat.get_buffer ().set_modified (true);
+                        }
                         break;
                     case ADD_USER:
                         var users = rooms_map_users.get (content.str) as ListStore;
@@ -466,7 +494,11 @@ namespace Bavardage {
                             }
                         } while (model.iter_next (ref tree_iter));
                         model.remove (tree_iter);
-
+                        if (chat.get_buffer () == rooms_map_chats.get (receiver.str)) {
+                            chat.get_buffer ().get_iter_at_line (out iter, chat.get_buffer ().get_line_count ());
+                            chat.scroll_to_iter (iter, 0.0, false, 0.0, 1.0);
+                            chat.get_buffer ().set_modified (true);
+                        }
                         break;
                     case DISCONNECT:
                         rooms_map_chats.clear ();
@@ -490,14 +522,20 @@ namespace Bavardage {
                     break;
                 }
             }
+            rooms_map_chats.clear ();
+            rooms_map_entries.clear ();
+            rooms_map_users.clear ();
+            open_rooms.set_model (new ListStore (1, typeof (string)));
+            chat.set_buffer (new TextBuffer (new TextTagTable ()));
+            message.set_buffer (new EntryBuffer ("".data));
+            connected_users.set_model (new ListStore (1, typeof (string)));
+            update_connected (false);
             Thread.exit (null);
             return null;
         }
 
-        private void send_message_entry () {
-            stdout.printf ("send_message_entry ()\n");
+        private async void send_message_entry () {
             var msg = message.get_text ();
-            stdout.printf ("message à envoyer : %s\n", msg);
 
             if (msg[0] != '/') {
                 TreeModel m;

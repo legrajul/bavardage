@@ -231,7 +231,7 @@ user_list get_users(char *room_name) {
 }
 
 int is_user_in_room(user u, char *room_name) {
-    printf ("---- BEGIN is_user_in_room ----\n");
+    /* printf ("---- BEGIN is_user_in_room ----\n"); */
     user_list l = get_users(room_name);
     for (; l != NULL; l = l->next) {
         if (strcmp(l->current_user->name, u->name) == 0) {
@@ -239,7 +239,7 @@ int is_user_in_room(user u, char *room_name) {
         }
     }
 
-    printf ("---- END is_user_in_room ----\n");
+    /* printf ("---- END is_user_in_room ----\n"); */
     return 0;
 }
 

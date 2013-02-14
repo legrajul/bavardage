@@ -150,7 +150,7 @@ int send_message(const char *mess) {
     if (mess[0] == '/') {
         code = extract_code(strtok(strdup(buffer), " "));
         if (code == -1) {
-            perror("extract_code");
+            fprintf (stderr, "Unknown command\n");
             return -1;
         }
         msg->code = code;
@@ -234,6 +234,7 @@ int send_message(const char *mess) {
             }
 
             strcpy(msg->content, buff);
+	    free(tab_string);
             return send_command();
             break;
 
