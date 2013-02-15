@@ -381,11 +381,13 @@ namespace Bavardage {
                     switch (m.code) {
                     case KO:
                         stdout.printf ("Error : %s\n", content.str);
-                        var dialog = new MessageDialog (window, Gtk.DialogFlags.MODAL, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK, content.str);
+                        Gdk.threads_enter ();
+                        var dialog = new MessageDialog (null, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK, content.str);
                         dialog.response.connect ( (response_id) => {
                                 dialog.hide_on_delete ();
                             });
-                        dialog.present ();
+                        dialog.show_all ();
+                        Gdk.threads_leave ();
                         break;
                     case OK:
 
@@ -617,6 +619,7 @@ namespace Bavardage {
      * Point d'entrée du programme
      */
     int main (string[] args) {
+        Gdk.init (ref args);
         Gtk.init (ref args);
         new Bavardage.Client (args[0]);
         Gtk.main ();

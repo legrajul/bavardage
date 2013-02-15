@@ -144,6 +144,7 @@ void *handle_connexion(void *param) {
                     break;
 
                 case JOIN_ROOM:
+                    printf ("Join room : %s\n", buffer.content);
                     if (!is_room_used (buffer.content)) {
                         strcpy (response.content, "The room does not exist");
                         response.code = KO;
@@ -206,8 +207,9 @@ void *handle_connexion(void *param) {
                             if (u == get_admin (l->current->name)) {
                                 delete_room (u, l->current->name);
                             } else {
-                                remove_user_from_room (u, l->current->name);
                                 quit_room (u, l->current->name);
+                                remove_user_from_room (u, l->current->name);
+
                             }
                         }
                         remove_user(u, server_user_map);
@@ -313,14 +315,15 @@ void *handle_connexion(void *param) {
                 writeSocketTCP(s, (char *) &response, sizeof(message));
             }
         } else {
-	    printf ("Error: the connection with the client just stopped\n");
+            printf ("Error: the connection with the client just stopped\n");
             if (u != NULL) {
                 for (room_list l = get_user_rooms (u); l != NULL; l = l->next) {
                     if (u == get_admin (l->current->name)) {
                         delete_room (u, l->current->name);
                     } else {
-                        remove_user_from_room (u, l->current->name);
                         quit_room (u, l->current->name);
+                        remove_user_from_room (u, l->current->name);
+
                     }
                 }
                 remove_user(u, server_user_map);
