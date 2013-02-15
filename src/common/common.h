@@ -17,8 +17,6 @@
 #define LOGIN_IN_USE   10
 #define NOT_CONNECTED  11
 #define CONNECTED      12
-#define USER_LIST_CHUNK 13
-#define USER_LIST_END 14
 #define MP 15
 #define ADD_USER 16
 #define RM_USER 17

@@ -45,10 +45,8 @@ void *traitement_recv(void *param) {
             continue;
         }
 
-        int code = get_last_request_code();
-
         char *res = NULL;
-        if (code == DISCONNECT && mess.code == OK) {
+        if (mess.code == DISCONNECT) {
             disconnect();
             printf("You're now disconnected from the chat server\n");
             pthread_detach(thread_send);
@@ -67,17 +65,6 @@ void *traitement_recv(void *param) {
 
         case MP:
             printf("[%s > %s] %s\n", mess.sender, mess.receiver, mess.content);
-            break;
-
-        case USER_LIST_CHUNK:
-            printf("You joined the room %s\n", mess.content);
-            res = strdup(mess.content);
-            while (mess.code == USER_LIST_CHUNK) {
-                receive_message(&mess);
-                strcat(res, ", ");
-                strcat(res, mess.content);
-            }
-            printf("%s", res);
             break;
 
         case NEW_USER:

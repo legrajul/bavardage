@@ -12,7 +12,6 @@
 SocketTCP *client_sock;
 message *msg;
 char *login, **tab_string;
-int status = NOT_CONNECTED;
 
 void my_sigaction(int s) {
     switch (s) {
@@ -70,12 +69,10 @@ int extract_code(const char *str) {
 int connect_socket(const char *addr, const int port) {
     int co;
     if ((client_sock = creerSocketTCP()) == NULL) {
-        perror("creerSocketTCP");
         return -1;
     }
     printf("Please wait for connecting the server...\n");
     if ((co = connectSocketTCP(client_sock, addr, port)) == -1) {
-        perror("connectSocketTCP");
         return -1;
     }
 
@@ -88,7 +85,6 @@ int connect_socket(const char *addr, const int port) {
 int receive_message(message *m) {
     int ret = readSocketTCP(client_sock, (char *) m, sizeof(message));
     if (ret == 0) {
-        perror("receive_message");
         return -1;
     } else {
         return 0;
@@ -114,7 +110,6 @@ int send_command() {
     if (login != NULL)
         strcpy(msg->sender, login);
     if (writeSocketTCP(client_sock, (char *) msg, sizeof(message)) < 0) {
-        perror("writeSocketTCP");
 	return (1);
     }
 
@@ -264,18 +259,6 @@ int disconnect() {
 	send_command ();
     }
     return 0;
-}
-
-int get_last_request_code() {
-    return msg->code;
-}
-
-int is_connected() {
-    if (status == CONNECTED) {
-        return 1;
-    } else {
-        return 0;
-    }
 }
 
 char *get_login () {

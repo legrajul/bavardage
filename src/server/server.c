@@ -1,5 +1,4 @@
 #include "lib_server.h"
-#include "../common/common.h"
 #include "../common/SocketTCP.h"
 #include "../common/room_manager.h"
 #include "../common/user_manager.h"
@@ -92,7 +91,7 @@ int quit_room (user u, char *room_name) {
     return 0;
 }
 
-int delete_room (user u, char *room_name) {
+int delete_room (char *room_name) {
     user_list users = get_users(room_name);
     user_list t;
     // On demande à tous les clients connectés au salon de le supprimer
@@ -192,7 +191,7 @@ void *handle_connexion(void *param) {
                         strcpy(response.content,
                                "You're not admin, you can't delete this room");
                     } else {
-                        delete_room (u, buffer.content);
+                        delete_room (buffer.content);
                         response.code = DELETE_ROOM;
                         strcpy (response.content, buffer.content);
                     }
@@ -204,7 +203,7 @@ void *handle_connexion(void *param) {
                     if (u != NULL) {
                         for (room_list l = get_user_rooms (u); l != NULL; l = l->next) {
                             if (u == get_admin (l->current->name)) {
-                                delete_room (u, l->current->name);
+                                delete_room (l->current->name);
                             } else {
                                 quit_room (u, l->current->name);
                                 remove_user_from_room (u, l->current->name);
@@ -320,7 +319,7 @@ void *handle_connexion(void *param) {
             if (u != NULL) {
                 for (room_list l = get_user_rooms (u); l != NULL; l = l->next) {
                     if (u == get_admin (l->current->name)) {
-                        delete_room (u, l->current->name);
+                        delete_room (l->current->name);
                     } else {
                         quit_room (u, l->current->name);
                         remove_user_from_room (u, l->current->name);

@@ -110,8 +110,19 @@ int remove_user_from_room(user u, char *room_name);
  */
 user_list get_users(char *room_name);
 
+/**
+ * Regarde si un utilisateur est dans un salon
+ * @param u l'utilisateur
+ * @param room_name le nom du salon
+ * @return 1 si l'utilisateur est dans le salon, 0 sinon
+ */
 int is_user_in_room(user u, char *room_name);
 
+/**
+ * Récupère la liste des salons dans lesquels l'utilisateur est connecté
+ * @param u l'utilisateur
+ * @return la liste des salons
+ */
 room_list get_user_rooms (user u);
 
 #endif

@@ -16,8 +16,6 @@ namespace Bavardage {
         public const int LOGIN_IN_USE;
         public const int NOT_CONNECTED;
         public const int CONNECTED;
-        public const int USER_LIST_CHUNK;
-        public const int USER_LIST_END;
         public const int MP;
         public const int ADD_USER;
         public const int RM_USER;
