@@ -75,9 +75,8 @@ int remove_user(user u, user_map map) {
             if (prec != NULL)
                 prec->next = t->next;
             t->next = NULL;
-            free(t->current_user);
-            free(t);
         }
+	free (t);
         prec = t;
     }
     if (count == 1) {

@@ -79,7 +79,6 @@ int join_room (user u, char *room_name) {
 }
 
 int quit_room (user u, char *room_name) {
-    // On envoie la liste des clients connectés à tous les clients connectés au salon
     user_list users = get_users(room_name);
     user_list t;
     message m;
@@ -126,10 +125,12 @@ void *handle_connexion(void *param) {
                 pthread_mutex_lock(&mutex);
                 switch (buffer.code) {
                 case CREATE_ROOM:
+                    printf ("Create room : %s\n", buffer.content);
                     if (is_room_used(buffer.content)) {
                         response.code = KO;
                         strcpy(response.content,
                                "This room name is already in use");
+                        printf ("Room already in user\n");
                     } else {
                         add_room(buffer.content, u);
                         add_user_in_room(u, buffer.content);
@@ -163,10 +164,14 @@ void *handle_connexion(void *param) {
                         response.code = KO;
                         strcpy (response.content, "This room does not exist");
                         break;
+                    } else if (strcmp (home_room, buffer.content) == 0) {
+                        response.code = KO;
+                        strcpy (response.content, "You cannot leave the home room");
+                        break;
                     } else if (u != get_admin(buffer.content)) {
-                        remove_user_from_room(u, buffer.content);
-                        printf("User successfully deleted");
                         quit_room (u, buffer.content);
+                        remove_user_from_room(u, buffer.content);
+                        printf("User successfully deleted\n");
                         response.code = DELETE_ROOM;
                         strcpy (response.content, buffer.content);
                         break;
@@ -174,12 +179,6 @@ void *handle_connexion(void *param) {
                         response.code = KO;
                         strcpy (response.content, "You are not in this room");
                         break;
-                    } else if (strcmp (home_room, buffer.content) == 0) {
-                        response.code = KO;
-                        strcpy (response.content, "You cannot leave the home room");
-                        break;
-                    } else {
-                        remove_user_from_room(u, buffer.content);
                     }
 
                 case DELETE_ROOM:
@@ -209,11 +208,10 @@ void *handle_connexion(void *param) {
                             } else {
                                 quit_room (u, l->current->name);
                                 remove_user_from_room (u, l->current->name);
-
                             }
                         }
                         remove_user(u, server_user_map);
-
+                        free (u);
                     }
                     response.code = DISCONNECT;
                     writeSocketTCP(s, (char *) &response, sizeof(message));
@@ -223,7 +221,10 @@ void *handle_connexion(void *param) {
                     break;
 
                 case CONNECT:
-                    if (!is_login_valid(buffer.sender)) {
+		    if (u != NULL) {
+			response.code = KO;
+			strcpy (response.content, "You are already connected");
+		    } else if (!is_login_valid(buffer.sender)) {
                         response.code = KO;
                         strcpy(response.content, "Login not acceptable");
                     } else if (is_login_used(buffer.sender, server_user_map)
@@ -327,7 +328,7 @@ void *handle_connexion(void *param) {
                     }
                 }
                 remove_user(u, server_user_map);
-
+                free (u);
             }
             printf("Error: exiting thread...\n");
             pthread_exit(0);

@@ -10,7 +10,7 @@ room_map rooms;
 int init_rooms() {
     rooms = (room_map) malloc(HASH_ROOM_SIZE * sizeof(room_list));
     for (int i = 0; i < HASH_ROOM_SIZE; i++) {
-	rooms[i] = NULL;
+        rooms[i] = NULL;
     }
     // Créer le salon d'accueil
     if (rooms == NULL) {
@@ -108,7 +108,7 @@ int remove_room(char *room_name) {
     // On parcourt la liste avec un pointeur sur l'élément précédent
     int count = 0;
     for (t = l; t != NULL; t = t->next) {
-	count++;
+        count++;
         if (strcmp(t->current->name, room_name) == 0) {
             if (prec != NULL) {
                 prec->next = t->next;
@@ -116,14 +116,15 @@ int remove_room(char *room_name) {
             t->next = NULL;
             free(t->current);
             free(t);
+            if (count == 1) {
+                rooms[index] = NULL;
+            }
             return 0;
         }
         prec = t;
     }
-    if (count == 1) {
-	rooms[index] = NULL;
-    }
-    
+
+
     return -1;
 }
 
@@ -247,23 +248,23 @@ room_list get_user_rooms (user u) {
     room_list res = NULL;
     room_list prec;
     for (int i = 0; i < HASH_ROOM_SIZE; i++) {
-	for (room_list l = rooms[i]; l != NULL && l->current != NULL && l->current->name != NULL; l = l->next) {
-	    if (is_user_in_room (u, l->current->name)) {
-		if (res == NULL) {
-		    res = (room_list) malloc (sizeof (struct ROOM_LIST));
-		    res->current = l->current;
-		    res->next = NULL;
-		    prec = res;
-		} else {
-		    room_list tmp;
-		    tmp = (room_list) malloc (sizeof (struct ROOM_LIST));
-		    tmp->current = l->current;
-		    tmp->next = NULL;
-		    prec->next = tmp;
-		    prec = tmp;
-		}
-	    }
-	}
+        for (room_list l = rooms[i]; l != NULL && l->current != NULL && l->current->name != NULL; l = l->next) {
+            if (is_user_in_room (u, l->current->name)) {
+                if (res == NULL) {
+                    res = (room_list) malloc (sizeof (struct ROOM_LIST));
+                    res->current = l->current;
+                    res->next = NULL;
+                    prec = res;
+                } else {
+                    room_list tmp;
+                    tmp = (room_list) malloc (sizeof (struct ROOM_LIST));
+                    tmp->current = l->current;
+                    tmp->next = NULL;
+                    prec->next = tmp;
+                    prec = tmp;
+                }
+            }
+        }
     }
     return res;
 }

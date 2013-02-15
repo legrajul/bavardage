@@ -139,7 +139,7 @@ char **create_table_param(const char *string) {
     return res;
 }
 
-int send_message(const char *mess) {
+int send_message(const char *mess, char **error_mess) {
     int code;
     char buffer[20 + MAX_NAME_SIZE + MAX_MESS_SIZE] = "";
     strcpy(buffer, mess);
@@ -150,8 +150,7 @@ int send_message(const char *mess) {
     if (mess[0] == '/') {
         code = extract_code(strtok(strdup(buffer), " "));
         if (code == -1) {
-            fprintf (stderr, "Unknown command\n");
-            return -1;
+            return -2;
         }
         msg->code = code;
         char *tmp, buff[MAX_MESS_SIZE] = "";
@@ -182,8 +181,8 @@ int send_message(const char *mess) {
             if (tmp != NULL) {
                 strcpy(msg->content, tmp);
             } else {
-		printf ("CREATE_ROOM a besoin d'un paramètre\n");
-		return -1;
+		*error_mess = strdup ("CREATE_ROOM a besoin d'un paramètre\n");
+		return -3;
 	    }
             return send_command();
             break;
@@ -192,8 +191,8 @@ int send_message(const char *mess) {
             if (tmp != NULL) {
                 strcpy(msg->content, tmp);
             } else {
-		printf ("DELETE_ROOM a besoin d'un paramètre\n");
-		return -1;
+		*error_mess = strdup ("DELETE_ROOM a besoin d'un paramètre\n");
+		return -3;
 	    }
             return send_command();
             break;
@@ -202,8 +201,8 @@ int send_message(const char *mess) {
             if (tmp != NULL) {
                 strcpy(msg->content, tmp);
             } else {
-		printf ("QUIT_ROOM a besoin d'un paramètre\n");
-		return -1;
+		*error_mess = strdup ("QUIT_ROOM a besoin d'un paramètre\n");
+		return -3;
 	    }
             strcpy(msg->sender, login);
             return send_command();
@@ -215,8 +214,8 @@ int send_message(const char *mess) {
             if (tmp != NULL) {
                 strcpy(msg->content, tmp);
             } else {
-		printf ("JOIN_ROOM a besoin d'un paramètre\n");
-		return -1;
+		*error_mess = strdup ("JOIN_ROOM a besoin d'un paramètre\n");
+		return -3;
 	    }
             return send_command();
             break;
@@ -224,8 +223,8 @@ int send_message(const char *mess) {
         case MESSAGE:  // Cas d'envoi de message
             tab_string = create_table_param(buffer);
 	    if (len (tab_string) < 3) {
-		printf ("MESSAGE doit avoir 2 paramètres : /MESSAGE salon mon super message\n");
-		return -1;
+		*error_mess = strdup ("MESSAGE doit avoir 2 paramètres : /MESSAGE salon mon super message\n");
+		return -3;
 	    }
             strcpy(msg->receiver, tab_string[1]);
             for (i = 2; i < len(tab_string); i++) {
@@ -241,8 +240,8 @@ int send_message(const char *mess) {
         case MP:  // Cas d'envoi de message prive
             tab_string = create_table_param(buffer);
 	    if (len (tab_string) < 3) {
-		printf ("MP doit avoir 2 paramètres : /MP toto mon super message privé\n");
-		return -1;
+		*error_mess = strdup ("MP doit avoir 2 paramètres : /MP toto mon super message privé\n");
+		return -3;
 	    }
             strcpy(msg->receiver, tab_string[1]);
             strcpy (buff, "");

@@ -27,7 +27,7 @@ namespace Bavardage {
     
     [CCode (cprefix = "", lower_case_cprefix = "", cheader_filename = "libclient.h")]
     namespace ClientCore {
-        public int send_message (string m);
+        public int send_message (string m, out string error_mess);
         public int send_command ();
         public int connect_socket (string addr, int port);
         public int disconnect ();

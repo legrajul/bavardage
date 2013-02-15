@@ -30,6 +30,7 @@ namespace Bavardage {
         private Button create_room_button;
         private Button quit_room_button;
         private Button join_room_button;
+        private Button send_mp_button;
         private Gtk.MenuItem connect_item;
         private Gtk.MenuItem disconnect_item;
         private Gtk.MenuItem quit_item;
@@ -83,6 +84,7 @@ namespace Bavardage {
                 create_room_button = builder.get_object ("button_create_room") as Button;
                 quit_room_button = builder.get_object ("button_quit_room") as Button;
                 join_room_button = builder.get_object ("button_join_room") as Button;
+                send_mp_button = builder.get_object ("button_send_mp") as Button;
                 connect_item = builder.get_object ("imagemenuitem2") as Gtk.MenuItem;
                 disconnect_item = builder.get_object ("imagemenuitem1") as Gtk.MenuItem;
                 quit_item = builder.get_object ("imagemenuitem5") as Gtk.MenuItem;
@@ -141,8 +143,10 @@ namespace Bavardage {
 
                             if (((string) v)[0] == '[') {
                                 connected_users.get_parent ().hide ();
+                                send_mp_button.hide ();
                             } else {
                                 connected_users.get_parent ().show_all ();
+                                send_mp_button.show ();
                             }
                         }
                     }
@@ -163,7 +167,12 @@ namespace Bavardage {
                     dialog.response.connect ((response_id) => {
                             if (response_id == Gtk.ResponseType.ACCEPT) {
                                 // demander à créer le salon
-                                send_message ("/CREATE_ROOM " + entry_room_name.get_text ());
+                                string error_msg;
+                                if (send_message ("/CREATE_ROOM " + entry_room_name.get_text (), out error_msg) == -3) {
+                                    TextIter iter;
+                                    chat.get_buffer ().get_end_iter (out iter);
+                                    chat.get_buffer ().insert_text (ref iter, error_msg, error_msg.length);
+                                }
                             }
                             dialog.hide_on_delete ();
                         });
@@ -180,7 +189,12 @@ namespace Bavardage {
                         m.get_value (iter, 0, out v);
                         string s = (string) v;
                         if (s[0] != '[') {
-                            send_message ("/QUIT_ROOM " + s);
+                            string error_msg;
+                            if (send_message ("/QUIT_ROOM " + s, out error_msg) == -3) {
+                                TextIter titer;
+                                chat.get_buffer ().get_end_iter (out titer);
+                                chat.get_buffer ().insert_text (ref titer, error_msg, error_msg.length);
+                            }
                         } else {
                             Value v2;
                             var model2 = open_rooms.get_model () as ListStore;
@@ -217,11 +231,39 @@ namespace Bavardage {
                     dialog.response.connect ((response_id) => {
                             if (response_id == Gtk.ResponseType.ACCEPT) {
                                 // demander à créer le salon
-                                send_message ("/JOIN_ROOM " + entry_room_name.get_text ());
+                                string error_msg;
+                                if (send_message ("/JOIN_ROOM " + entry_room_name.get_text (), out error_msg) == -3) {
+                                    TextIter iter;
+                                    chat.get_buffer ().get_end_iter (out iter);
+                                    chat.get_buffer ().insert_text (ref iter, error_msg, error_msg.length);
+                                }
                             }
                             dialog.hide_on_delete ();
                         });
                     dialog.show_all ();
+                });
+
+            send_mp_button.clicked.connect ( () => {
+                    TreeModel m;
+                    TreeIter iter;
+                    var select = connected_users.get_selection ();
+                    if (select.get_selected (out m, out iter)) {
+                        Value v;
+                        m.get_value (iter, 0, out v);
+                        string s = (string) v;
+                        string room_name = "[" + s + "]";
+                        if (rooms_map_chats.get (room_name) == null ) {
+                            var rooms = open_rooms.get_model () as ListStore;
+                            rooms.append (out iter);
+                            rooms.set (iter, 0, room_name, -1);
+
+                            rooms_map_users.set (room_name, new ListStore (1, typeof (string)));
+                            rooms_map_chats.set (room_name, new TextBuffer (new TextTagTable ()));
+                            rooms_map_entries.set (room_name, new EntryBuffer ("".data));
+                            open_rooms.get_selection ().select_iter (iter);
+                            open_rooms.cursor_changed ();
+                        }
+                    }
                 });
 
             message.activate.connect ( () => {
@@ -268,7 +310,8 @@ namespace Bavardage {
                                         });
                                     msg.present ();
                                 } else {
-                                    if (send_message ("/CONNECT " + entry_login.get_text ()) == -1) {
+                                    string tmp;
+                                    if (send_message ("/CONNECT " + entry_login.get_text (), out tmp) == -1) {
                                         var msg = new MessageDialog (window, DialogFlags.MODAL | DialogFlags.DESTROY_WITH_PARENT, MessageType.ERROR, ButtonsType.OK, "Login vide");
                                         msg.response.connect ((response_id3) => {
                                                 msg.hide_on_delete ();
@@ -356,6 +399,7 @@ namespace Bavardage {
                     join_room_button.set_sensitive (is_connected);
                     message.set_sensitive (is_connected);
                 });
+
         }
 
 
@@ -381,13 +425,10 @@ namespace Bavardage {
                     switch (m.code) {
                     case KO:
                         stdout.printf ("Error : %s\n", content.str);
-                        Gdk.threads_enter ();
-                        var dialog = new MessageDialog (null, 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK, content.str);
-                        dialog.response.connect ( (response_id) => {
-                                dialog.hide_on_delete ();
-                            });
-                        dialog.show_all ();
-                        Gdk.threads_leave ();
+                        string s = "Erreur : " + content.str + "\n";
+                        TextIter iter;
+                        chat.get_buffer ().get_end_iter (out iter);
+                        chat.get_buffer ().insert_text (ref iter, s, s.length);
                         break;
                     case OK:
 
@@ -538,7 +579,7 @@ namespace Bavardage {
 
         private async void send_message_entry () {
             var msg = message.get_text ();
-
+            string error_msg;
             if (msg[0] != '/') {
                 TreeModel m;
                 TreeIter iter;
@@ -551,14 +592,18 @@ namespace Bavardage {
                         for (int i = 1; i < ((string) v).length - 1; i++) {
                             recv_name.append_c ((char) ((string) v).data[i]);
                         }
-                        send_message ("/MP " + recv_name.str + " " + msg);
+                        send_message ("/MP " + recv_name.str + " " + msg, out error_msg);
                     } else {
-                        send_message ("/MESSAGE " + (string) v + " " + msg);
+                        send_message ("/MESSAGE " + (string) v + " " + msg, out error_msg);
                     }
 
                 }
             } else {
-                send_message (msg);
+                if (send_message (msg,out error_msg) == -3) {
+                    TextIter titer;
+                    chat.get_buffer ().get_end_iter (out titer);
+                    chat.get_buffer ().insert_text (ref titer, error_msg, error_msg.length);
+                }
             }
             message.set_text("");
         }

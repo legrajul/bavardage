@@ -20,7 +20,7 @@ char *str_sub(const char *s, unsigned int start, unsigned int end);
  *	@param mess message envoyé au serveur
  *	@return 0 ou -1 en cas d'erreur
  */
-int send_message(const char *mess);
+int send_message(const char *mess, char **error_mess);
 
 /** creez un tableau a partir d'une chaine 
  *  @param une chaine de caractere
