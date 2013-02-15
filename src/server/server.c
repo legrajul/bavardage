@@ -206,12 +206,10 @@ void *handle_connexion(void *param) {
                             if (u == get_admin (l->current->name)) {
                                 delete_room (u, l->current->name);
                             } else {
-
                                 remove_user_from_room (u, l->current->name);
                                 quit_room (u, l->current->name);
                             }
                         }
-                        remove_user_from_room(u, home_room);
                         remove_user(u, server_user_map);
 
                     }
@@ -325,7 +323,6 @@ void *handle_connexion(void *param) {
                         quit_room (u, l->current->name);
                     }
                 }
-                remove_user_from_room(u, home_room);
                 remove_user(u, server_user_map);
 
             }
