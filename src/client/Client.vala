@@ -164,6 +164,9 @@ namespace Bavardage {
                     grid.attach (entry_room_name, 1, 0, 1, 1);
 
                     content.add (grid);
+
+                    entry_room_name.activate.connect ( () => {dialog.response (Gtk.ResponseType.ACCEPT);});
+
                     dialog.response.connect ((response_id) => {
                             if (response_id == Gtk.ResponseType.ACCEPT) {
                                 // demander à créer le salon
@@ -228,6 +231,9 @@ namespace Bavardage {
                     grid.attach (entry_room_name, 1, 0, 1, 1);
 
                     content.add (grid);
+
+                    entry_room_name.activate.connect ( () => {dialog.response (Gtk.ResponseType.ACCEPT);});
+                    
                     dialog.response.connect ((response_id) => {
                             if (response_id == Gtk.ResponseType.ACCEPT) {
                                 // demander à créer le salon
@@ -298,6 +304,11 @@ namespace Bavardage {
                     grid.attach (entry_login, 1, 2, 1, 1);
 
                     content.add (grid);
+
+                    entry_server_ip.activate.connect ( () => {dialog.response (Gtk.ResponseType.ACCEPT);});
+                    entry_server_port.activate.connect ( () => {dialog.response (Gtk.ResponseType.ACCEPT);});
+                    entry_login.activate.connect ( () => {dialog.response (Gtk.ResponseType.ACCEPT);});
+
                     dialog.response.connect ((response_id) => {
                             if (response_id == Gtk.ResponseType.CANCEL || response_id == Gtk.ResponseType.DELETE_EVENT) {
                                 dialog.hide_on_delete ();
@@ -398,6 +409,7 @@ namespace Bavardage {
                     quit_room_button.set_sensitive (is_connected);
                     join_room_button.set_sensitive (is_connected);
                     message.set_sensitive (is_connected);
+                    send_mp_button.set_sensitive (is_connected);
                 });
 
         }
