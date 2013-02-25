@@ -104,13 +104,18 @@ int len(char **tab) {
 }
 
 int send_command() {
+    if (client_sock == NULL) {
+        return -1;
+    }
     if (msg == NULL) {
         msg = (message*) malloc(sizeof(message));
     }
     if (login != NULL)
         strcpy(msg->sender, login);
+    else
+        return -1;
     if (writeSocketTCP(client_sock, (char *) msg, sizeof(message)) < 0) {
-	return (1);
+        return (1);
     }
 
     return 0;
@@ -153,17 +158,17 @@ int send_message(const char *mess, char **error_mess) {
 
         switch (code) {
         case CONNECT:   // Cas d'une demande de connexion
-	    tmp = strtok(NULL, " ");
-	    if (tmp != NULL) {
-		login = strdup(tmp);
-	    }
-	    if (login == NULL) {
-		printf("login null\n");
-		return -1;
-	    } else {
-		strcpy(msg->sender, login);
-		return send_command();
-	    }
+            tmp = strtok(NULL, " ");
+            if (tmp != NULL) {
+                login = strdup(tmp);
+            }
+            if (login == NULL) {
+                printf("login null\n");
+                return -1;
+            } else {
+                strcpy(msg->sender, login);
+                return send_command();
+            }
             break;
 
         case DISCONNECT:        // Cas d'une demande de déconnexion
@@ -176,9 +181,9 @@ int send_message(const char *mess, char **error_mess) {
             if (tmp != NULL) {
                 strcpy(msg->content, tmp);
             } else {
-		*error_mess = strdup ("CREATE_ROOM a besoin d'un paramètre\n");
-		return -3;
-	    }
+                *error_mess = strdup ("CREATE_ROOM a besoin d'un paramètre\n");
+                return -3;
+            }
             return send_command();
             break;
         case DELETE_ROOM:
@@ -186,9 +191,9 @@ int send_message(const char *mess, char **error_mess) {
             if (tmp != NULL) {
                 strcpy(msg->content, tmp);
             } else {
-		*error_mess = strdup ("DELETE_ROOM a besoin d'un paramètre\n");
-		return -3;
-	    }
+                *error_mess = strdup ("DELETE_ROOM a besoin d'un paramètre\n");
+                return -3;
+            }
             return send_command();
             break;
         case QUIT_ROOM:         // Cas d'une demande pour quitter une room
@@ -196,9 +201,9 @@ int send_message(const char *mess, char **error_mess) {
             if (tmp != NULL) {
                 strcpy(msg->content, tmp);
             } else {
-		*error_mess = strdup ("QUIT_ROOM a besoin d'un paramètre\n");
-		return -3;
-	    }
+                *error_mess = strdup ("QUIT_ROOM a besoin d'un paramètre\n");
+                return -3;
+            }
             strcpy(msg->sender, login);
             return send_command();
 
@@ -209,18 +214,18 @@ int send_message(const char *mess, char **error_mess) {
             if (tmp != NULL) {
                 strcpy(msg->content, tmp);
             } else {
-		*error_mess = strdup ("JOIN_ROOM a besoin d'un paramètre\n");
-		return -3;
-	    }
+                *error_mess = strdup ("JOIN_ROOM a besoin d'un paramètre\n");
+                return -3;
+            }
             return send_command();
             break;
 
         case MESSAGE:  // Cas d'envoi de message
             tab_string = create_table_param(buffer);
-	    if (len (tab_string) < 3) {
-		*error_mess = strdup ("MESSAGE doit avoir 2 paramètres : /MESSAGE salon mon super message\n");
-		return -3;
-	    }
+            if (len (tab_string) < 3) {
+                *error_mess = strdup ("MESSAGE doit avoir 2 paramètres : /MESSAGE salon mon super message\n");
+                return -3;
+            }
             strcpy(msg->receiver, tab_string[1]);
             for (i = 2; i < len(tab_string); i++) {
                 strcat(buff, tab_string[i]);
@@ -228,16 +233,16 @@ int send_message(const char *mess, char **error_mess) {
             }
 
             strcpy(msg->content, buff);
-	    free(tab_string);
+            free(tab_string);
             return send_command();
             break;
 
         case MP:  // Cas d'envoi de message prive
             tab_string = create_table_param(buffer);
-	    if (len (tab_string) < 3) {
-		*error_mess = strdup ("MP doit avoir 2 paramètres : /MP toto mon super message privé\n");
-		return -3;
-	    }
+            if (len (tab_string) < 3) {
+                *error_mess = strdup ("MP doit avoir 2 paramètres : /MP toto mon super message privé\n");
+                return -3;
+            }
             strcpy(msg->receiver, tab_string[1]);
             strcpy (buff, "");
             for (i = 2; i < len(tab_string); i++) {
@@ -254,9 +259,9 @@ int send_message(const char *mess, char **error_mess) {
 }
 
 int disconnect() {
-    if (client_sock != NULL) {
-	msg->code = DISCONNECT;
-	send_command ();
+    if (client_sock != NULL && msg != NULL) {
+        msg->code = DISCONNECT;
+        send_command ();
     }
     return 0;
 }
