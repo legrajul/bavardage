@@ -72,8 +72,9 @@ namespace Bavardage {
                 builder.connect_signals (this);
                 window = builder.get_object ("mainWindow") as Window;
                 connected_users = builder.get_object ("connected_users") as TreeView;
-                connected_users.set_model (new ListStore (1, typeof (string)));
-                connected_users.insert_column_with_attributes (-1, "Contacts connectés", new CellRendererText (), "text", 0);
+                connected_users.set_model (new ListStore (2, typeof (string), typeof (string)));
+                connected_users.insert_column_with_attributes (-1, "Contacts connectés", new CellRendererText (), "text", 0, null);
+                connected_users.insert_column_with_attributes (-1, null, new CellRendererText (), "text", 1, null);
                 open_rooms = builder.get_object ("open_rooms") as TreeView;
                 open_rooms.set_model (new ListStore (1, typeof (string)));
                 open_rooms.insert_column_with_attributes (-1, "Salons ouverts", new CellRendererText (), "text", 0);
@@ -130,7 +131,7 @@ namespace Bavardage {
                         Value v;
                         m.get_value (iter, 0, out v);
                         if (rooms_map_users != null) {
-                            var users_model = rooms_map_users.get ((string) v) as TreeModel;
+                            var users_model = rooms_map_users.get ((string) v) as ListStore;
                             connected_users.set_model (users_model);
                             var chat_model = rooms_map_chats.get ((string) v) as TextBuffer;
                             chat.set_buffer (chat_model);
@@ -263,7 +264,7 @@ namespace Bavardage {
                             rooms.append (out iter);
                             rooms.set (iter, 0, room_name, -1);
 
-                            rooms_map_users.set (room_name, new ListStore (1, typeof (string)));
+                            rooms_map_users.set (room_name, new ListStore (2, typeof (string), typeof (string)));
                             var buffer = new TextBuffer (new TextTagTable ());
                             buffer.create_tag ("blue", "foreground", "#0000FF", "underline", Pango.Underline.SINGLE);
                             rooms_map_chats.set (room_name, buffer);
@@ -485,7 +486,7 @@ namespace Bavardage {
                         rooms.append (out tree_iter);
                         rooms.set (tree_iter, 0, content.str, -1);
 
-                        rooms_map_users.set (content.str, new ListStore (1, typeof (string)));
+                        rooms_map_users.set (content.str, new ListStore (2, typeof (string), typeof (string)));
                         var buffer = new TextBuffer (new TextTagTable ());
                         buffer.create_tag ("blue", "foreground", "#0000FF", "underline", Pango.Underline.SINGLE);
                         rooms_map_chats.set (content.str, buffer);
@@ -549,7 +550,7 @@ namespace Bavardage {
                             chat.get_buffer ().set_modified (true);
                         }
                         break;
-
+                        
                     case MP:
                         string s = "[" + sender.str + "] " + content.str + "\n";
                         TextIter iter;
@@ -562,7 +563,7 @@ namespace Bavardage {
                             rooms.append (out tree_iter);
                             rooms.set (tree_iter, 0, room_name, -1);
 
-                            rooms_map_users.set (room_name, new ListStore (1, typeof (string)));
+                            rooms_map_users.set (room_name, new ListStore (2, typeof (string), typeof (string)));
                             var buffer = new TextBuffer (new TextTagTable ());
                             buffer.create_tag ("blue", "foreground", "#0000FF", "underline", Pango.Underline.SINGLE);
                             rooms_map_chats.set (room_name, buffer);
@@ -613,7 +614,7 @@ namespace Bavardage {
                         rooms_map_chats.get (room_name).insert_text (ref iter, s, s.length);
                         var users = rooms_map_users.get (content.str) as ListStore;
                         users.append (out tree_iter);
-                        users.set (tree_iter, 0, sender.str, -1);
+                        users.set (tree_iter, 0, sender.str, 1, "", -1);
                         if (chat.get_buffer () == rooms_map_chats.get (receiver.str)) {
                             chat.get_buffer ().get_iter_at_line (out iter, chat.get_buffer ().get_line_count ());
                             chat.scroll_to_iter (iter, 0.0, false, 0.0, 1.0);
@@ -623,7 +624,7 @@ namespace Bavardage {
                     case ADD_USER:
                         var users = rooms_map_users.get (content.str) as ListStore;
                         users.append (out tree_iter);
-                        users.set (tree_iter, 0, sender.str, -1);
+                        users.set (tree_iter, 0, sender.str, 1, "", -1);
                         break;
                     case RM_USER:
                         string s = sender.str + " vient de quitter le salon\n";
@@ -654,12 +655,18 @@ namespace Bavardage {
                         open_rooms.set_model (new ListStore (1, typeof (string)));
                         chat.set_buffer (new TextBuffer (new TextTagTable ()));
                         message.set_buffer (new EntryBuffer ("".data));
-                        connected_users.set_model (new ListStore (1, typeof (string)));
+                        connected_users.set_model (new ListStore (2, typeof (string), typeof (string)));
                         update_connected (false);
                         Thread.exit (null);
                         break;
                     case CONNECT:
                         update_connected (true);
+                        break;
+                    case ADMIN:
+                        var users = rooms_map_users.get (content.str) as ListStore;
+                        users.append (out tree_iter);
+                        users.set (tree_iter, 0, sender.str, 1, "(admin)", -1);
+                        break;
                         break;
                     default:
                         break;
@@ -676,7 +683,7 @@ namespace Bavardage {
             open_rooms.set_model (new ListStore (1, typeof (string)));
             chat.set_buffer (new TextBuffer (new TextTagTable ()));
             message.set_buffer (new EntryBuffer ("".data));
-            connected_users.set_model (new ListStore (1, typeof (string)));
+            connected_users.set_model (new ListStore (2, typeof (string), typeof (string)));
             update_connected (false);
             Thread.exit (null);
             return null;

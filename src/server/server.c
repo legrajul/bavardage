@@ -66,13 +66,22 @@ int join_room (user u, char *room_name) {
     writeSocketTCP (u->socket, (char *) &m, sizeof (message));
     add_user_in_room(u, room_name);
 
+    if (get_admin (room_name) != NULL) {
+	m.code = ADMIN;
+	strcpy(m.content, room_name);
+	strcpy (m.sender, get_admin (room_name)->name);
+	writeSocketTCP (u->socket, (char *) &m, sizeof (message));
+    }
+
     m.code = ADD_USER;
     strcpy(m.content, room_name);
     users = get_users(room_name);
     for (l = users; l != NULL; l = l->next) {
-        strcpy(m.sender, l->current_user->name);
-        writeSocketTCP(u->socket, (char *) &m,
-                       sizeof(message));
+	if (l->current_user != get_admin (room_name)) {
+	    strcpy(m.sender, l->current_user->name);
+	    writeSocketTCP(u->socket, (char *) &m,
+			   sizeof(message));
+	}
     }
     return 0;
 }
@@ -139,7 +148,12 @@ void *handle_connexion(void *param) {
                         strcpy (response.content, buffer.content);
                         writeSocketTCP (u->socket, (char *) &response, sizeof (message));
 
-                        response.code = ADD_USER;
+			response.code = ADMIN;
+			strcpy(response.content, buffer.content);
+			strcpy (response.sender, u->name);
+			writeSocketTCP (u->socket, (char *) &response, sizeof (message));
+			
+			response.code = OK;
                     }
                     break;
 

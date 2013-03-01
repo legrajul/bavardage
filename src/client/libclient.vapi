@@ -20,6 +20,7 @@ namespace Bavardage {
         public const int ADD_USER;
         public const int RM_USER;
         public const int NEW_USER;
+        public const int ADMIN;
     }
 
     
