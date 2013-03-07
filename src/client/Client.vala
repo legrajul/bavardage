@@ -427,13 +427,17 @@ namespace Bavardage {
                     chat.get_buffer ().get_end_iter (out end);
                     string buffer_text = chat.get_buffer ().get_text (start, end, true);
 
-                    int idx = s.last_index_of ("http://");
+                    int idx = s.last_index_of ("://");
                     if (idx == -1) {
                         iter.forward_chars (6);
                         s = chat.get_buffer ().get_text (start, iter, true);
-                        idx = s.last_index_of ("http://");
+                        idx = s.last_index_of ("://");
                     }
                     if (idx != -1 && !s.substring (idx, -1).contains (" ")) {
+                        while (buffer_text[idx] != ' ' && idx > 0) {
+                            idx--;
+                        }
+                        idx++;
                         StringBuilder url = new StringBuilder ("");
                         for (int i = idx; i < buffer_text.length; i++) {
                             if (buffer_text[i] == ' ' || buffer_text[i] == '\n') {
@@ -442,7 +446,11 @@ namespace Bavardage {
                                 url.append_c ((char) buffer_text[i]);
                             }
                         }
-                        Gtk.show_uri (null, url.str, Gdk.CURRENT_TIME);
+                        try {
+                            Gtk.show_uri (null, url.str, Gdk.CURRENT_TIME);
+                        } catch (GLib.Error e) {
+                            stderr.printf (e.message);
+                        }
                     }
                     return false;
                 });
@@ -523,12 +531,18 @@ namespace Bavardage {
                         rooms_map_chats.get (receiver.str).get_end_iter (out end);
                         rooms_map_chats.get (receiver.str).get_start_iter (out start);
                         string buffer_text = rooms_map_chats.get (receiver.str).get_text (start, end, true);
-                        if (buffer_text.contains ("http://")) {
-                            int idx = buffer_text.index_of ("http://");
+                        if (buffer_text.contains ("://")) {
+                            int idx = buffer_text.index_of ("://");
+                            
                             int old_idx = 0;
                             while (idx != -1) {
+                                while (idx > 0 && buffer_text[idx] != ' ') {
+                                    idx--;
+                                }
+                                idx++;
                                 StringBuilder url = new StringBuilder ("");
-                                for (int i = idx; i < buffer_text.length; i++) {
+                                int i = 0;
+                                for (i = idx; i < buffer_text.length; i++) {
                                     if (buffer_text[i] == ' ' || buffer_text[i] == '\n') {
                                         break;
                                     } else {
@@ -541,7 +555,7 @@ namespace Bavardage {
                                 rooms_map_chats.get (receiver.str).apply_tag_by_name ("blue", start, end);
 
                                 old_idx = idx;
-                                idx = buffer_text.index_of ("http://", idx + 1);
+                                idx = buffer_text.index_of ("://", i + 1);
                             }
                         }
                         if (chat.get_buffer () == rooms_map_chats.get (receiver.str)) {
@@ -578,12 +592,18 @@ namespace Bavardage {
                         rooms_map_chats.get (room_name).get_start_iter (out start);
                         rooms_map_chats.get (room_name).get_end_iter (out end);
                         string buffer_text = rooms_map_chats.get (room_name).get_text (start, end, true);
-                        if (buffer_text.contains ("http://")) {
-                            int idx = buffer_text.index_of ("http://");
+                        if (buffer_text.contains ("://")) {
+                            int idx = buffer_text.index_of ("://");
+                            
                             int old_idx = 0;
                             while (idx != -1) {
+                                while (idx > 0 && buffer_text[idx] != ' ') {
+                                    idx--;
+                                }
+                                idx++;
+                                int i = 0;
                                 StringBuilder url = new StringBuilder ("");
-                                for (int i = idx; i < buffer_text.length; i++) {
+                                for (i = idx; i < buffer_text.length; i++) {
                                     if (buffer_text[i] == ' ' || buffer_text[i] == '\n') {
                                         break;
                                     } else {
@@ -596,7 +616,7 @@ namespace Bavardage {
                                 rooms_map_chats.get (room_name).apply_tag_by_name ("blue", start, end);
 
                                 old_idx = idx;
-                                idx = buffer_text.index_of ("http://", idx + 1);
+                                idx = buffer_text.index_of ("://", i + 1);
                             }
                         }
 
@@ -666,7 +686,6 @@ namespace Bavardage {
                         var users = rooms_map_users.get (content.str) as ListStore;
                         users.append (out tree_iter);
                         users.set (tree_iter, 0, sender.str, 1, "(admin)", -1);
-                        break;
                         break;
                     default:
                         break;
