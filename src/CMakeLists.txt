@@ -16,4 +16,6 @@ set (PREFIX ${CMAKE_INSTALL_PREFIX})
 set (DOLLAR "$")
 
 add_subdirectory (server)
+add_subdirectory (serversec)
+
 add_subdirectory (client)

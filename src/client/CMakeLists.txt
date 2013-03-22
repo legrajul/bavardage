@@ -2,6 +2,10 @@
 set(libclient_SRCS ../common/SocketTCP.c libclient.c ../common/SocketTCP.h libclient.h)
 add_library(client STATIC ${libclient_SRCS})
 
+set(libclientsec_SRCS ../common/SocketTCP.c libclient.c libclientsec.c ../common/SocketTCP.h libclient.h)
+add_library(clientsec STATIC ${libclientsec_SRCS})
+
+
 # Partie client lignes de commandes
 set(CLIENT_CLI_FLAGS -w -pthread -std=c99)
 add_definitions(${CLIENT_CLI_FLAGS})
