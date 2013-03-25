@@ -1,6 +1,9 @@
 #ifndef _SECURE_SERVER_H
 #define _SECURE_SERVER_H
 
+#define CertFile "bavardateserversec_certif.pem"
+#define KeyFile "bavardateserversec.pem"
+
 /* OpenSSL headers */
 #include <openssl/ssl.h>
 #include <openssl/rsa.h>

@@ -1,5 +1,6 @@
-add_definitions(-Wall -std=c99 -pthread -lcrypto)
+add_definitions(-Wall -std=c99 -pthread -lssl)
 set(COMMON_FILES ../common/SocketTCP.c ../common/user_manager.c ../common/room_manager.c)
 find_package(Threads)
+FIND_PACKAGE(OpenSSL)
 add_executable(secure_server ${COMMON_FILES} secure_server.c)
-target_link_libraries(secure_server ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(secure_server ${CMAKE_THREAD_LIBS_INIT} ssl)

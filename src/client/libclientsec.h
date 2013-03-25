@@ -1,10 +1,15 @@
 #ifndef _LIBCLIENTSEC_H
 #define _LIBCLIENTSEC_H
 
+#define CertFile "toto_certif.pem"
+#define KeyFile "toto.pem"
+
 #include "libclient.h"
 
+#include "../common/SocketTCP.h"
+
 int connect_with_authentication (char *chatservaddr, int chatservport, char *login,
-				 char *secservaddr, int secservaddr);
+				 char *secservaddr, int secservport);
 
 int disconnect_servers ();
 

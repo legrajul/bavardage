@@ -9,9 +9,29 @@
 #include <sys/types.h>
 #include <sys/un.h>
 #include <signal.h>
+#include "openssl/ssl.h"
+#include <openssl/ssl2.h>
 
 SocketTCP *listen_socket;
 pthread_mutex_t mutex;
+
+SSL_METHOD *method;   /* create server instance */
+SSL_CTX *ctx;         /* create context */
+
+
+int setup_ctx () {
+    method = SSLv3_server_method();
+    ctx = SSL_CTX_new(method);
+    OpenSSL_add_all_algorithms();   /* load & register cryptos */
+    SSL_load_error_strings();
+    /* set the local certificate from CertFile */
+    SSL_CTX_use_certificate_file (ctx, CertFile, SSL_FILETYPE_PEM);
+    /* set the private key from KeyFile */
+    SSL_CTX_use_PrivateKey_file (ctx, KeyFile, SSL_FILETYPE_PEM);
+    /* verify private key */
+    if (!SSL_CTX_check_private_key(ctx))
+	abort();
+}
 
 void my_sigaction(int s) {
     switch (s) {
@@ -26,8 +46,16 @@ void my_sigaction(int s) {
 
 void *handle_connexion(void *param) {
     SocketTCP *s = (SocketTCP *) param;
+    SSL *ssl = SSL_new(ctx);  /* get new SSL state with context */
+    SSL_set_fd(ssl, s->socket);    /* set connection to SSL state */
+    SSL_accept(ssl);           /* start the handshaking */
     while (1) {
-
+        char *buf;
+        int ret = SSL_read (ssl, buf, sizeof (buf));
+        if (ret > 0) {
+            printf ("Message reçu = %s\n", buf);
+            break;
+        }
     }
 }
 

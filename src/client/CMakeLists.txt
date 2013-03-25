@@ -2,6 +2,7 @@
 set(libclient_SRCS ../common/SocketTCP.c libclient.c ../common/SocketTCP.h libclient.h)
 add_library(client STATIC ${libclient_SRCS})
 
+find_package(OpenSSL)
 set(libclientsec_SRCS ../common/SocketTCP.c libclient.c libclientsec.c ../common/SocketTCP.h libclient.h)
 add_library(clientsec STATIC ${libclientsec_SRCS})
 
