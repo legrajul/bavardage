@@ -22,20 +22,31 @@ SSL_CTX *ctx;         /* create context */
 
 
 int setup_ctx () {
+    printf ("BEGIN setup_ctx\n");
     method = SSLv3_client_method();
+    int i = 1;
+    printf ("debug %d\n", i++);
     ctx = SSL_CTX_new(method);
-    OpenSSL_add_all_algorithms();   /* load & register cryptos */
+    printf ("debug %d\n", i++);
+    SSL_library_init ();
+    printf ("debug %d\n", i++);
     SSL_load_error_strings();
+    printf ("debug %d\n", i++);
     /* set the local certificate from CertFile */
     SSL_CTX_use_certificate_file (ctx, CertFile, SSL_FILETYPE_PEM);
+    printf ("debug %d\n", i++);
     /* set the private key from KeyFile */
     SSL_CTX_use_PrivateKey_file (ctx, KeyFile, SSL_FILETYPE_PEM);
+    printf ("debug %d\n", i++);
     /* verify private key */
-    if (!SSL_CTX_check_private_key(ctx))
-	abort();
+    /* if (!SSL_CTX_check_private_key(ctx)) */
+        /* abort(); */
+
+    printf ("END setup_ctx\n");
 }
 
 int connect_secure_socket(const char *addr, const int port) {
+    printf ("BEGIN connect_secure_socket\n");
     int co;
     if ((secure_socket = creerSocketTCP()) == NULL) {
         return -1;
@@ -48,11 +59,13 @@ int connect_secure_socket(const char *addr, const int port) {
     printf("You can now send commands and messages\n");
     //(void) signal(SIGINT, my_sigaction);
 
+    printf ("END connect_secure_socket\n");
     return 0;
 }
 
 int connect_with_authentication (char *chatservaddr, int chatservport, char *login,
                                  char *secservaddr, int secservport) {
+    printf ("BEGIN connect_with_authentication\n");
     connect_socket (chatservaddr, chatservport);
     connect_secure_socket (secservaddr, secservport);
 
@@ -61,6 +74,8 @@ int connect_with_authentication (char *chatservaddr, int chatservport, char *log
     SSL_accept(ssl);           /* start the handshaking */
 
     SSL_write (ssl, "test", 5);
+
+    printf ("END connect_secure_socket\n");
 }
 
 int disconnect_servers () {
