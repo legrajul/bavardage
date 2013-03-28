@@ -1,11 +1,20 @@
-# Partie libclient.so
+# Partie libclient.a
 set(libclient_SRCS ../common/SocketTCP.c libclient.c ../common/SocketTCP.h libclient.h)
 add_library(client STATIC ${libclient_SRCS})
 
+# Partie libclientsec.a
 find_package(OpenSSL)
-set(libclientsec_SRCS ../common/SocketTCP.c libclient.c libclientsec.c ../common/SocketTCP.h libclient.h)
+set(libclientsec_SRCS ../common/SocketTCP.c libclient.c ../common/commonsec.c libclientsec.c ../common/SocketTCP.h libclient.h)
 add_library(clientsec STATIC ${libclientsec_SRCS})
 
+
+# Partie client sécurisé (TEST)
+set(CLIENTSEC_CLI_FLAGS -w -pthread -std=c99)
+add_definitions(${CLIENTSEC_CLI_FLAGS})
+set(client_cli_sec_SRCS clientsectest.c)
+find_package(Threads)
+add_executable(clientsectest ${client_cli_sec_SRCS})
+target_link_libraries(clientsectest ${CMAKE_THREAD_LIBS_INIT} client clientsec ssl)
 
 # Partie client lignes de commandes
 set(CLIENT_CLI_FLAGS -w -pthread -std=c99)
@@ -15,6 +24,10 @@ find_package(Threads)
 add_executable(client-cli ${client_cli_SRCS})
 target_link_libraries(client-cli ${CMAKE_THREAD_LIBS_INIT} client)
 
+
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+# rien
+ELSE(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 # Partie Client graphique
 find_package(Vala REQUIRED)
 include(ValaVersion)
@@ -48,3 +61,5 @@ target_link_libraries(Client ${DEPS_LIBRARIES} client)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/interface.ui DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 install(TARGETS Client RUNTIME DESTINATION bin)
+
+ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")

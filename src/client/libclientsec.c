@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "libclientsec.h"
+#include "../common/commonsec.h"
 
 char *private_key_filename;
 char *certif_request_filename;
@@ -17,30 +18,12 @@ SocketTCP *secure_socket;
 
 int is_connected = 0;
 
-SSL_METHOD *method;   /* create server instance */
-SSL_CTX *ctx;         /* create context */
-
+SSL_CTX *ctx;
+SSL *ssl;
+BIO *sbio;
 
 int setup_ctx () {
     printf ("BEGIN setup_ctx\n");
-    method = SSLv3_client_method();
-    int i = 1;
-    printf ("debug %d\n", i++);
-    ctx = SSL_CTX_new(method);
-    printf ("debug %d\n", i++);
-    SSL_library_init ();
-    printf ("debug %d\n", i++);
-    SSL_load_error_strings();
-    printf ("debug %d\n", i++);
-    /* set the local certificate from CertFile */
-    SSL_CTX_use_certificate_file (ctx, CertFile, SSL_FILETYPE_PEM);
-    printf ("debug %d\n", i++);
-    /* set the private key from KeyFile */
-    SSL_CTX_use_PrivateKey_file (ctx, KeyFile, SSL_FILETYPE_PEM);
-    printf ("debug %d\n", i++);
-    /* verify private key */
-    /* if (!SSL_CTX_check_private_key(ctx)) */
-        /* abort(); */
 
     printf ("END setup_ctx\n");
 }
@@ -54,10 +37,27 @@ int connect_secure_socket(const char *addr, const int port) {
     printf("Please wait for connecting the server...\n");
     if ((co = connectSocketTCP(secure_socket, addr, port)) == -1) {
         return -1;
-    }
+    }    
+
+    ctx = initialize_ctx (CertFile, KeyFile, "toto");
+
+    ssl = SSL_new(ctx);
+    sbio = BIO_new_socket(secure_socket->socket, BIO_NOCLOSE);
+    SSL_set_bio(ssl, sbio, sbio);
+
+    if(SSL_connect(ssl)<=0)
+      berr_exit("SSL connect error");
 
     printf("You can now send commands and messages\n");
     //(void) signal(SIGINT, my_sigaction);
+
+
+    //TODO ceci est du code de test
+
+    int ssl_bytes_written = SSL_write (ssl, "salut", 5);
+    printf ("SSL_bytes_written = %d\n", ssl_bytes_written);
+
+    SSL_write (ssl, "salut", 5);
 
     printf ("END connect_secure_socket\n");
     return 0;
@@ -68,12 +68,6 @@ int connect_with_authentication (char *chatservaddr, int chatservport, char *log
     printf ("BEGIN connect_with_authentication\n");
     connect_socket (chatservaddr, chatservport);
     connect_secure_socket (secservaddr, secservport);
-
-    SSL *ssl = SSL_new(ctx);  /* get new SSL state with context */
-    SSL_set_fd(ssl, secure_socket->socket);    /* set connection to SSL state */
-    SSL_accept(ssl);           /* start the handshaking */
-
-    SSL_write (ssl, "test", 5);
 
     printf ("END connect_secure_socket\n");
 }

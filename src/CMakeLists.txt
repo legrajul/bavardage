@@ -15,6 +15,13 @@ set (CMAKE_C_FLAGS "-ggdb")
 set (PREFIX ${CMAKE_INSTALL_PREFIX})
 set (DOLLAR "$")
 
+
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+# Mac OS X specific code
+SET(OperatingSystem "Mac OS X")
+ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+
+
 add_subdirectory (server)
 add_subdirectory (serversec)
 
