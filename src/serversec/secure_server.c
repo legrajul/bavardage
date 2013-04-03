@@ -1,6 +1,11 @@
 #include "secure_server.h"
+#include "structures.h"
+#include "../common/common.h"
 #include "../common/SocketTCP.h"
 #include "../common/commonsec.h"
+#include "../common_server/mysqlite.h"
+
+
 
 #include <pthread.h>
 #include <stdio.h>
@@ -20,12 +25,6 @@ SSL_CTX *ctx;
 SSL *ssl;
 BIO *sbio;
 
-int setup_ctx () {
-    printf ("BEGIN setup_ctx\n");
-
-    printf ("END setup_ctx\n");
-}
-
 void my_sigaction(int s) {
     switch (s) {
     case SIGINT:
@@ -44,36 +43,71 @@ void *handle_connexion(void *param) {
     client_ssl = SSL_new(ctx);              /* get new SSL state with context */
     SSL_set_fd(client_ssl, s->socket);      /* set connection socket to SSL state */
 
-    char buf[1024], reply[1024];
+    message buffer, response;
     int bytes = 0;
-    if ( SSL_accept(client_ssl) <= 0) {     /* do SSL-protocol accept */
+    user_sec u;
+    if (SSL_accept(client_ssl) <= 0) {     /* do SSL-protocol accept */
         ERR_print_errors_fp(stderr);
     } else {
+        while (1) {
+            // TODO attention code de test
+            bytes = SSL_read(client_ssl, (void *) &buffer, sizeof(message)); /* get request */
+            printf ("SSL_read : %d bytes\n", bytes);
+            if (bytes > 0) {
 
-	// TODO attention code de test
-        bytes = SSL_read(client_ssl, buf, sizeof(buf)); /* get request */
-	printf ("SSL_read : %d bytes\n", bytes);
-        if ( bytes > 0 ) {
-            buf[bytes] = 0;
-            printf("Client msg: \"%s\"\n", buf);
-	    sprintf (reply, "bonjour %s", buf);
-            SSL_write(ssl, reply, strlen(reply)); /* send reply */
-        } else {
-            ERR_print_errors_fp(stderr);
-	}
+                pthread_mutex_lock(&mutex);
+                switch (buffer.code) {
+                case CREATE_ROOM:
+                    //TODO
+                    break;
+
+                case JOIN_ROOM:
+                    //TODO
+                    break;
+
+                case QUIT_ROOM:
+                    //TODO
+                    break;
+
+                case DELETE_ROOM:
+                    //TODO
+                    break;
+
+                case DISCONNECT:
+                    printf("Disconnection\n");
+                    response.code = DISCONNECT;
+                    SSL_write(client_ssl, &response, sizeof(message));
+                    pthread_mutex_unlock(&mutex);
+                    closeSocketTCP(s);
+                    pthread_exit(0);
+                    break;
+
+                case CONNECT:
+                    if (check_user (buffer.sender) == -1) {
+                        response.code = KO;
+                        strcpy (response.content, "Cannot join the server with this login");
+                    } else {
+                        add_user (buffer.sender);
+                        printf("successful connection : %s\n",
+                               buffer.sender);
+                        response.code = CONNECT;
+
+                        u = (user_sec) malloc(sizeof(struct USER_SEC));
+                        strcpy(u->name, buffer.sender);
+                        u->ssl = client_ssl;
+                    }
+
+                    break;
+                }
+                SSL_write(ssl, &response, sizeof (message)); /* send reply */
+            } else {
+                ERR_print_errors_fp(stderr);
+            }
+        }
     }
 
-    int sd = SSL_get_fd(client_ssl);       /* get socket connection */
-    /* while (1) { */
-        /* char *buf; */
-        /* int ret = SSL_read (ssl, buf, sizeof (buf)); */
-        /* if (ret > 0) { */
-            /* printf ("Message reçu = %s\n", buf); */
-            /* break; */
-        /* } */
-    /* } */
-
     printf ("END handle_connexion\n");
+    return -1;
 }
 
 void new_thread(SocketTCP *socket) {
@@ -131,7 +165,7 @@ int start_listening(const char *addr, int port) {
 }
 
 int main(int argc, char *argv[]) {
-    setup_ctx ();
+    connect_server_database ("secureserver.db");
     if (argc < 3) {
         fprintf(stderr, "Usage: ./server ip port\n");
         exit(EXIT_FAILURE);

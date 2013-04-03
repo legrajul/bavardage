@@ -8,6 +8,9 @@
 #include <string.h>
 
 #include "libclientsec.h"
+#include "libclient.h"
+
+#include "../common/common.h"
 #include "../common/commonsec.h"
 
 char *private_key_filename;
@@ -22,13 +25,23 @@ SSL_CTX *ctx;
 SSL *ssl;
 BIO *sbio;
 
-int setup_ctx () {
-    printf ("BEGIN setup_ctx\n");
+message *msg;
 
-    printf ("END setup_ctx\n");
+extern char *login, **tab_string;
+
+int set_certif_filename (const char *certif_f) {
+    certif_filename = strdup (certif_f);
 }
 
-int connect_secure_socket(const char *addr, const int port) {
+int set_certif_request_filename (const char *certif_req_f) {
+    certif_request_filename = strdup (certif_req_f);
+}
+
+int set_private_key_filename (const char *private_key_f) {
+    private_key_filename = strdup (private_key_f);
+}
+
+int connect_secure_socket(const char *addr, const int port, const char *password) {
     printf ("BEGIN connect_secure_socket\n");
     int co;
     if ((secure_socket = creerSocketTCP()) == NULL) {
@@ -39,7 +52,7 @@ int connect_secure_socket(const char *addr, const int port) {
         return -1;
     }    
 
-    ctx = initialize_ctx (CertFile, KeyFile, "toto");
+    ctx = initialize_ctx (certif_filename, private_key_filename, password);
 
     ssl = SSL_new(ctx);
     sbio = BIO_new_socket(secure_socket->socket, BIO_NOCLOSE);
@@ -67,7 +80,7 @@ int connect_with_authentication (char *chatservaddr, int chatservport, char *log
                                  char *secservaddr, int secservport) {
     printf ("BEGIN connect_with_authentication\n");
     connect_socket (chatservaddr, chatservport);
-    connect_secure_socket (secservaddr, secservport);
+    connect_secure_socket (secservaddr, secservport, "toto");
 
     printf ("END connect_secure_socket\n");
 }
@@ -87,4 +100,131 @@ int generate_certificate_request (char *common_name, char *locality, char *count
 
 int get_certificate (char *pkiaddr) {
     //TODO
+}
+
+
+int extract_code_sec(const char *str) {
+    char *command = NULL;
+    command = str_sub(str, 1, strlen(str));
+
+    if (strcmp(command, "CREATE_ROOM_SEC") == 0) {
+        return CREATE_ROOM_SEC;
+    } else if (strcmp(command, "DELETE_ROOM_SEC") == 0) {
+        return DELETE_ROOM_SEC;
+    } else if (strcmp(command, "DISCONNECT_SEC") == 0) {
+        return DISCONNECT_SEC;
+    } else if (strcmp(command, "CONNECT_SEC") == 0) {
+        return CONNECT_SEC;
+    } else if (strcmp(command, "QUIT_ROOM_SEC") == 0) {
+        return QUIT_ROOM_SEC;
+    } else if (strcmp(command, "JOIN_ROOM_SEC") == 0) {
+        return JOIN_ROOM_SEC;
+    }
+
+    return -1;
+}
+
+int send_command_sec () {
+    if (secure_socket == NULL) {
+        return -1;
+    }
+    if (msg == NULL) {
+        msg = (message*) malloc(sizeof(message));
+    }
+    if (login != NULL)
+        strcpy(msg->sender, login);
+    else
+        return -1;
+    if (SSL_write(ssl, (char *) msg, sizeof(message)) < 0) {
+        return (1);
+    }
+
+    return 0;
+}
+
+
+int send_message_sec (const char *mess, char **error_mess) {
+    int code;
+    char buffer[20 + MAX_NAME_SIZE + MAX_MESS_SIZE] = "";
+    strcpy(buffer, mess);
+    buffer[strlen(buffer)] = '\0';
+
+    msg = (message*) malloc(sizeof(message));
+
+    if (mess[0] == '/') {
+        code = extract_code_sec(strtok(strdup(buffer), " "));
+        if (code == -1) {
+            return -2;
+        }
+        msg->code = code;
+        char *tmp, buff[MAX_MESS_SIZE] = "";
+        int i;
+
+        switch (code) {
+        case CONNECT_SEC:   // Cas d'une demande de connexion
+            tmp = strtok(NULL, " ");
+            if (tmp != NULL) {
+                login = strdup(tmp);
+            }
+            if (login == NULL) {
+                printf("login null\n");
+                return -1;
+            } else {
+                strcpy(msg->sender, login);
+                return send_command_sec();
+            }
+            break;
+
+        case DISCONNECT_SEC:        // Cas d'une demande de déconnexion
+            strcpy(msg->sender, login);
+            // disconnect();
+            break;
+
+        case CREATE_ROOM_SEC:       // Cas d'une demande de création de Salon
+            tmp = strtok(NULL, " ");
+            if (tmp != NULL) {
+                strcpy(msg->content, tmp);
+            } else {
+                *error_mess = strdup ("CREATE_ROOM a besoin d'un paramètre\n");
+                return -3;
+            }
+            return send_command_sec();
+            break;
+        case DELETE_ROOM_SEC:
+            tmp = strtok(NULL, " ");
+            if (tmp != NULL) {
+                strcpy(msg->content, tmp);
+            } else {
+                *error_mess = strdup ("DELETE_ROOM a besoin d'un paramètre\n");
+                return -3;
+            }
+            return send_command_sec();
+            break;
+        case QUIT_ROOM_SEC:         // Cas d'une demande pour quitter une room
+            tmp = strtok(NULL, " ");
+            if (tmp != NULL) {
+                strcpy(msg->content, tmp);
+            } else {
+                *error_mess = strdup ("QUIT_ROOM a besoin d'un paramètre\n");
+                return -3;
+            }
+            strcpy(msg->sender, login);
+            return send_command_sec();
+
+            break;
+
+        case JOIN_ROOM_SEC:
+            tmp = strtok(NULL, " ");
+            if (tmp != NULL) {
+                strcpy(msg->content, tmp);
+            } else {
+                *error_mess = strdup ("JOIN_ROOM a besoin d'un paramètre\n");
+                return -3;
+            }
+            return send_command_sec();
+            break;
+
+        }
+    }
+    return 0;
 }

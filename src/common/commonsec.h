@@ -16,6 +16,13 @@
 
 #include <openssl/ssl.h>
 
+#define CREATE_ROOM_SEC     1
+#define DELETE_ROOM_SEC     2
+#define QUIT_ROOM_SEC 	3
+#define JOIN_ROOM_SEC	4
+#define DISCONNECT_SEC	5
+#define CONNECT_SEC		6
+
 #define BUFSIZZ 1024
 
 extern BIO *bio_err;

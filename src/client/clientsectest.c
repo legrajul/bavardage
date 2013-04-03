@@ -7,5 +7,6 @@
 #define SECPORT  11000
 
 int main (int argc, char *argv[]) {
-    connect_with_authentication (CHATADDR, CHATPORT, "toto", SECADDR, SECPORT);
+    connect_with_authentication (CHATADDR, CHATPORT, argv[1], SECADDR, SECPORT);
+    return 0;
 }

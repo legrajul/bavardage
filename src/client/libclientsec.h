@@ -20,4 +20,6 @@ int generate_certificate_request (char *common_name, char *locality, char *count
 
 int get_certificate (char *pkiaddr);
 
+int send_message_sec (const char *mess, char **error_mess);
+
 #endif
