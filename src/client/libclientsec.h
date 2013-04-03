@@ -22,4 +22,8 @@ int get_certificate (char *pkiaddr);
 
 int send_message_sec (const char *mess, char **error_mess);
 
+int set_certif_filename (const char *f);
+
+int set_private_key_filename (const char *f);
+
 #endif

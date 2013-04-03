@@ -58,6 +58,8 @@ int connect_secure_socket(const char *addr, const int port, const char *password
     sbio = BIO_new_socket(secure_socket->socket, BIO_NOCLOSE);
     SSL_set_bio(ssl, sbio, sbio);
 
+    SSL_check_private_key (ssl);
+
     if(SSL_connect(ssl)<=0)
       berr_exit("SSL connect error");
 
@@ -228,3 +230,5 @@ int send_message_sec (const char *mess, char **error_mess) {
     }
     return 0;
 }
+
+
