@@ -22,19 +22,8 @@ int connect_server_database(const char *fileDb) {
         return -1;
     }
 
-    //Suppression des utilisateurs dans la base de donnÃ©es
-    char delete[QUERY_SIZE] = "";
-    sprintf (delete, "DELETE FROM  users");
-
-    int sql = sqlite3_exec(database, delete, 0, 0, 0);
-    if (sql != SQLITE_OK) {
-        perror("Deleting users in server database failed\n");
-        return -1;
-    }
-    printf("Deleting users in server database...\n");
-
     // creation de la table users
-    char create_table[QUERY_SIZE] = "CREATE TABLE IF NOT EXISTS users (login VARCHAR(20) unique, is_connected boolean)";
+    char create_table[QUERY_SIZE] = "CREATE TABLE IF NOT EXISTS users (login VARCHAR(20) unique, is_connected INTEGER)";
     int sq = sqlite3_exec(database, create_table, 0, 0, 0);
     if (sq != SQLITE_OK) {
         perror("Can't create table users\n");
@@ -55,10 +44,10 @@ int close_server_database() {
 
 /** ajoute un user dans la base **/
 int add_user(char *login) {
-
+  printf("BEGIN ADD_USER with login %s\n", login);
     // creation de la requete insertion
     char insert[QUERY_SIZE] = "";
-    sprintf (insert, "INSERT INTO users values (\'%s, true\')", login);
+    sprintf (insert, "INSERT INTO users values (\'%s\', 1)", login);
 
     int sql = sqlite3_exec(database, insert, 0, 0, 0);
     if (sql != SQLITE_OK) {
@@ -84,7 +73,7 @@ int delete_user (char *login) {
     } else {
         printf("User delete succesfully\n");
     }
-
+  printf("END ADD_USER with login %s\n", login);
     return 1;
 }
 
@@ -120,4 +109,31 @@ int check_user(char *login) {
             return -1;
         }
     }
+}
+
+/* determine si un user est connecte ou non */
+int is_connected (char *login) {
+  check_user(login);
+  
+  char is_connect[QUERY_SIZE] = "";
+  sprintf (is_connect, "SELECT FROM users values (\'%s\') where is_connected = 1", login);
+
+   int sq = sqlite3_exec(database, is_connect, 0, 0, 0);
+   if (sq != SQLITE_OK) {
+       perror("Can't verifie the connection status\n");
+       return -1;
+   }
+    return 1;
+}
+
+/* change le status d'un utilisateur */
+int change_status(char *login) {
+  char ch[QUERY_SIZE] = "";
+  sprintf (ch, "UPDATE users set is_connected = 0 where login = \'%s\'", login);
+  int sq = sqlite3_exec(database, ch, 0, 0, 0);
+  if (sq != SQLITE_OK) {
+    perror("can't change status\n");
+    return -1;
+  }
+  return 1;
 }

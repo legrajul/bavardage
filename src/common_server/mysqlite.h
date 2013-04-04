@@ -37,4 +37,17 @@
  */  
   int close_server_database();
 
+/** 
+ * verifie si un utilisateur est bien connecte
+ * @param login
+ * @return -1 si l'utilisateur  n'est pas connecte, 1 sinon
+ */
+int is_connected(char *login);
+
+/**
+ * change le status de connection d'un utilisateur
+ * @param login
+ * @return 1 si le changement s'est bien passe, -1 sinon
+ */
+int change_status(char *login);
 #endif

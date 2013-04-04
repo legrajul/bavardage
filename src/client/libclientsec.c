@@ -66,14 +66,6 @@ int connect_secure_socket(const char *addr, const int port, const char *password
     printf("You can now send commands and messages\n");
     //(void) signal(SIGINT, my_sigaction);
 
-
-    //TODO ceci est du code de test
-
-    int ssl_bytes_written = SSL_write (ssl, "salut", 5);
-    printf ("SSL_bytes_written = %d\n", ssl_bytes_written);
-
-    SSL_write (ssl, "salut", 5);
-
     printf ("END connect_secure_socket\n");
     return 0;
 }

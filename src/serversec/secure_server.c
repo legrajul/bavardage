@@ -5,8 +5,6 @@
 #include "../common/commonsec.h"
 #include "../common_server/mysqlite.h"
 
-
-
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
@@ -49,31 +47,34 @@ void *handle_connexion(void *param) {
     if (SSL_accept(client_ssl) <= 0) {     /* do SSL-protocol accept */
         ERR_print_errors_fp(stderr);
     } else {
+       printf ("Before while\n");
         while (1) {
             // TODO attention code de test
             bytes = SSL_read(client_ssl, (void *) &buffer, sizeof(message)); /* get request */
-            printf ("SSL_read : %d bytes\n", bytes);
+	    //            printf ("SSL_read : %d bytes\n", bytes);
             if (bytes > 0) {
-
-                pthread_mutex_lock(&mutex);
+	      printf ("SSL_read : %d bytes\n", bytes);
+	      printf ("Before ssl_mutex: buffer.content: %s\n",buffer.sender);
+                //pthread_mutex_lock(&mutex);
+		printf ("After ssl_mutex\n");
                 switch (buffer.code) {
-                case CREATE_ROOM:
+                case CREATE_ROOM_SEC:
                     //TODO
                     break;
 
-                case JOIN_ROOM:
+                case JOIN_ROOM_SEC:
                     //TODO
                     break;
 
-                case QUIT_ROOM:
+                case QUIT_ROOM_SEC:
                     //TODO
                     break;
 
-                case DELETE_ROOM:
+                case DELETE_ROOM_SEC:
                     //TODO
                     break;
 
-                case DISCONNECT:
+                case DISCONNECT_SEC:
                     printf("Disconnection\n");
                     response.code = DISCONNECT;
                     SSL_write(client_ssl, &response, sizeof(message));
@@ -82,24 +83,40 @@ void *handle_connexion(void *param) {
                     pthread_exit(0);
                     break;
 
-                case CONNECT:
-                    if (check_user (buffer.sender) == -1) {
+                case CONNECT_SEC:
+		  printf("BEGIN connect_sec\n");
+  		    /* verification de l'utlisateur dans la base de donnees */
+		    if (check_user (buffer.sender) == -1) {
                         response.code = KO;
                         strcpy (response.content, "Cannot join the server with this login");
                     } else {
-                        add_user (buffer.sender);
-                        printf("successful connection : %s\n",
-                               buffer.sender);
-                        response.code = CONNECT;
+		      /* cas ou l'utilisateur est connecte et dans la base */
+		      if (is_connected (buffer.sender) == 1) {
+			response.code = KO;
+			strcpy (response.content, "you are already connected!\n");
+		      }
+		      
+		      /* cas ou l'utilisateur est non connecté et dans la base */
+		      if (is_connected (buffer.sender) ==  -1) {
+			change_status(buffer.sender);
+			printf("successful connection : %s\n", buffer.sender);
+			response.code = CONNECT_SEC;
+		      }
 
+		      /* cas d'un nouvel utilisateur */
+		      if (is_connected (buffer.sender) != 1) {
+		        add_user (buffer.sender);
+			printf("successful connection : %s\n", buffer.sender);
+			response.code = CONNECT_SEC;
                         u = (user_sec) malloc(sizeof(struct USER_SEC));
                         strcpy(u->name, buffer.sender);
                         u->ssl = client_ssl;
-                    }
-
-                    break;
+		      }
+		      break;
+		    }
+		    //break;
                 }
-                SSL_write(ssl, &response, sizeof (message)); /* send reply */
+                SSL_write(client_ssl, &response, sizeof (message)); /* send reply */
             } else {
                 ERR_print_errors_fp(stderr);
             }
