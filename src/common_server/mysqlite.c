@@ -47,7 +47,7 @@ int add_user(char *login) {
   printf("BEGIN ADD_USER with login %s\n", login);
     // creation de la requete insertion
     char insert[QUERY_SIZE] = "";
-    sprintf (insert, "INSERT INTO users values (\'%s\', 1)", login);
+    sprintf (insert, "INSERT INTO users values (\'%s\', 0)", login);
 
     int sql = sqlite3_exec(database, insert, 0, 0, 0);
     if (sql != SQLITE_OK) {
@@ -129,7 +129,7 @@ int is_connected (char *login) {
 /* change le status d'un utilisateur */
 int change_status(char *login) {
   char ch[QUERY_SIZE] = "";
-  sprintf (ch, "UPDATE users set is_connected = 0 where login = \'%s\'", login);
+  sprintf (ch, "UPDATE users set is_connected = not is_connected where login = \'%s\'", login);
   int sq = sqlite3_exec(database, ch, 0, 0, 0);
   if (sq != SQLITE_OK) {
     perror("can't change status\n");

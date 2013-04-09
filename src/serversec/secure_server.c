@@ -80,46 +80,45 @@ void *handle_connexion(void *param) {
                     SSL_write(client_ssl, &response, sizeof(message));
                     pthread_mutex_unlock(&mutex);
                     closeSocketTCP(s);
+                    change_status (buffer.sender);
                     pthread_exit(0);
                     break;
 
                 case CONNECT_SEC:
-		  printf("BEGIN connect_sec\n");
-  		    /* verification de l'utlisateur dans la base de donnees */
-		    if (check_user (buffer.sender) == -1) {
+		          printf("BEGIN connect_sec\n");
+                  int status = is_connected (buffer.sender);
+                  switch (status) {
+                    case 1:
                         response.code = KO;
-                        strcpy (response.content, "Cannot join the server with this login");
-                    } else {
-		      /* cas ou l'utilisateur est connecte et dans la base */
-		      if (is_connected (buffer.sender) == 1) {
-			response.code = KO;
-			strcpy (response.content, "you are already connected!\n");
-		      }
-		      
-		      /* cas ou l'utilisateur est non connecté et dans la base */
-		      if (is_connected (buffer.sender) ==  -1) {
-			change_status(buffer.sender);
-			printf("successful connection : %s\n", buffer.sender);
-			response.code = CONNECT_SEC;
-		      }
-
-		      /* cas d'un nouvel utilisateur */
-		      if (is_connected (buffer.sender) != 1) {
-		        add_user (buffer.sender);
-			printf("successful connection : %s\n", buffer.sender);
-			response.code = CONNECT_SEC;
+                        strcpy (response.content, "you are already connected!\n");
+                        printf("You are already connected\n");
+                        break;
+                    case -1:
+                        if (check_user(buffer.sender) == 1) {
+                            add_user (buffer.sender);
+                        }
+                        change_status(buffer.sender);
+                        printf("successful connection : %s\n", buffer.sender);
                         u = (user_sec) malloc(sizeof(struct USER_SEC));
                         strcpy(u->name, buffer.sender);
                         u->ssl = client_ssl;
-		      }
+                        response.code = CONNECT_SEC;
+                        break;
+                    default:
+                        // pas possible
+                        break;
+                  }
 		      break;
-		    }
-		    //break;
                 }
                 SSL_write(client_ssl, &response, sizeof (message)); /* send reply */
-            } else {
+            } else if (bytes <= 0) {
+                change_status(buffer.sender);
                 ERR_print_errors_fp(stderr);
-            }
+                printf ("Error: the connection with the client just stopped (ServerSec)\n");
+                pthread_mutex_unlock(&mutex);
+                closeSocketTCP(s);
+                pthread_exit(0);
+            } 
         }
     }
 
