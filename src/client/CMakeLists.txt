@@ -34,6 +34,7 @@ include(ValaVersion)
 ensure_vala_version("0.18.0" MINIMUM)
 include(ValaPrecompile)
 vala_precompile(VALA_C 
+  Widgets/ConnectionDialog.vala
   Client.vala
 PACKAGES
   gtk+-3.0
@@ -44,6 +45,7 @@ OPTIONS
   --target-glib=2.32
 CUSTOM_VAPIS
   libclient.vapi
+  libclientsec.vapi
 )
 
 find_package(PkgConfig)
@@ -57,7 +59,7 @@ remove_definitions(${CLIENT_CLI_FLAGS})
 add_definitions(${CFLAGS})
 
 add_executable(Client ${VALA_C})
-target_link_libraries(Client ${DEPS_LIBRARIES} client gthread-2.0)
+target_link_libraries(Client ${DEPS_LIBRARIES} client clientsec gthread-2.0)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/interface.ui DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 install(TARGETS Client RUNTIME DESTINATION bin)

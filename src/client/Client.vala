@@ -36,9 +36,10 @@ namespace Bavardage {
         private Gtk.MenuItem quit_item;
         private Gtk.MenuItem about_item;
         private Statusbar statusbar;
-        private Thread<void *> thread_receive;
+        private Bavardage.Widgets.ConnectionDialog conn_dial;
+        public Thread<void *> thread_receive;
 
-        private signal void update_connected (bool is_connected);
+        private signal void update_connected (bool is_connected, string login);
 
         /*
          * Constructeur d'un client
@@ -53,7 +54,7 @@ namespace Bavardage {
 
                 setup_ui (cl);
                 connect_signals ();
-                update_connected (false);
+                update_connected (false, "");
                 window.show_all ();
                 connect_item.activate ();
             } catch (Error e) {
@@ -94,6 +95,8 @@ namespace Bavardage {
                 statusbar = builder.get_object ("statusbar") as Statusbar;
                 statusbar.push (statusbar.get_context_id ("status"), "Déconnecté");
                 window.set_application (this);
+
+                conn_dial = new Bavardage.Widgets.ConnectionDialog (window, this);
 
             } catch (Error e) {
                 stderr.printf ("Could not load UI: %s\n", e.message);
@@ -287,87 +290,14 @@ namespace Bavardage {
 
             // On clique sur Fichier > Connexion
             connect_item.activate.connect ( () => {
-                    var dialog = new Dialog.with_buttons ("Connexion", window, DialogFlags.MODAL | DialogFlags.DESTROY_WITH_PARENT, Gtk.Stock.CANCEL, Gtk.ResponseType.CANCEL, Gtk.Stock.CONNECT, Gtk.ResponseType.ACCEPT);
-                    var content = dialog.get_content_area () as Gtk.Box;
-                    var grid = new Gtk.Grid ();
-                    var label = new Gtk.Label ("Adresse du serveur :");
-                    grid.attach (label, 0, 0, 1, 1);
-                    var entry_server_ip = new Gtk.Entry ();
-                    grid.attach (entry_server_ip, 1, 0, 1, 1);
-
-                    label = new Gtk.Label ("Port du serveur :");
-                    grid.attach (label, 0, 1, 1, 1);
-                    var entry_server_port = new Gtk.Entry ();
-                    grid.attach (entry_server_port, 1, 1, 1, 1);
-
-                    label = new Gtk.Label ("Pseudo :");
-                    grid.attach (label, 0, 2, 1, 1);
-                    var entry_login = new Gtk.Entry ();
-                    entry_login.set_max_length (Common.MAX_NAME_SIZE);
-                    grid.attach (entry_login, 1, 2, 1, 1);
-
-                    content.add (grid);
-
-                    entry_server_ip.activate.connect ( () => {dialog.response (Gtk.ResponseType.ACCEPT);});
-                    entry_server_port.activate.connect ( () => {dialog.response (Gtk.ResponseType.ACCEPT);});
-                    entry_login.activate.connect ( () => {dialog.response (Gtk.ResponseType.ACCEPT);});
-
-                    dialog.response.connect ((response_id) => {
-                            if (response_id == Gtk.ResponseType.CANCEL || response_id == Gtk.ResponseType.DELETE_EVENT) {
-                                dialog.hide_on_delete ();
-                            } else if (response_id == Gtk.ResponseType.ACCEPT) {
-                                ClientCore.disconnect ();
-                                if (connect_socket (entry_server_ip.get_text (), int.parse (entry_server_port.get_text ())) == -1) {
-                                    var msg = new MessageDialog (window, DialogFlags.MODAL | DialogFlags.DESTROY_WITH_PARENT, MessageType.ERROR, ButtonsType.OK, "Le serveur indiqué ne répond pas");
-                                    msg.response.connect ((response_id3) => {
-                                            msg.hide_on_delete ();
-                                        });
-                                    msg.present ();
-                                } else {
-                                    string tmp;
-                                    if (send_message ("/CONNECT " + entry_login.get_text (), out tmp) == -1) {
-                                        var msg = new MessageDialog (window, DialogFlags.MODAL | DialogFlags.DESTROY_WITH_PARENT, MessageType.ERROR, ButtonsType.OK, "Login vide");
-                                        msg.response.connect ((response_id3) => {
-                                                msg.hide_on_delete ();
-                                            });
-                                        msg.present ();
-                                    } else {
-                                        Message m;
-                                        receive_message (out m);
-                                        if (m.code == KO) {
-                                            var content_str = new StringBuilder ("");
-                                            for (int i = 0; i < m.content.length; i++) {
-                                                content_str.append_c ((char) m.content[i]);
-                                            }
-                                            var msg = new MessageDialog (window, DialogFlags.MODAL | DialogFlags.DESTROY_WITH_PARENT, MessageType.ERROR, ButtonsType.OK, content_str.str);
-                                            msg.response.connect ((response_id2) => {
-                                                    msg.hide_on_delete ();
-                                                });
-                                            msg.present ();
-                                        } else {
-                                            statusbar.pop (statusbar.get_context_id ("status"));
-                                            statusbar.push (statusbar.get_context_id ("status"), "Connecté au serveur " + entry_server_ip.get_text () + ":" + entry_server_port.get_text () + " avec le login : " + entry_login.get_text ());
-                                            update_connected (true);
-                                            dialog.hide_on_delete ();
-                                            try {
-                                                thread_receive = new Thread<void *>.try ("recv thread", this.receive_thread);
-                                            } catch (GLib.Error e) {
-                                                stderr.printf ("Error : %s\n", e.message);
-                                            }
-                                        }
-                                    }
-                                }
-
-                            }
-                        });
-                    dialog.show_all ();
+                    conn_dial.present ();
                 });
 
             // On clique sur Fichier > Déconnexion
             disconnect_item.activate.connect ( () => {
                     // démander déconnexion
                     ClientCore.disconnect ();
-                    update_connected (false);
+                    update_connected (false, "");
                 });
 
             // On clique sur Fichier > À propos
@@ -383,7 +313,7 @@ namespace Bavardage {
                     dialog.license = "Logiciel développé dans le cadre d'un projet universitaire encadré par Magali Bardet";
                     dialog.wrap_license = true;
 
-                    dialog.program_name = "Barvardage";
+                    dialog.program_name = "Bavardage";
                     dialog.comments = "Messagerie instantanée";
                     dialog.copyright = "Copyright © 2012-2013";
                     dialog.version = "0.1";
@@ -401,18 +331,11 @@ namespace Bavardage {
                 });
 
             // Écoute les changements d'état connecté/déconnecté
-            this.update_connected.connect ( (is_connected) => {
-                    if (!is_connected) {
-                        statusbar.pop (statusbar.get_context_id ("status"));
-                        statusbar.push (statusbar.get_context_id ("status"), "Déconnecté");
-                    }
-                    connect_item.set_sensitive (!is_connected);
-                    disconnect_item.set_sensitive (is_connected);
-                    create_room_button.set_sensitive (is_connected);
-                    quit_room_button.set_sensitive (is_connected);
-                    join_room_button.set_sensitive (is_connected);
-                    message.set_sensitive (is_connected);
-                    send_mp_button.set_sensitive (is_connected);
+            conn_dial.update_connected.connect ( (is_connected, login) => {
+                    update_statusbar (is_connected, login);
+                });
+            this.update_connected.connect ( (is_connected, login) => {
+                    update_statusbar (is_connected, login);
                 });
 
             chat.button_release_event.connect ( (e) => {
@@ -457,8 +380,25 @@ namespace Bavardage {
 
         }
 
+        private void update_statusbar (bool is_connected, string login) {
+            if (!is_connected) {
+                statusbar.pop (statusbar.get_context_id ("status"));
+                statusbar.push (statusbar.get_context_id ("status"), "Déconnecté");
+            } else {
+                statusbar.pop (statusbar.get_context_id ("status"));
+                statusbar.push (statusbar.get_context_id ("status"), "Connecté avec le login : " + login);
 
-        private void *receive_thread () {
+            }
+            connect_item.set_sensitive (!is_connected);
+            disconnect_item.set_sensitive (is_connected);
+            create_room_button.set_sensitive (is_connected);
+            quit_room_button.set_sensitive (is_connected);
+            join_room_button.set_sensitive (is_connected);
+            message.set_sensitive (is_connected);
+            send_mp_button.set_sensitive (is_connected);
+        }
+
+        public void *receive_thread () {
             Message m = { -1, "".data, "".data, "".data };
             TreeIter tree_iter;
             while (true) {
@@ -533,7 +473,7 @@ namespace Bavardage {
                         string buffer_text = rooms_map_chats.get (receiver.str).get_text (start, end, true);
                         if (buffer_text.contains ("://")) {
                             int idx = buffer_text.index_of ("://");
-                            
+
                             int old_idx = 0;
                             while (idx != -1) {
                                 while (idx > 0 && buffer_text[idx] != ' ') {
@@ -564,7 +504,7 @@ namespace Bavardage {
                             chat.get_buffer ().set_modified (true);
                         }
                         break;
-                        
+
                     case MP:
                         string s = "[" + sender.str + "] " + content.str + "\n";
                         TextIter iter;
@@ -594,7 +534,7 @@ namespace Bavardage {
                         string buffer_text = rooms_map_chats.get (room_name).get_text (start, end, true);
                         if (buffer_text.contains ("://")) {
                             int idx = buffer_text.index_of ("://");
-                            
+
                             int old_idx = 0;
                             while (idx != -1) {
                                 while (idx > 0 && buffer_text[idx] != ' ') {
@@ -676,11 +616,8 @@ namespace Bavardage {
                         chat.set_buffer (new TextBuffer (new TextTagTable ()));
                         message.set_buffer (new EntryBuffer ("".data));
                         connected_users.set_model (new ListStore (2, typeof (string), typeof (string)));
-                        update_connected (false);
+                        update_connected (false, "");
                         Thread.exit (null);
-                        break;
-                    case CONNECT:
-                        update_connected (true);
                         break;
                     case ADMIN:
                         var users = rooms_map_users.get (content.str) as ListStore;
@@ -703,7 +640,7 @@ namespace Bavardage {
             chat.set_buffer (new TextBuffer (new TextTagTable ()));
             message.set_buffer (new EntryBuffer ("".data));
             connected_users.set_model (new ListStore (2, typeof (string), typeof (string)));
-            update_connected (false);
+            update_connected (false, "");
             Thread.exit (null);
             return null;
         }
