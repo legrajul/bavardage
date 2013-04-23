@@ -63,6 +63,19 @@ int connect_secure_socket(const char *addr, const int port, const char *password
     if(SSL_connect(ssl)<=0)
       berr_exit("SSL connect error");
 
+    long err;
+    // modif   
+    if ((err = post_connection_check(ssl, "localhost")) != X509_V_OK) {
+        fprintf(stderr, "-Error: peer certificate: %s\n", X509_verify_cert_error_string(err));
+        //int_error("Error checking SSL object after connection");
+    }
+
+    fprintf(stderr, "SSL Connection opened\n");
+    SSL_clear(ssl);
+    SSL_free(ssl);
+    SSL_CTX_free(ctx);
+    // fin modif
+
     printf("You can now send commands and messages\n");
     //(void) signal(SIGINT, my_sigaction);
 

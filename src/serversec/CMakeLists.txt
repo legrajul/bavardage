@@ -3,4 +3,4 @@ set(COMMON_FILES ../common/SocketTCP.c ../common_server/mysqlite.c ../common/com
 find_package(Threads)
 FIND_PACKAGE(OpenSSL)
 add_executable(secure_server ${COMMON_FILES} secure_server.c)
-target_link_libraries(secure_server ${CMAKE_THREAD_LIBS_INIT} ssl sqlite3)
+target_link_libraries(secure_server ${CMAKE_THREAD_LIBS_INIT} ssl sqlite3 pthread)

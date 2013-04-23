@@ -16,12 +16,42 @@
 #include "openssl/ssl.h"
 #include <openssl/ssl2.h>
 
+// modif
+#define CAFILE "root.pem"
+#define CADIR NULL
+#define CERTFILE "server.pem"
+#define KEYFILE "server_key.pem"
+// fin modif
+
+
 SocketTCP *listen_socket;
 pthread_mutex_t mutex;
 
 SSL_CTX *ctx;
 SSL *ssl;
 BIO *sbio;
+
+// modif
+
+SSL_CTX *setup_server_ctx(void) {
+    ctx = SSL_CTX_new(SSLv23_method());
+    if (SSL_CTX_load_verify_locations(ctx, CAFILE, CADIR) != 1)
+        fprintf(stderr, "Error loading CA file or directory\n");
+        //int_error("Error loading CA file and/or directory");
+    if (SSL_CTX_set_default_verify_paths(ctx) != 1)
+        fprintf(stderr, "Error loading CA file or directory\n");
+    if (SSL_CTX_use_certificate_chain_file(ctx, CERTFILE) != 1)
+        fprintf(stderr, "Error loading certificate from file\n");
+    if (SSL_CTX_use_PrivateKey_file(ctx, KEYFILE, SSL_FILETYPE_PEM) != 1)
+        fprintf(stderr, "Error loading private key from file\n");
+
+    SSL_CTX_set_verify(ctx,
+    SSL_VERIFY_PEER|SSL_VERIFY_FAIL_IF_NO_PEER_CERT, verify_callback);
+    SSL_CTX_set_verify_depth(ctx, 4);
+    return ctx;
+}
+
+// fin modif
 
 void my_sigaction(int s) {
     switch (s) {
@@ -47,6 +77,23 @@ void *handle_connexion(void *param) {
     if (SSL_accept(client_ssl) <= 0) {     /* do SSL-protocol accept */
         ERR_print_errors_fp(stderr);
     } else {
+        SSL_CTX_load_verify_locations(ctx, CertFile, ".");
+        SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, 0);
+        SSL_CTX_set_verify_depth(ctx,1);
+
+        //SSL_connect(client_ssl);
+        if (SSL_get_peer_certificate(client_ssl) != NULL) {
+            if(SSL_get_verify_result(client_ssl) == X509_V_OK) {
+                printf("client verification with SSL_get_verify_result() succeeded.\n");
+            }                
+            else {
+                printf("client verification with SSL_get_verify_result() failed.\n");
+                exit(1);
+            }
+        } else {
+            printf("the peer certificate was not presented.\n");
+        }
+
        printf ("Before while\n");
         while (1) {
             // TODO attention code de test
@@ -79,6 +126,7 @@ void *handle_connexion(void *param) {
                     response.code = DISCONNECT;
                     SSL_write(client_ssl, &response, sizeof(message));
                     pthread_mutex_unlock(&mutex);
+                    SSL_CTX_free(ctx);
                     closeSocketTCP(s);
                     change_status (buffer.sender);
                     pthread_exit(0);
@@ -164,7 +212,11 @@ int start_listening(const char *addr, int port) {
         return -1;
     }
 
-    ctx = initialize_ctx (CertFile, KeyFile, "bavardage");
+    init_OpenSSL();
+    //seed_prng();
+    //ctx = initialize_ctx (CertFile, KeyFile, "bavardage");
+
+    ctx = setup_server_ctx();   
 
     ssl = SSL_new(ctx);
     sbio = BIO_new_socket(listen_socket->socket, BIO_NOCLOSE);
@@ -172,8 +224,15 @@ int start_listening(const char *addr, int port) {
 
     (void) signal(SIGINT, my_sigaction);
     pthread_mutex_init(&mutex, NULL);
+    int err;
     while (1) {
         client = acceptSocketTCP(listen_socket);
+        // modif
+        if ((err = post_connection_check(ssl, "localhost")) != X509_V_OK) {
+            fprintf(stderr, "-Error: peer certificate: %s\n", X509_verify_cert_error_string(err));
+            //int_error("Error checking SSL object after connection");
+        }
+        // fin modif
         printf("New connection\n");
         new_thread(client);
     }
