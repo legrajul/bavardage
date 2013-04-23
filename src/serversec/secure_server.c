@@ -19,8 +19,8 @@
 // modif
 #define CAFILE "root.pem"
 #define CADIR NULL
-#define CERTFILE "server.pem"
-#define KEYFILE "server_key.pem"
+#define CERTFILE "secserv_certif.pem"
+#define KEYFILE "secserv_key.pem"
 // fin modif
 
 
