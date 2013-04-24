@@ -35,6 +35,9 @@ ensure_vala_version("0.18.0" MINIMUM)
 include(ValaPrecompile)
 vala_precompile(VALA_C 
   Widgets/ConnectionDialog.vala
+  Widgets/NewRoomDialog.vala
+  Widgets/JoinRoomDialog.vala
+  Widgets/AboutDialog.vala
   Client.vala
 PACKAGES
   gtk+-3.0

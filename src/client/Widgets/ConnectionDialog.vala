@@ -85,7 +85,6 @@ namespace Bavardage.Widgets {
             box.set_orientation (Orientation.VERTICAL);
             box.pack_start (connection_grid, true, true);
             box.pack_start (secure_connection_grid, true, true);
-            box.set_resize_mode (ResizeMode.IMMEDIATE);
         }
 
         private void connect_signals () {

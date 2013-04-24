@@ -55,7 +55,6 @@ namespace Bavardage {
                 setup_ui (cl);
                 connect_signals ();
                 update_connected (false, "");
-                window.show_all ();
                 connect_item.activate ();
             } catch (Error e) {
                 stderr.printf ("Error: %s\n", e.message);
@@ -95,6 +94,8 @@ namespace Bavardage {
                 statusbar = builder.get_object ("statusbar") as Statusbar;
                 statusbar.push (statusbar.get_context_id ("status"), "Déconnecté");
                 window.set_application (this);
+
+                window.show_all ();
 
                 conn_dial = new Bavardage.Widgets.ConnectionDialog (window, this);
 
@@ -158,31 +159,21 @@ namespace Bavardage {
 
             // On clique sur le bouton "Créer un salon"
             create_room_button.clicked.connect ( () => {
-                    var dialog = new Dialog.with_buttons ("Création d'un salon", window, DialogFlags.MODAL | DialogFlags.DESTROY_WITH_PARENT, Gtk.Stock.CANCEL, Gtk.ResponseType.CANCEL, Gtk.Stock.OK, Gtk.ResponseType.ACCEPT);
-                    var content = dialog.get_content_area () as Gtk.Box;
-                    var grid = new Gtk.Grid ();
-                    var label = new Gtk.Label ("Nom du salon :");
-                    grid.attach (label, 0, 0, 1, 1);
-                    var entry_room_name = new Gtk.Entry ();
-                    entry_room_name.set_max_length (Common.MAX_ROOM_NAME_SIZE);
-                    grid.attach (entry_room_name, 1, 0, 1, 1);
-
-                    content.add (grid);
-
-                    entry_room_name.activate.connect ( () => {dialog.response (Gtk.ResponseType.ACCEPT);});
-
-                    dialog.response.connect ((response_id) => {
-                            if (response_id == Gtk.ResponseType.ACCEPT) {
-                                // demander à créer le salon
+                    var dialog = new Bavardage.Widgets.NewRoomDialog (window, this);
+                    dialog.create_new_room.connect ((room_name, is_sec) => {
+                            if (is_sec) {
+                                //TODO
+                            } else {
                                 string error_msg;
-                                if (send_message ("/CREATE_ROOM " + entry_room_name.get_text (), out error_msg) == -3) {
+                                if (send_message ("/CREATE_ROOM " + room_name, out error_msg) == -3) {
                                     TextIter iter;
                                     chat.get_buffer ().get_end_iter (out iter);
                                     chat.get_buffer ().insert_text (ref iter, error_msg, error_msg.length);
                                 }
                             }
-                            dialog.hide_on_delete ();
                         });
+
+
                     dialog.show_all ();
                 });
 
@@ -225,24 +216,12 @@ namespace Bavardage {
                 });
 
             join_room_button.clicked.connect ( () => {
-                    var dialog = new Dialog.with_buttons ("Rejoindre un salon un salon", window, DialogFlags.MODAL | DialogFlags.DESTROY_WITH_PARENT, Gtk.Stock.CANCEL, Gtk.ResponseType.CANCEL, Gtk.Stock.OK, Gtk.ResponseType.ACCEPT);
-                    var content = dialog.get_content_area () as Gtk.Box;
-                    var grid = new Gtk.Grid ();
-                    var label = new Gtk.Label ("Nom du salon :");
-                    grid.attach (label, 0, 0, 1, 1);
-                    var entry_room_name = new Gtk.Entry ();
-                    entry_room_name.set_max_length (Common.MAX_ROOM_NAME_SIZE);
-                    grid.attach (entry_room_name, 1, 0, 1, 1);
-
-                    content.add (grid);
-
-                    entry_room_name.activate.connect ( () => {dialog.response (Gtk.ResponseType.ACCEPT);});
-
+                    var dialog = new Bavardage.Widgets.JoinRoomDialog (window, this);
                     dialog.response.connect ((response_id) => {
                             if (response_id == Gtk.ResponseType.ACCEPT) {
-                                // demander à créer le salon
+                                // demander à rejoindre le salon
                                 string error_msg;
-                                if (send_message ("/JOIN_ROOM " + entry_room_name.get_text (), out error_msg) == -3) {
+                                if (send_message ("/JOIN_ROOM " + dialog.room_name_entry.get_text (), out error_msg) == -3) {
                                     TextIter iter;
                                     chat.get_buffer ().get_end_iter (out iter);
                                     chat.get_buffer ().insert_text (ref iter, error_msg, error_msg.length);
@@ -302,25 +281,7 @@ namespace Bavardage {
 
             // On clique sur Fichier > À propos
             about_item.activate.connect ( () => {
-                    var dialog = new AboutDialog ();
-                    dialog.set_destroy_with_parent (true);
-                    dialog.set_transient_for (window);
-                    dialog.set_modal (true);
-
-                    dialog.artists = {"Charles Ango", "Julien Legras"};
-                    dialog.authors = {"Charles Ango", "Ismaël Kabore", "Julien Legras", "Yves Nouafo", "Jean-Baptiste Souchal"};
-
-                    dialog.license = "Logiciel développé dans le cadre d'un projet universitaire encadré par Magali Bardet";
-                    dialog.wrap_license = true;
-
-                    dialog.program_name = "Bavardage";
-                    dialog.comments = "Messagerie instantanée";
-                    dialog.copyright = "Copyright © 2012-2013";
-                    dialog.version = "0.1";
-
-
-                    dialog.website = "http://github.com/legrajul/bavardage";
-                    dialog.website_label = "Dépôt github";
+                    Gtk.AboutDialog dialog = new Bavardage.Widgets.AboutDialog (window);
 
                     dialog.response.connect ((response_id) => {
                             if (response_id == Gtk.ResponseType.CANCEL || response_id == Gtk.ResponseType.DELETE_EVENT) {
