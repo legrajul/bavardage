@@ -8,3 +8,4 @@ typedef struct USER_SEC {
     char name[MAX_NAME_SIZE];
     SSL *ssl;
 } *user_sec;
+

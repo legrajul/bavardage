@@ -64,6 +64,27 @@ void my_sigaction(int s) {
     }
 }
 
+void randomString(char *str, size_t n) {
+	srand( time(NULL) );
+	char c;
+	int i;
+	for(i=0;i<n;i++) {
+	   do {
+		  c=rand() % 'z';
+	   }
+	   while( !(( 'A'<=c && c<='Z' ) || ( 'a'<=c && c<='z' )) );
+		str[i]=c;
+	}
+	str[i]=0;
+}
+
+void gen_keyiv(key_iv *keyiv, unsigned char *key_data, int key_data_len, unsigned char *salt) {
+     int nrounds = 5;
+ 
+     EVP_BytesToKey(EVP_aes_256_cbc(), EVP_sha1(),(unsigned char *)&salt,(unsigned char *)key_data, strlen((char *)key_data), nrounds, keyiv->key, keyiv->iv);
+
+}
+
 void *handle_connexion(void *param) {
     printf ("BEGIN handle_connexion\n");
     SocketTCP *s = (SocketTCP *) param;
@@ -110,7 +131,18 @@ void *handle_connexion(void *param) {
                     break;
 
                 case JOIN_ROOM_SEC:
-                    //TODO
+                   printf ("Join room : %s\n", buffer.content);
+                    if (!is_room_used (buffer.content)) {
+                        strcpy (response.content, "The room does not exist");
+                        response.code = KO;
+                    } else if (is_user_in_room (u, buffer.content)) {
+                        strcpy (response.content, "You're already in this room");
+                        response.code = KO;
+                    } else {
+                        join_room (u, buffer.content);
+                        strcpy(response.content, buffer.content);
+                        response.code = OK;
+                    }
                     break;
 
                 case QUIT_ROOM_SEC:

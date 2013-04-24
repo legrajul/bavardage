@@ -19,7 +19,7 @@ pthread_t thread_send, thread_recv;
 void my_sigaction(int s) {
 	switch (s) {
 	case SIGINT:
-		disconnect();
+		disconnect();					
 		break;
 	default:
 		break;

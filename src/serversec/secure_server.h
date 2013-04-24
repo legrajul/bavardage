@@ -12,4 +12,9 @@
 #include <openssl/bio.h>
 #include <openssl/err.h>
 
+
+void randomString(char *str, size_t n);
+
+void gen_keyiv(key_iv *keyiv, unsigned char *key_data, int key_data_len, unsigned char *salt);
+
 #endif

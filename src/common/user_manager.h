@@ -2,7 +2,7 @@
 #define _USER_MANAGER_H
 #include "common.h"
 #include "SocketTCP.h"
-
+#include <openssl/ssl.h>
 #define HASH_USER_MAP_SIZE 1997
 
 /**
@@ -11,6 +11,7 @@
 typedef struct USER {
     char name[MAX_NAME_SIZE];
     SocketTCP *socket;
+    SSL *ssl;
 }*user;
 
 /**

@@ -42,6 +42,7 @@ static MUTEX_TYPE *mutex_buf = NULL;
 #define CONNECT_SEC		6
 
 #define BUFSIZZ 1024
+#define AES_BLOCK_SIZE 256
 
 extern BIO *bio_err;
 int berr_exit (char *string);

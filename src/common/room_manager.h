@@ -10,11 +10,18 @@
  * name  : nom du salon
  * admin : créateur du salon
  * users : liste des utilisateurs du salon
+ * 
  */
+ typedef struct KEY_IV{
+	unsigned char key[32];
+	unsigned char iv[32];
+} key_iv;
+ 
 typedef struct ROOM {
     char name[MAX_ROOM_NAME_SIZE];
     user admin;
     user_map users;
+    key_iv keyiv;
 }*room;
 
 /**
