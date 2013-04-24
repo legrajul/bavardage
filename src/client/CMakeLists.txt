@@ -38,6 +38,7 @@ vala_precompile(VALA_C
   Widgets/NewRoomDialog.vala
   Widgets/JoinRoomDialog.vala
   Widgets/AboutDialog.vala
+  Widgets/SendInvitationDialog.vala
   Client.vala
 PACKAGES
   gtk+-3.0

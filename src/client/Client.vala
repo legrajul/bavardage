@@ -31,6 +31,7 @@ namespace Bavardage {
         private Button quit_room_button;
         private Button join_room_button;
         private Button send_mp_button;
+        private Button invite_button;
         private Gtk.MenuItem connect_item;
         private Gtk.MenuItem disconnect_item;
         private Gtk.MenuItem quit_item;
@@ -86,6 +87,7 @@ namespace Bavardage {
                 quit_room_button = builder.get_object ("button_quit_room") as Button;
                 join_room_button = builder.get_object ("button_join_room") as Button;
                 send_mp_button = builder.get_object ("button_send_mp") as Button;
+                invite_button = builder.get_object ("invite_button") as Button;
                 connect_item = builder.get_object ("imagemenuitem2") as Gtk.MenuItem;
                 disconnect_item = builder.get_object ("imagemenuitem1") as Gtk.MenuItem;
                 quit_item = builder.get_object ("imagemenuitem5") as Gtk.MenuItem;
@@ -257,6 +259,14 @@ namespace Bavardage {
                     }
                 });
 
+            invite_button.clicked.connect ( () => {
+                    var dialog = new Bavardage.Widgets.SendInvitationDialog (window, this);
+                    dialog.response.connect ( (responseid) => {
+
+                        });
+                    dialog.show ();
+                });
+
             message.activate.connect ( () => {
                     send_message_entry.begin ();
                 });
@@ -357,6 +367,7 @@ namespace Bavardage {
             join_room_button.set_sensitive (is_connected);
             message.set_sensitive (is_connected);
             send_mp_button.set_sensitive (is_connected);
+            invite_button.set_sensitive (is_connected);
         }
 
         public void *receive_thread () {
@@ -386,6 +397,7 @@ namespace Bavardage {
                         TextIter iter;
                         chat.get_buffer ().get_end_iter (out iter);
                         chat.get_buffer ().insert_text (ref iter, s, s.length);
+
                         break;
                     case OK:
 
