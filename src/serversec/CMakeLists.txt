@@ -1,5 +1,5 @@
 add_definitions(-Wall -std=c99 -pthread -lssl -lsqlite3)
-set(COMMON_FILES ../common/SocketTCP.c ../common_server/mysqlite.c ../common/commonsec.c)
+set(COMMON_FILES ../common/SocketTCP.c ../common_server/mysqlite.c ../common/commonsec.c ../common/room_manager.c ../common/user_manager.c)
 find_package(Threads)
 FIND_PACKAGE(OpenSSL)
 add_executable(secure_server ${COMMON_FILES} secure_server.c)
