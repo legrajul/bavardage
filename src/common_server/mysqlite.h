@@ -1,6 +1,6 @@
 #ifndef _MYSQLITE_H
 #define _MYSQLITE_H
-
+#include <stdint.h>
   #define QUERY_SIZE 524
 
   // commun au serveurs
@@ -16,7 +16,7 @@
  *	 @param login 
  *   @return 1 si la l'ajout s'est bien effectuÃ©, -1 sinon
  */
-  int add_user(char *login);
+  int add_user(char *login, uint8_t *challenge);
   
 /**
  *   Supprime un utilisateur dans la base de donnÃ©es
@@ -30,7 +30,7 @@
  *	 @param login 
  *   @return 1 si la vÃ©rification s'est bien effectuÃ©e, -1 sinon
  */
-  int check_user(char *login);
+  int check_user(char *login, uint8_t *challenge);
   
 /**
  *   DÃ©connecte le serveur de la base de donnÃ©es
@@ -42,7 +42,7 @@
  * @param login
  * @return -1 si l'utilisateur  n'est pas connecte, 1 sinon
  */
-int is_connected(char *login);
+int is_connected(char *login, uint8_t *challenge);
 
 /**
  * change le status de connection d'un utilisateur

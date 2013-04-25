@@ -32,6 +32,8 @@ BIO *sbio;
 
 message *msg;
 
+int debug = 0;
+
 extern char *login, **tab_string;
 
 int set_certif_filename (const char *certif_f) {
@@ -66,7 +68,7 @@ SSL_CTX *setup_client_ctx(void) {
 
 //fin modif
 
-int connect_secure_socket(const char *addr, const int port, const char *password) {
+int connect_secure_socket(const char *addr, const int port) {
     printf ("BEGIN connect_secure_socket\n");
     int co;
     if ((secure_socket = creerSocketTCP()) == NULL) {
@@ -88,17 +90,18 @@ int connect_secure_socket(const char *addr, const int port, const char *password
     if(SSL_connect(ssl)<=0)
       berr_exit("SSL connect error");
 
-    long err;
-    // modif   
-    if ((err = post_connection_check(ssl, "localhost")) != X509_V_OK) {
+    //long err;
+    // modif a refaire  
+    /*if ((err = post_connection_check(ssl, "localhost")) != X509_V_OK) {
         fprintf(stderr, "-Error: peer certificate: %s\n", X509_verify_cert_error_string(err));
         //int_error("Error checking SSL object after connection");
-    }
+    }*/
 
     fprintf(stderr, "SSL Connection opened\n");
-    SSL_clear(ssl);
-    SSL_free(ssl);
-    SSL_CTX_free(ctx);
+    // pour le disconect
+    //SSL_clear(ssl);
+    //SSL_free(ssl);
+    //SSL_CTX_free(ctx);
     // fin modif
 
     printf("You can now send commands and messages\n");
@@ -108,11 +111,11 @@ int connect_secure_socket(const char *addr, const int port, const char *password
     return 0;
 }
 
-int connect_with_authentication (char *chatservaddr, int chatservport, char *login,
+int connect_with_authentication (char *chatservaddr, int chatservport,
                                  char *secservaddr, int secservport) {
     printf ("BEGIN connect_with_authentication\n");
     connect_socket (chatservaddr, chatservport);
-    connect_secure_socket (secservaddr, secservport, "toto");
+    connect_secure_socket (secservaddr, secservport);
 
     printf ("END connect_secure_socket\n");
 }
@@ -195,6 +198,7 @@ int extract_code_sec(const char *str) {
 }
 
 int send_command_sec () {
+    printf("DEBUG_SEND_COMMAND-%d\n", debug++);
     if (secure_socket == NULL) {
         return -1;
     }
@@ -205,13 +209,38 @@ int send_command_sec () {
         strcpy(msg->sender, login);
     else
         return -1;
+    printf("DEBUG_SEND_COMMAND-%d\n", debug++);
+    printf("SIZEOF_MESSAGE-%ld\n", sizeof(message));
+    printf("MSG_SENDER-%s\n", msg->sender);
     if (SSL_write(ssl, (char *) msg, sizeof(message)) < 0) {
         return (1);
+    } else {
+        printf("DEBUG_SEND_COMMAND--%d\n", debug++);
     }
 
     return 0;
 }
 
+char *create_challenge_sec (const char *data) {
+    uint8_t *encryptedBytes = NULL;
+    //const char* data = "Data to enrypt";
+    char *private_key_file_name = KEYFILE;
+
+    FILE *fp = fopen(private_key_file_name, "r");
+    RSA *rsa = RSA_new();
+
+    PEM_read_RSAPrivateKey(fp, &rsa, 0, NULL);
+
+    size_t encryptedBytesSize = RSA_size(rsa);
+
+    encryptedBytes = malloc(encryptedBytesSize * sizeof(uint8_t));
+    memset((void *)encryptedBytes, 0x0, encryptedBytesSize);
+    fclose(fp);
+
+    int result = RSA_private_encrypt(strlen(data), data, encryptedBytes, rsa,RSA_PKCS1_PADDING);
+    printf("RSA_size-%i\n", RSA_size(rsa));
+    return encryptedBytes;
+}
 
 int send_message_sec (const char *mess, char **error_mess) {
     int code;
@@ -220,26 +249,40 @@ int send_message_sec (const char *mess, char **error_mess) {
     buffer[strlen(buffer)] = '\0';
 
     msg = (message*) malloc(sizeof(message));
-
+    printf("DEBUG_SEND_MESS-%d\n", debug++);
     if (mess[0] == '/') {
         code = extract_code_sec(strtok(strdup(buffer), " "));
         if (code == -1) {
             return -2;
         }
         msg->code = code;
-        char *tmp, buff[MAX_MESS_SIZE] = "";
+        char *tmp, *pass, buff[MAX_MESS_SIZE] = "";
+        uint8_t *challenge;
         int i;
-
+        printf("DEBUG_SEND_MESS-%d\n", debug++);
         switch (code) {
         case CONNECT_SEC:   // Cas d'une demande de connexion
+            printf("DEBUG_SEND_MESS-%d\n", debug++);
             tmp = strtok(NULL, " ");
             if (tmp != NULL) {
                 login = strdup(tmp);
             }
+            pass = strtok(NULL, "");
+            printf("PASS-%s\n", pass);
+
+            challenge = create_challenge_sec (pass);
+
+            //printf("CHALLENGE_SIZE-%s\n", RSA_size(rsa));
+            if (pass != NULL) {
+                strcpy(msg->content, challenge);
+            }
+
+            printf("DEBUG_SEND_MESS-%d\n", debug++);
             if (login == NULL) {
                 printf("login null\n");
                 return -1;
             } else {
+                printf("LOGIN-%s\n", login);
                 strcpy(msg->sender, login);
                 return send_command_sec();
             }
@@ -247,7 +290,7 @@ int send_message_sec (const char *mess, char **error_mess) {
 
         case DISCONNECT_SEC:        // Cas d'une demande de déconnexion
             strcpy(msg->sender, login);
-            // disconnect();
+            disconnect_sec();
             break;
 
         case CREATE_ROOM_SEC:       // Cas d'une demande de création de Salon
@@ -299,4 +342,13 @@ int send_message_sec (const char *mess, char **error_mess) {
     return 0;
 }
 
-
+int disconnect_sec() {
+    if (secure_socket != NULL && msg != NULL) {
+        msg->code = DISCONNECT_SEC;
+        send_command ();
+        SSL_clear(ssl);
+        SSL_free(ssl);
+        SSL_CTX_free(ctx);
+    }
+    return 0;
+}

@@ -146,8 +146,7 @@ return ok;
 
 long post_connection_check(SSL *ssl, char *host)
 {
-X509
-*cert;
+X509 *cert;
 X509_NAME *subj;
 char
 data[256];

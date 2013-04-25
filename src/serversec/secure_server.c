@@ -15,6 +15,7 @@
 #include <signal.h>
 #include "openssl/ssl.h"
 #include <openssl/ssl2.h>
+#include <stdint.h>
 
 // modif
 #define CAFILE "root.pem"
@@ -98,7 +99,7 @@ void *handle_connexion(void *param) {
     if (SSL_accept(client_ssl) <= 0) {     /* do SSL-protocol accept */
         ERR_print_errors_fp(stderr);
     } else {
-        SSL_CTX_load_verify_locations(ctx, CertFile, ".");
+        SSL_CTX_load_verify_locations(ctx, CERTFILE, ".");
         SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, 0);
         SSL_CTX_set_verify_depth(ctx,1);
 
@@ -166,7 +167,8 @@ void *handle_connexion(void *param) {
 
                 case CONNECT_SEC:
 		          printf("BEGIN connect_sec\n");
-                  int status = is_connected (buffer.sender);
+                  int status = is_connected (buffer.sender, buffer.content);
+                  printf("AFTER is connected\n");
                   switch (status) {
                     case 1:
                         response.code = KO;
@@ -174,9 +176,14 @@ void *handle_connexion(void *param) {
                         printf("You are already connected\n");
                         break;
                     case -1:
-                        if (check_user(buffer.sender) == 1) {
-                            add_user (buffer.sender);
+                        printf("DEBUT CASE -1\n");
+                        if (check_user(buffer.sender, buffer.content) == 1) {
+                            add_user (buffer.sender, buffer.content);
+                        } else if (check_user(buffer.sender, buffer.content) == -1) {
+                            perror("incorrect login / password");
+                            exit(0);
                         }
+                        printf("AFTER CHECK_USER\n");
                         change_status(buffer.sender);
                         printf("successful connection : %s\n", buffer.sender);
                         u = (user_sec) malloc(sizeof(struct USER_SEC));
@@ -259,11 +266,11 @@ int start_listening(const char *addr, int port) {
     int err;
     while (1) {
         client = acceptSocketTCP(listen_socket);
-        // modif
-        if ((err = post_connection_check(ssl, "localhost")) != X509_V_OK) {
+        // modif a refaire
+        /*if ((err = post_connection_check(ssl, "localhost")) != X509_V_OK) {
             fprintf(stderr, "-Error: peer certificate: %s\n", X509_verify_cert_error_string(err));
             //int_error("Error checking SSL object after connection");
-        }
+        }*/
         // fin modif
         printf("New connection\n");
         new_thread(client);
