@@ -4,6 +4,8 @@
 #include "../common/SocketTCP.h"
 #include "../common/commonsec.h"
 #include "../common_server/mysqlite.h"
+#include "../common/room_manager.h"
+#include "../common/user_manager.h"
 
 #include <pthread.h>
 #include <stdio.h>
@@ -132,19 +134,7 @@ void *handle_connexion(void *param) {
                     break;
 
                 case JOIN_ROOM_SEC:
-                   printf ("Join room : %s\n", buffer.content);
-                    if (!is_room_used (buffer.content)) {
-                        strcpy (response.content, "The room does not exist");
-                        response.code = KO;
-                    } else if (is_user_in_room (u, buffer.content)) {
-                        strcpy (response.content, "You're already in this room");
-                        response.code = KO;
-                    } else {
-                        join_room (u, buffer.content);
-                        strcpy(response.content, buffer.content);
-                        response.code = OK;
-                    }
-                    break;
+                   
 
                 case QUIT_ROOM_SEC:
                     //TODO
