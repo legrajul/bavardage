@@ -15,7 +15,7 @@
  typedef struct KEY_IV{
 	unsigned char key[32];
 	unsigned char iv[32];
-} key_iv;
+}*key_iv;
  
 typedef struct ROOM {
     char name[MAX_ROOM_NAME_SIZE];

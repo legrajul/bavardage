@@ -11,10 +11,12 @@
 #include <openssl/evp.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
+#include "../common/room_manager.h"
+
 
 
 void randomString(char *str, size_t n);
 
-void gen_keyiv(key_iv *keyiv, unsigned char *key_data, int key_data_len, unsigned char *salt);
+void gen_keyiv(key_iv keyiv, unsigned char *key_data, int key_data_len, unsigned char *salt);
 
 #endif

@@ -81,7 +81,7 @@ void randomString(char *str, size_t n) {
 	str[i]=0;
 }
 
-void gen_keyiv(key_iv *keyiv, unsigned char *key_data, int key_data_len, unsigned char *salt) {
+void gen_keyiv(key_iv keyiv, unsigned char *key_data, int key_data_len, unsigned char *salt) {
      int nrounds = 5;
  
      EVP_BytesToKey(EVP_aes_256_cbc(), EVP_sha1(),(unsigned char *)&salt,(unsigned char *)key_data, strlen((char *)key_data), nrounds, keyiv->key, keyiv->iv);
