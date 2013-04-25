@@ -172,6 +172,15 @@ unsigned char *aes_decrypt (EVP_CIPHER_CTX *e, unsigned char *ciphertext,
     return plaintext;
 }
 
+int receive_message_sec(message *m) {
+    int ret = SSL_read (ssl, (char *) m, sizeof(message));
+    if (ret == 0) {
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
 int extract_code_sec (const char *str) {
     char *command = NULL;
     command = str_sub (str, 1, strlen (str));
@@ -342,10 +351,7 @@ int send_message_sec (const char *mess, char **error_mess) {
 int disconnect_sec () {
     if (secure_socket != NULL && msg != NULL) {
         msg->code = DISCONNECT_SEC;
-        send_command ();
-        SSL_clear (ssl);
-        SSL_free (ssl);
-        SSL_CTX_free (ctx);
+        send_command_sec ();
     }
     return 0;
 }

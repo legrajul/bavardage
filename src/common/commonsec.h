@@ -34,12 +34,12 @@
 
 #include <openssl/ssl.h>
 
-#define CREATE_ROOM_SEC     1
-#define DELETE_ROOM_SEC     2
-#define QUIT_ROOM_SEC 	3
-#define JOIN_ROOM_SEC	4
-#define DISCONNECT_SEC	5
-#define CONNECT_SEC		6
+#define CREATE_ROOM_SEC     111
+#define DELETE_ROOM_SEC     211
+#define QUIT_ROOM_SEC 	311
+#define JOIN_ROOM_SEC	411
+#define DISCONNECT_SEC	511
+#define CONNECT_SEC		611
 
 #define BUFSIZZ 1024
 #define AES_BLOCK_SIZE 256

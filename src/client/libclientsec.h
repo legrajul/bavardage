@@ -50,4 +50,6 @@ unsigned char *aes_encrypt (EVP_CIPHER_CTX *e, unsigned char *plaintext,
 unsigned char *aes_decrypt (EVP_CIPHER_CTX *e, unsigned char *ciphertext,
 		int *len);
 
+int receive_message_sec(message *m);
+
 #endif

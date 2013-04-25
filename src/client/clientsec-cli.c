@@ -50,12 +50,14 @@ void *traitement_send (void *param) {
 void *traitement_recv (void *param) {
 	message mess;
 	while (1) {
-		if (receive_message (&mess) < 0) {
-			perror ("readSocketTCP");
-			pthread_detach (thread_recv);
-			pthread_detach (thread_send);
-			exit (EXIT_FAILURE);
-		}
+		if (receive_message_sec(&mess) == -1) {
+            if (receive_message(&mess) < 0) {
+                perror("readSocketTCP");
+                pthread_detach(thread_recv);
+                pthread_detach(thread_send);
+                exit(EXIT_FAILURE);
+            }
+        }
 
 		if (mess.code == KO) {
 			printf ("Error: %s\n", mess.content);
@@ -63,13 +65,17 @@ void *traitement_recv (void *param) {
 		}
 
 		char *res = NULL;
-		if (mess.code == DISCONNECT) {
-			disconnect ();
-			printf ("You're now disconnected from the chat server\n");
-			pthread_detach (thread_send);
-			exit (0);
-		}
 		switch (mess.code) {
+        case DISCONNECT:
+            disconnect ();
+            printf ("You're now disconnected from the chat server\n");
+            pthread_detach (thread_send);
+            exit (0);
+        case DISCONNECT_SEC:
+            disconnect_sec();
+            printf ("You're now disconnected from the chat server\n");
+            pthread_detach (thread_send);
+            exit (0);
 		case OK:
 			if (strlen (mess.content) > 0) {
 				printf ("%s\n", mess.content);
