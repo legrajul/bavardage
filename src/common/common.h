@@ -1,5 +1,6 @@
 #ifndef COMMON
 #define COMMON
+#include <openssl/ssl.h>
 
 #define MAX_NAME_SIZE 64
 #define MAX_MESS_SIZE 512
@@ -28,6 +29,7 @@ typedef struct {
 	char sender[MAX_NAME_SIZE];
 	char content[MAX_MESS_SIZE];
 	char receiver[MAX_ROOM_NAME_SIZE];
+	SSL *ssl;
 } message;
 
 #endif

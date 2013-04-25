@@ -38,7 +38,6 @@ int connect_server_database(const char *fileDb) {
 
 /** fermer la base de donnÃ©es */
 int close_server_database() {
-
     sqlite3_close(database);
     return 1;
 }
@@ -51,7 +50,7 @@ int add_user_db(char *login, uint8_t *challenge) {
     char insert[QUERY_SIZE] = "";
     sprintf (insert, "INSERT INTO users values (\'%s\', ?, 0)", login);
     sqlite3_prepare_v2 (database, insert, strlen (insert) + 1, &stmt, 0);
-    sqlite3_bind_blob (stmt, 1, challenge, strlen (challenge), SQLITE_TRANSIENT);
+    sqlite3_bind_blob (stmt, 1, challenge, 256, SQLITE_TRANSIENT);
     if (sqlite3_step(stmt) != SQLITE_DONE) {
         perror("Can't insert in server database");
         return -1;
@@ -80,7 +79,7 @@ int delete_user (char *login) {
     return 1;
 }
 
-int check_challenge (char *login, uint8_t *challenge) {
+int check_challenge (char *login, char *challenge) {
     char select[QUERY_SIZE] = "";
     printf("BEFORE REQUEST\n");
     sprintf (select, "SELECT challenge FROM users WHERE login = \'%s\'", login);
@@ -90,14 +89,14 @@ int check_challenge (char *login, uint8_t *challenge) {
     char *err = NULL;
     sqlite3_get_table (database, select, &res, &row_nb, &col_nb, &err);
     if (memcmp (challenge, res[1], 256) == 0) {
-	return -1;
+		return -1;
     } else {
-	return 1;
+		return 1;
     }
 }
 
 /** verifie la prÃ©sence d'un user */
-int check_user(char *login, uint8_t *challenge) {
+int check_user(char *login) {
     char select[QUERY_SIZE] = "";
     sprintf (select, "SELECT * FROM users WHERE login = \'%s\'", login);
 
@@ -124,22 +123,14 @@ int check_user(char *login, uint8_t *challenge) {
         if (total == 0) {
             return 1;
         } else {
-            printf("BEFORE CHECK challenge\n");
-            if (check_challenge(login, challenge) == 1) {
-                return -1;
-            } else if (check_challenge(login, challenge) == -1) {
-                return 2;
-            }
+            return -1;
         }
     }
 }
 
 /* determine si un user est connecte ou non */
-int is_connected (char *login, uint8_t *challenge) {
-    if (challenge == NULL) {
-        printf("challenge IS NULL\n");
-    }
-    check_user(login, challenge);
+int is_connected (char *login) {
+    check_user(login);
     printf("AFTER CHECK_USER (IS CONNECTED)\n");
     char is_connect[QUERY_SIZE] = "";
     sprintf (is_connect, "SELECT * FROM users where login = \'%s\' and is_connected = 1", login);
@@ -163,3 +154,5 @@ int change_status(char *login) {
     }
     return 1;
 }
+
+

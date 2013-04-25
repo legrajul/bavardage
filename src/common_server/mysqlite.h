@@ -30,7 +30,7 @@
  *	 @param login 
  *   @return 1 si la vÃ©rification s'est bien effectuÃ©e, -1 sinon
  */
-  int check_user(char *login, uint8_t *challenge);
+  int check_user(char *login);
   
 /**
  *   DÃ©connecte le serveur de la base de donnÃ©es
@@ -42,7 +42,7 @@
  * @param login
  * @return -1 si l'utilisateur  n'est pas connecte, 1 sinon
  */
-int is_connected(char *login, uint8_t *challenge);
+int is_connected(char *login);
 
 /**
  * change le status de connection d'un utilisateur
@@ -50,4 +50,11 @@ int is_connected(char *login, uint8_t *challenge);
  * @return 1 si le changement s'est bien passe, -1 sinon
  */
 int change_status(char *login);
+
+/**
+ * retourne le challenge d'un utilisateur
+ * @param login, challenge
+ * @return 1 si le challenge est non null, -1 sinon
+ */
+int check_challenge (char *login, char *challenge);
 #endif

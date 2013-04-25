@@ -1,5 +1,4 @@
 #include "secure_server.h"
-#include "structures.h"
 #include "../common/common.h"
 #include "../common/SocketTCP.h"
 #include "../common/commonsec.h"
@@ -171,12 +170,14 @@ void *handle_connexion(void *param) {
                         response.code = KO;
                     } else {
 						    randomString(key_data,(sizeof key_data)-1);
+						    keyiv = malloc (sizeof (key_iv));
                             gen_keyiv(keyiv,(unsigned char *)key_data, 10, (unsigned char *)salt);
                         join_room (u, buffer.content);
                         strcpy(response.content, buffer.content);
-                        strcat(response.content,'|');
+                        strcat(response.content,"|");
                         strcat(response.content, (char *)keyiv);
                         response.code = OK;
+                        free(keyiv);
                     }
                     break;
                 case QUIT_ROOM_SEC:
@@ -200,7 +201,7 @@ void *handle_connexion(void *param) {
 
                 case CONNECT_SEC:
 		          printf("BEGIN connect_sec\n");
-                  int status = is_connected (buffer.sender, buffer.content);
+                  int status = is_connected (buffer.sender);
                   printf("AFTER is connected\n");
                   switch (status) {
                     case -1:
@@ -210,17 +211,19 @@ void *handle_connexion(void *param) {
                         break;
                     case 1:
                         printf("DEBUT CASE -1\n");
-                        if (check_user(buffer.sender, buffer.content) == 1) {
-                            add_user_db (buffer.sender, buffer.content);
-                        } else if (check_user(buffer.sender, buffer.content) == -1) {
+                        if (check_user(buffer.sender) == 1) {
+							uint8_t *u8bufcontent;
+							u8bufcontent = (uint8_t *) buffer.content;
+                            add_user_db (buffer.sender, u8bufcontent);
+                        } else if (check_user(buffer.sender) == -1) {
                             fprintf(stderr, "incorrect login / password\n");
-                            response.code = KO;
-			    break;
+	                        response.code = KO;
+						    break;
                         }
                         printf("AFTER CHECK_USER\n");
                         change_status(buffer.sender);
                         printf("successful connection : %s\n", buffer.sender);
-                        u = (user_sec) malloc(sizeof(struct USER_SEC));
+                        u = (user) malloc(sizeof(struct USER));
                         strcpy(u->name, buffer.sender);
                         u->ssl = client_ssl;
                         response.code = CONNECT_SEC;
@@ -244,7 +247,7 @@ void *handle_connexion(void *param) {
     }
 
     printf ("END handle_connexion\n");
-    return -1;
+    return NULL;
 }
 
 int is_login_valid(char *login) {
@@ -397,7 +400,7 @@ int start_listening(const char *addr, int port) {
 
     (void) signal(SIGINT, my_sigaction);
     pthread_mutex_init(&mutex, NULL);
-    int err;
+    //int err;
     while (1) {
         client = acceptSocketTCP(listen_socket);
         // modif a refaire

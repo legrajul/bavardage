@@ -1,14 +1,14 @@
 #include "commonsec.h"
-
-
 #include "common.h"
 #include <openssl/err.h>
+#include <strings.h>
 
 
 BIO *bio_err = 0;
 static char *pass;
 static int password_cb (char *buf, int num, int rwflag, void *userdata);
 static void sigpipe_handle (int x);
+static MUTEX_TYPE *mutex_buf = NULL;
 
 /* A simple error and exit routine*/
 int err_exit (char *string) {
@@ -27,7 +27,6 @@ int berr_exit(char *string) {
 static int password_cb(char *buf, int num, int rwflag, void *userdata) {
     if (num < strlen (pass) + 1)
         return (0);
-
     strcpy (buf, pass);
     return (strlen (pass));
 }
@@ -84,17 +83,15 @@ void destroy_ctx(SSL_CTX *ctx) {
 
 // modif
 
-static unsigned long id_function(void)
-{
-return ((unsigned long)THREAD_ID);
+static unsigned long id_function(void) {
+	return ((unsigned long)THREAD_ID);
 }
 
-static void locking_function(int mode, int n, const char * file, int line)
-{
-if (mode & CRYPTO_LOCK)
-MUTEX_LOCK(mutex_buf[n]);
-else
-MUTEX_UNLOCK(mutex_buf[n]);
+static void locking_function(int mode, int n, const char * file, int line) {
+	if (mode & CRYPTO_LOCK)
+		MUTEX_LOCK(mutex_buf[n]);
+	else
+		MUTEX_UNLOCK(mutex_buf[n]);
 }
 
 int THREAD_setup(void) {
@@ -124,101 +121,79 @@ void init_OpenSSL(void) {
     SSL_load_error_strings();
 }
 
-int verify_callback(int ok, X509_STORE_CTX *store)
-{
-char data[256];
-if (!ok)
-{
-X509 *cert = X509_STORE_CTX_get_current_cert(store);
-int depth = X509_STORE_CTX_get_error_depth(store);
-int err = X509_STORE_CTX_get_error(store);
-fprintf(stderr, "-Error with certificate at depth: %i\n",
-depth);
-X509_NAME_oneline(X509_get_issuer_name(cert), data, 256);
-fprintf(stderr, " issuer = %s\n", data);
-X509_NAME_oneline(X509_get_subject_name(cert), data, 256);
-fprintf(stderr, " subject = %s\n", data);
-fprintf(stderr, " err %i:%s\n", err,
-X509_verify_cert_error_string(err));
-}
-return ok;
+int verify_callback(int ok, X509_STORE_CTX *store) {
+	char data[256];
+	if (!ok) {
+		X509 *cert = X509_STORE_CTX_get_current_cert(store);
+		int depth = X509_STORE_CTX_get_error_depth(store);
+		int err = X509_STORE_CTX_get_error(store);
+		fprintf(stderr, "-Error with certificate at depth: %i\n", depth);
+		X509_NAME_oneline(X509_get_issuer_name(cert), data, 256);
+		fprintf(stderr, " issuer = %s\n", data);
+		X509_NAME_oneline(X509_get_subject_name(cert), data, 256);
+		fprintf(stderr, " subject = %s\n", data);
+		fprintf(stderr, " err %i:%s\n", err, X509_verify_cert_error_string(err));
+	}
+	return ok;
 }
 
-long post_connection_check(SSL *ssl, char *host)
-{
-X509 *cert;
-X509_NAME *subj;
-char
-data[256];
-int
-extcount;
-int
-ok = 0;
-/* Checking the return from SSL_get_peer_certificate here is
-* strictly necessary. With our example programs, it is not
-* possible for it to return NULL. However, it is good form
-* check the return since it can return NULL if the examples
-* modified to enable anonymous ciphers or for the server to
-* require a client certificate.
-*/
-if (!(cert = SSL_get_peer_certificate(ssl)) || !host)
-goto err_occured;
-if ((extcount = X509_get_ext_count(cert)) > 0)
-{
-int i;
-
-for (i = 0; i < extcount; i++)
-{
-char
-*extstr;
-X509_EXTENSION
-*ext;
-ext = X509_get_ext(cert, i);
-extstr =
-OBJ_nid2sn(OBJ_obj2nid(X509_EXTENSION_get_object(ext)));
-if (!strcmp(extstr, "subjectAltName"))
-{
-int
-j;
-unsigned char
-*data;
-STACK_OF(CONF_VALUE) *val;
-CONF_VALUE
-*nval;
-X509V3_EXT_METHOD
-*meth;
-if (!(meth = X509V3_EXT_get(ext)))
-break;
-data = ext->value->data;
-val = meth->i2v(meth,
-meth->d2i(NULL, &data, ext->value->length), NULL);
-for (j = 0; j < sk_CONF_VALUE_num(val); j++)
-{
-nval = sk_CONF_VALUE_value(val, j);
-if (!strcmp(nval->name, "DNS") && !strcmp(nval->value, host))
-{
-ok = 1;
-break;
-}
-}
-}
-if (ok)
-break;
-}
-}
-if (!ok && (subj = X509_get_subject_name(cert)) &&
-X509_NAME_get_text_by_NID(subj, NID_commonName, data, 256) > 0)
-{
-data[255] = 0;
-if (strcasecmp(data, host) != 0)
-goto err_occured;
-}
-X509_free(cert);
-return SSL_get_verify_result(ssl);
-err_occured:
-if (cert)
-X509_free(cert);
-return X509_V_ERR_APPLICATION_VERIFICATION;
+long post_connection_check(SSL *ssl, char *host) {
+	X509 *cert;
+	X509_NAME *subj;
+	char data[256];
+	int extcount;
+	int ok = 0;
+	/* Checking the return from SSL_get_peer_certificate here is
+	* strictly necessary. With our example programs, it is not
+	* possible for it to return NULL. However, it is good form
+	* check the return since it can return NULL if the examples
+	* modified to enable anonymous ciphers or for the server to
+	* require a client certificate.
+	*/
+	if (!(cert = SSL_get_peer_certificate(ssl)) || !host)
+		goto err_occured;
+	if ((extcount = X509_get_ext_count(cert)) > 0) {
+		int i;
+		for (i = 0; i < extcount; i++) {
+			char *extstr;
+			X509_EXTENSION *ext;
+			ext = X509_get_ext(cert, i);
+			extstr = OBJ_nid2sn(OBJ_obj2nid(X509_EXTENSION_get_object(ext)));
+			if (!strcmp(extstr, "subjectAltName")) {
+				int j;
+				unsigned char *data;
+				STACK_OF(CONF_VALUE) *val;
+				CONF_VALUE *nval;
+				X509V3_EXT_METHOD *meth;
+				if (!(meth = X509V3_EXT_get(ext)))
+					break;
+				data = ext->value->data;
+				val = meth->i2v(meth,
+				meth->d2i(NULL, &data, ext->value->length), NULL);
+				for (j = 0; j < sk_CONF_VALUE_num(val); j++) {
+					nval = sk_CONF_VALUE_value(val, j);
+					if (!strcmp(nval->name, "DNS") && !strcmp(nval->value, host)) {
+						ok = 1;
+						break;
+					}
+				}
+			}
+			if (ok) 
+				break;
+		}
+	}
+	if (!ok && (subj = X509_get_subject_name(cert)) &&
+			X509_NAME_get_text_by_NID(subj, NID_commonName, data, 256) > 0) {
+		data[255] = 0;
+		if (strcasecmp(data, host) != 0)
+			goto err_occured;
+	}
+	X509_free(cert);
+	return SSL_get_verify_result(ssl);
+	err_occured:
+	if (cert)
+		X509_free(cert);
+	return X509_V_ERR_APPLICATION_VERIFICATION;
 }
 
 // fin modif
