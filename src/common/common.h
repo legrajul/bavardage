@@ -5,6 +5,7 @@
 #define MAX_NAME_SIZE 64
 #define MAX_MESS_SIZE 512
 #define MAX_ROOM_NAME_SIZE 64
+#define KEY_DATA_SIZE 10
 
 #define CREATE_ROOM     1
 #define DELETE_ROOM     2

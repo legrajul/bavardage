@@ -78,9 +78,10 @@ int quit_room (user u, char *room_name);
  */
 int delete_room (char *room_name);
 
-
 void randomString(char *str, size_t n);
 
-void gen_keyiv(key_iv keyiv, unsigned char *key_data, int key_data_len, unsigned char *salt);
+unsigned int * randomInt();
+
+void gen_keyiv(key_iv keyiv, unsigned char *key_data, int key_data_len);
 
 #endif

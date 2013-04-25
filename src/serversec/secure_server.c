@@ -82,10 +82,29 @@ void randomString(char *str, size_t n) {
 	str[i]=0;
 }
 
-void gen_keyiv(key_iv keyiv, unsigned char *key_data, int key_data_len, unsigned char *salt) {
-     int nrounds = 5;
- 
-     EVP_BytesToKey(EVP_aes_256_cbc(), EVP_sha1(),(unsigned char *)&salt,(unsigned char *)key_data, strlen((char *)key_data), nrounds, keyiv->key, keyiv->iv);
+unsigned int * randomInt()
+{
+	static unsigned int c[2];
+	int i,v;
+		 srand((unsigned)time(NULL) );
+		for ( i = 0; i < 2; ++i)
+		{
+			do
+			{
+				v = rand()%1000000;
+			}
+			while( !(10000<=v && v <= 99999) );
+			c[i]=v;
+		}
+		while( !(10000<=v && v <= 99999) );		
+		return c;
+}
+
+void gen_keyiv(key_iv keyiv, unsigned char *key_data, int key_data_len) {
+     int nrounds = 5;  
+     unsigned int *salt=malloc(sizeof(randomInt()));
+     salt = randomInt();
+     EVP_BytesToKey(EVP_aes_256_cbc(), EVP_sha1(),(unsigned char *)salt,(unsigned char *)key_data, strlen((char *)key_data), nrounds, keyiv->key, keyiv->iv);
 
 }
 
@@ -100,8 +119,8 @@ void *handle_connexion(void *param) {
     int bytes = 0;
     user u;
     key_iv keyiv;
-    unsigned int salt[] = {12345, 54321};
-    char key_data[10];
+   
+    char key_data[KEY_DATA_SIZE];
   
     
     if (SSL_accept(client_ssl) <= 0) {     /* do SSL-protocol accept */
@@ -143,21 +162,27 @@ void *handle_connexion(void *param) {
                                "This room name is already in use");
                         printf ("Room already in user\n");
                     } else {
+						randomString(key_data,(sizeof key_data)-1);
+						keyiv = malloc(sizeof keyiv);
+                        gen_keyiv(keyiv, (unsigned char *)key_data, sizeof(key_data));
                         add_room(buffer.content, u);
                         add_user_in_room(u, buffer.content);
 
                         response.code = CREATE_ROOM;
-                        strcpy (response.sender, buffer.sender);
-                        strcpy (response.content, buffer.content);
-                        writeSocketTCP (u->socket, (char *) &response, sizeof (message));
-
-			response.code = ADMIN;
-			strcpy(response.content, buffer.content);
-			strcpy (response.sender, u->name);
-			writeSocketTCP (u->socket, (char *) &response, sizeof (message));
+                        strcpy(response.sender, buffer.sender);
+                        strcpy(response.content, buffer.content);
+                        response.code = ADMIN;
+                        strcat(response.content,"|");
+                        strcat(response.content, (char *)keyiv);                    
+                        SSL_write(u->ssl, (char *) &response, sizeof (message));			
+		
+		            	strcpy (response.sender, u->name);
+		            	SSL_write (u->ssl, (char *) &response, sizeof (message));
 			
-			response.code = OK;
-                    }
+			            response.code = OK;
+			            free(keyiv);
+                      }
+                    
                     break;
 
                 case JOIN_ROOM_SEC:
@@ -170,19 +195,58 @@ void *handle_connexion(void *param) {
                         response.code = KO;
                     } else {
 						    randomString(key_data,(sizeof key_data)-1);
-						    keyiv = malloc (sizeof (key_iv));
-                            gen_keyiv(keyiv,(unsigned char *)key_data, 10, (unsigned char *)salt);
-                        join_room (u, buffer.content);
-                        strcpy(response.content, buffer.content);
-                        strcat(response.content,"|");
-                        strcat(response.content, (char *)keyiv);
-                        response.code = OK;
-                        free(keyiv);
+						    keyiv = malloc(sizeof keyiv);
+                            gen_keyiv(keyiv,(unsigned char *)key_data, sizeof(key_data));
+							join_room (u, buffer.content);
+							strcpy(response.content, buffer.content);
+							strcat(response.content,"|");
+							strcat(response.content, (char *)keyiv);
+							response.code = OK;
+							user_list l = get_users(buffer.receiver);
+							user_list t;
+							for (t = l; t != NULL; t = t->next) {
+								SSL_write(t->current_user->ssl,
+										   &response, sizeof(message));
+                            }
+                    free(keyiv);
+
                     }
                     break;
                 case QUIT_ROOM_SEC:
-                    //TODO
-                    break;
+                     if (!is_room_used (buffer.content)) {
+                        response.code = KO;
+                        strcpy (response.content, "This room does not exist");
+                        break;
+                    } else if (strcmp (home_room, buffer.content) == 0) {
+                        response.code = KO;
+                        strcpy (response.content, "You cannot leave the home room");
+                        break;
+                    } else if (u != get_admin(buffer.content)) {
+                        quit_room (u, buffer.content);
+                        remove_user_from_room(u, buffer.content);
+                        printf("User successfully deleted\n");
+                        randomString(key_data,(sizeof key_data)-1);
+						keyiv = malloc(sizeof keyiv);
+                        gen_keyiv(keyiv,(unsigned char *)key_data, sizeof(key_data));						
+					    strcat(response.content, (char *)keyiv);
+						response.code = OK;
+					    user_list l = get_users(buffer.receiver);
+						user_list t;
+						for (t = l; t != NULL; t = t->next) {
+							SSL_write(t->current_user->ssl,
+										&response, sizeof(message));
+                        }   
+                                          
+                        response.code = DELETE_ROOM;
+                        strcpy (response.content, buffer.content);
+                        free(keyiv);
+                        break;
+                    } else if (!is_user_in_room (u, buffer.content)) {
+                        response.code = KO;
+                        strcpy (response.content, "You are not in this room");
+                        break;
+                    }  
+
 
                 case DELETE_ROOM_SEC:
                     //TODO
@@ -280,20 +344,20 @@ int join_room (user u, char *room_name) {
     strcpy(m.sender, u->name);
     strcpy(m.content, room_name);
     for (t = users; t != NULL; t = t->next) {
-        writeSocketTCP(t->current_user->socket, (char *) &m,
+        SSL_write(t->current_user->ssl, (char *) &m,
                        sizeof(message));
     }
 
     strcpy(m.content, room_name);
     m.code = CREATE_ROOM;
-    writeSocketTCP (u->socket, (char *) &m, sizeof (message));
+    SSL_write (u->ssl, (char *) &m, sizeof (message));
     add_user_in_room(u, room_name);
 
     if (get_admin (room_name) != NULL) {
 	m.code = ADMIN;
 	strcpy(m.content, room_name);
 	strcpy (m.sender, get_admin (room_name)->name);
-	writeSocketTCP (u->socket, (char *) &m, sizeof (message));
+	SSL_write (u->ssl, (char *) &m, sizeof (message));
     }
 
     m.code = ADD_USER;
@@ -302,7 +366,7 @@ int join_room (user u, char *room_name) {
     for (l = users; l != NULL; l = l->next) {
 	if (l->current_user != get_admin (room_name)) {
 	    strcpy(m.sender, l->current_user->name);
-	    writeSocketTCP(u->socket, (char *) &m,
+	    SSL_write(u->ssl, (char *) &m,
 			   sizeof(message));
 	}
     }
@@ -317,7 +381,7 @@ int quit_room (user u, char *room_name) {
     strcpy(m.sender, u->name);
     strcpy(m.content, room_name);
     for (t = users; t != NULL; t = t->next) {
-        writeSocketTCP(t->current_user->socket, (char *) &m,
+        SSL_write(t->current_user->ssl, (char *) &m,
                        sizeof(message));
     }
     return 0;
@@ -332,7 +396,7 @@ int delete_room (char *room_name) {
     m.code = DELETE_ROOM;
     strcpy(m.content, room_name);
     for (t = users; t != NULL; t = t->next) {
-        writeSocketTCP(t->current_user->socket,
+        SSL_write(t->current_user->ssl,
                        (char *) &m, sizeof(message));
     }
     remove_room (room_name);
