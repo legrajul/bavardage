@@ -6,6 +6,7 @@
 #include "mysqlite.h"
 #include <stdint.h>
 
+#define ERRCHECK {if (err!=NULL) {printf("%s\n",err);  return 0;}}
 
 // variable globale
 sqlite3 *database;
@@ -24,7 +25,7 @@ int connect_server_database(const char *fileDb) {
     }
 
     // creation de la table users
-    char create_table[QUERY_SIZE] = "CREATE TABLE IF NOT EXISTS users (login VARCHAR(20) unique, challenge VARCHAR2(256), is_connected INTEGER)";
+    char create_table[QUERY_SIZE] = "CREATE TABLE IF NOT EXISTS users (login VARCHAR(20) unique, challenge BLOB, is_connected INTEGER)";
     int sq = sqlite3_exec(database, create_table, 0, 0, 0);
     if (sq != SQLITE_OK) {
         perror("Can't create table users\n");
@@ -45,16 +46,17 @@ int close_server_database() {
 
 /** ajoute un user dans la base **/
 int add_user_db(char *login, uint8_t *challenge) {
-  printf("BEGIN ADD_USER with login %s\n", login);
+    printf("BEGIN ADD_USER with login %s\n", login);
     // creation de la requete insertion
     char insert[QUERY_SIZE] = "";
-    sprintf (insert, "INSERT INTO users values (\'%s\', \'%s\',0)", login, challenge);
-
-    int sql = sqlite3_exec(database, insert, 0, 0, 0);
-    if (sql != SQLITE_OK) {
+    sprintf (insert, "INSERT INTO users values (\'%s\', ?, 0)", login);
+    sqlite3_prepare_v2 (database, insert, strlen (insert) + 1, &stmt, 0);
+    sqlite3_bind_blob (stmt, 1, challenge, strlen (challenge), SQLITE_TRANSIENT);
+    if (sqlite3_step(stmt) != SQLITE_DONE) {
         perror("Can't insert in server database");
         return -1;
     } else {
+	sqlite3_finalize(stmt);
         printf("Added user %s succesfully\n", login);
     }
     return 1;
@@ -74,42 +76,24 @@ int delete_user (char *login) {
     } else {
         printf("User delete succesfully\n");
     }
-  printf("END ADD_USER with login %s\n", login);
+    printf("END ADD_USER with login %s\n", login);
     return 1;
 }
 
 int check_challenge (char *login, uint8_t *challenge) {
     char select[QUERY_SIZE] = "";
     printf("BEFORE REQUEST\n");
-    sprintf (select, "SELECT * FROM users WHERE login = \'%s\' and challenge = \'%s\'", login, challenge);
-    printf("AFTER REQUEST\n");
-    int sql = sqlite3_prepare_v2(database, select, -1, &stmt, 0);
-    printf("BEFORE IF SQL\n");
-    if (sql) {
-        perror("Bad request formula-one\n");
-        return -1;
+    sprintf (select, "SELECT challenge FROM users WHERE login = \'%s\'", login);
+
+    char **res = NULL;
+    int row_nb, col_nb;
+    char *err = NULL;
+    sqlite3_get_table (database, select, &res, &row_nb, &col_nb, &err);
+    if (memcmp (challenge, res[1], 256) == 0) {
+	return -1;
     } else {
-        int fetch = 1;
-        int total = 0;
-        while(fetch) {
-            switch (sqlite3_step(stmt)) {
-            case SQLITE_ROW:
-                total++;
-                break;
-            case SQLITE_DONE:
-                fetch = 0;
-                break;
-            default:
-                printf("Some error encountered\n");
-                return -1;
-            }
-        }
-        if (total == 0) {
-            return 1;
-        } else {
-            return -1;
-        }
-    }    
+	return 1;
+    }
 }
 
 /** verifie la prÃ©sence d'un user */
@@ -147,7 +131,7 @@ int check_user(char *login, uint8_t *challenge) {
                 return 2;
             }
         }
-    }    
+    }
 }
 
 /* determine si un user est connecte ou non */
@@ -155,27 +139,27 @@ int is_connected (char *login, uint8_t *challenge) {
     if (challenge == NULL) {
         printf("challenge IS NULL\n");
     }
-  check_user(login, challenge);
-  printf("AFTER CHECK_USER (IS CONNECTED)\n");
-  char is_connect[QUERY_SIZE] = "";
-  sprintf (is_connect, "SELECT FROM users values (\'%s\') where is_connected = 1", login);
+    check_user(login, challenge);
+    printf("AFTER CHECK_USER (IS CONNECTED)\n");
+    char is_connect[QUERY_SIZE] = "";
+    sprintf (is_connect, "SELECT * FROM users where login = \'%s\' and is_connected = 1", login);
 
-   int sq = sqlite3_exec(database, is_connect, 0, 0, 0);
-   if (sq != SQLITE_OK) {
-       perror("Can't verifie the connection status\n");
-       return -1;
-   }
+    int sq = sqlite3_exec(database, is_connect, 0, 0, 0);
+    if (sq != SQLITE_OK) {
+        perror("Can't verifie the connection status\n");
+        return -1;
+    }
     return 1;
 }
 
 /* change le status d'un utilisateur */
 int change_status(char *login) {
-  char ch[QUERY_SIZE] = "";
-  sprintf (ch, "UPDATE users set is_connected = not is_connected where login = \'%s\'", login);
-  int sq = sqlite3_exec(database, ch, 0, 0, 0);
-  if (sq != SQLITE_OK) {
-    perror("can't change status\n");
-    return -1;
-  }
-  return 1;
+    char ch[QUERY_SIZE] = "";
+    sprintf (ch, "UPDATE users set is_connected = not is_connected where login = \'%s\'", login);
+    int sq = sqlite3_exec(database, ch, 0, 0, 0);
+    if (sq != SQLITE_OK) {
+        perror("can't change status\n");
+        return -1;
+    }
+    return 1;
 }

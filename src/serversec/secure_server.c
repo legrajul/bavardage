@@ -160,17 +160,17 @@ void *handle_connexion(void *param) {
                   int status = is_connected (buffer.sender, buffer.content);
                   printf("AFTER is connected\n");
                   switch (status) {
-                    case 1:
+                    case -1:
                         response.code = KO;
                         strcpy (response.content, "you are already connected!\n");
                         printf("You are already connected\n");
                         break;
-                    case -1:
+                    case 1:
                         printf("DEBUT CASE -1\n");
                         if (check_user(buffer.sender, buffer.content) == 1) {
                             add_user_db (buffer.sender, buffer.content);
                         } else if (check_user(buffer.sender, buffer.content) == -1) {
-                            perror("incorrect login / password");
+                            fprintf(stderr, "incorrect login / password\n");
                             response.code = KO;
 			    break;
                         }
