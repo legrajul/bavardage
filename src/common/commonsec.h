@@ -61,8 +61,8 @@ long post_connection_check (SSL *ssl, char *host);
 
 int THREAD_setup(void);
 
-//static unsigned long id_function(void);
-//static void locking_function(int mode, int n, const char * file, int line);
+// unsigned long id_function(void);
+// void locking_function(int mode, int n, const char * file, int line);
 //void handle_error(const char *file, int lineno, const char *msg);
 
 #ifndef ALLOW_OLD_VERSIONS

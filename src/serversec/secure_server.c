@@ -80,27 +80,24 @@ void randomString (char *str, size_t n) {
     str[i] = 0;
 }
 
-unsigned int * randomInt()
-{
-    static unsigned int c[2];
-    int i,v;
-    srand((unsigned)time(NULL) );
-    for ( i = 0; i < 2; ++i)
-        {
-            do
-                {
-                    v = rand()%1000000;
-                }
-            while( !(10000<=v && v <= 99999) );
-            c[i]=v;
+unsigned int *randomInt() {
+    unsigned int *c;
+    c = (unsigned int *) malloc (2 * sizeof (unsigned int));
+    int i, v;
+    srand ((unsigned) time(NULL));
+    for ( i = 0; i < 2; ++i) {
+        do {
+            v = rand() % 1000000;
         }
-    while( !(10000<=v && v <= 99999) );
+        while (!(10000 <= v && v <= 99999));
+        c[i] = v;
+    }
     return c;
 }
 
 void gen_keyiv(key_iv keyiv, unsigned char *key_data, int key_data_len) {
     int nrounds = 5;
-    unsigned int *salt=malloc(sizeof(randomInt()));
+    unsigned int *salt = malloc (sizeof (randomInt ()));
     salt = randomInt();
     EVP_BytesToKey(EVP_aes_256_cbc(), EVP_sha1(),(unsigned char *)salt,(unsigned char *)key_data, strlen((char *)key_data), nrounds, keyiv->key, keyiv->iv);
 
