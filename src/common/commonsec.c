@@ -37,9 +37,6 @@ void sigpipe_handle (int x) {
 }
 
 SSL_CTX *initialize_ctx (char *certiffile, char *keyfile, char *password) {
-    SSL_METHOD *meth;
-    SSL_CTX * ctx;
-
     if (!bio_err) {
         /* Global system initialization*/
         SSL_library_init ();
@@ -53,8 +50,8 @@ SSL_CTX *initialize_ctx (char *certiffile, char *keyfile, char *password) {
     signal (SIGPIPE, sigpipe_handle);
 
     /* Create our context*/
-    meth = SSLv23_method ();
-    ctx = SSL_CTX_new (meth);
+    const SSL_METHOD *meth = SSLv23_method ();
+    SSL_CTX *ctx = SSL_CTX_new (meth);
 
     /* Load our keys and certificates*/
     if (!(SSL_CTX_use_certificate_file (ctx, certiffile, SSL_FILETYPE_PEM)))
@@ -155,7 +152,7 @@ long post_connection_check (SSL *ssl, char *host) {
     if ((extcount = X509_get_ext_count(cert)) > 0) {
         int i;
         for (i = 0; i < extcount; i++) {
-            char *extstr;
+            const char *extstr;
             X509_EXTENSION *ext;
             ext = X509_get_ext(cert, i);
             extstr = OBJ_nid2sn(OBJ_obj2nid(X509_EXTENSION_get_object(ext)));
@@ -164,7 +161,7 @@ long post_connection_check (SSL *ssl, char *host) {
                 unsigned char *data;
                 STACK_OF(CONF_VALUE) *val;
                 CONF_VALUE *nval;
-                X509V3_EXT_METHOD *meth;
+                const X509V3_EXT_METHOD *meth;
                 if (!(meth = X509V3_EXT_get(ext)))
                     break;
                 data = ext->value->data;
