@@ -2,6 +2,9 @@
 #include "common.h"
 #include <openssl/err.h>
 #include <strings.h>
+#include <openssl/bio.h>
+#include <openssl/x509.h>
+#include <openssl/conf.h>
 
 BIO *bio_err = 0;
 char *pass;
