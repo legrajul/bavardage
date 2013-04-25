@@ -44,7 +44,7 @@ int close_server_database() {
 
 
 /** ajoute un user dans la base **/
-int add_user(char *login, uint8_t *challenge) {
+int add_user_db(char *login, uint8_t *challenge) {
   printf("BEGIN ADD_USER with login %s\n", login);
     // creation de la requete insertion
     char insert[QUERY_SIZE] = "";

@@ -168,10 +168,11 @@ void *handle_connexion(void *param) {
                     case -1:
                         printf("DEBUT CASE -1\n");
                         if (check_user(buffer.sender, buffer.content) == 1) {
-                            add_user (buffer.sender, buffer.content);
+                            add_user_db (buffer.sender, buffer.content);
                         } else if (check_user(buffer.sender, buffer.content) == -1) {
                             perror("incorrect login / password");
-                            exit(0);
+                            response.code = KO;
+			    break;
                         }
                         printf("AFTER CHECK_USER\n");
                         change_status(buffer.sender);

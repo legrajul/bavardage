@@ -14,7 +14,7 @@ add_definitions(${CLIENTSEC_CLI_FLAGS})
 set(client_cli_sec_SRCS clientsec-cli.c)
 find_package(Threads)
 add_executable(clientsec-cli ${client_cli_sec_SRCS})
-target_link_libraries(clientsec-cli ${CMAKE_THREAD_LIBS_INIT} client clientsec ssl)
+target_link_libraries(clientsec-cli ${CMAKE_THREAD_LIBS_INIT} client clientsec ssl crypto)
 
 # Partie client lignes de commandes
 set(CLIENT_CLI_FLAGS -w -pthread -std=c99)

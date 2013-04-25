@@ -16,7 +16,7 @@
  *	 @param login 
  *   @return 1 si la l'ajout s'est bien effectuÃ©, -1 sinon
  */
-  int add_user(char *login, uint8_t *challenge);
+  int add_user_db(char *login, uint8_t *challenge);
   
 /**
  *   Supprime un utilisateur dans la base de donnÃ©es

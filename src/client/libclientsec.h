@@ -8,6 +8,14 @@
 
 #include "../common/SocketTCP.h"
 
+#include <openssl/ssl.h>
+#include <openssl/rsa.h>
+#include <openssl/x509.h>
+#include <openssl/evp.h>
+#include <openssl/bio.h>
+#include <openssl/err.h>
+
+
 int connect_with_authentication (char *chatservaddr, int chatservport,
 				 char *secservaddr, int secservport);
 
@@ -26,7 +34,6 @@ int set_certif_filename (const char *f);
 
 int set_private_key_filename (const char *f);
 
-<<<<<<< Updated upstream
 int disconnect_sec();
 
 char *create_challenge_sec (const char *data);

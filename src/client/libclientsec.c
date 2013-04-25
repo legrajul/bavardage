@@ -1,10 +1,4 @@
 /* OpenSSL headers */
-#include <openssl/ssl.h>
-#include <openssl/rsa.h>
-#include <openssl/x509.h>
-#include <openssl/evp.h>
-#include <openssl/bio.h>
-#include <openssl/err.h>
 #include <string.h>
 
 #include "libclientsec.h"
