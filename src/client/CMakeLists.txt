@@ -63,7 +63,7 @@ remove_definitions(${CLIENT_CLI_FLAGS})
 add_definitions(${CFLAGS})
 
 add_executable(Client ${VALA_C})
-target_link_libraries(Client ${DEPS_LIBRARIES} client clientsec gthread-2.0)
+target_link_libraries(Client ${DEPS_LIBRARIES} client clientsec gthread-2.0 ssl crypto)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/interface.ui DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 install(TARGETS Client RUNTIME DESTINATION bin)

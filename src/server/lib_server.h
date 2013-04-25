@@ -11,7 +11,7 @@
  *      @param param Socket du client
  */
 
-void *handle_connexion(void *param);
+void *handle_connexion (void *param);
 
 /**
  *   Crée la socket serveur
@@ -22,7 +22,7 @@ void *handle_connexion(void *param);
  *   @return -1 si erreur de création de socket ou de thread
  */
 
-int start_listening(const char *addr, int port);
+int start_listening (const char *addr, int port);
 
 /**
  *   Initie un thread
@@ -32,26 +32,26 @@ int start_listening(const char *addr, int port);
  *      @param socket socket client
  */
 
-void new_thread(SocketTCP *socket);
+void new_thread (SocketTCP *socket);
 
 /**
  * Vide la structure message
  * @param m structure message
  */
-int clear_message(message *m);
+int clear_message (message *m);
 
 /**
  * Créer le salon d'accueil
  * @return -1 si erreur, 0 sinon
  */
-int create_main_room();
+int create_main_room ();
 
 /**
  * Créer un salon
  * @param room_name le nom du salon
  * @return -1 si erreur, 0 sinon
  */
-int create_room(char *room_name);
+int create_room (char *room_name);
 
 /**
  * Ajouter un utilisateur dans un salon

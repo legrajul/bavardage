@@ -3,7 +3,6 @@
 #include <openssl/err.h>
 #include <strings.h>
 
-
 BIO *bio_err = 0;
 static char *pass;
 static int password_cb (char *buf, int num, int rwflag, void *userdata);
@@ -12,15 +11,15 @@ static MUTEX_TYPE *mutex_buf = NULL;
 
 /* A simple error and exit routine*/
 int err_exit (char *string) {
-    fprintf (stderr, "%s\n", string);
-    exit (0);
+	fprintf (stderr, "%s\n", string);
+	exit (0);
 }
 
 /* Print SSL errors and exit*/
-int berr_exit(char *string) {
-    BIO_printf (bio_err, "%s\n", string);
-    ERR_print_errors (bio_err);
-    exit (0);
+int berr_exit (char *string) {
+	BIO_printf (bio_err, "%s\n", string);
+	ERR_print_errors (bio_err);
+	exit (0);
 }
 
 /*The password code is not thread safe*/
@@ -35,51 +34,48 @@ static void sigpipe_handle (int x) {
 }
 
 SSL_CTX *initialize_ctx (char *certiffile, char *keyfile, char *password) {
-    SSL_METHOD *meth;
-    SSL_CTX *ctx;
+	SSL_METHOD *meth;
+	SSL_CTX * ctx;
 
-    if (!bio_err){
-        /* Global system initialization*/
-        SSL_library_init();
-        SSL_load_error_strings();
+	if (!bio_err) {
+		/* Global system initialization*/
+		SSL_library_init ();
+		SSL_load_error_strings ();
 
-        /* An error write context */
-        bio_err=BIO_new_fp(stderr,BIO_NOCLOSE);
-    }
+		/* An error write context */
+		bio_err = BIO_new_fp (stderr, BIO_NOCLOSE);
+	}
 
-    /* Set up a SIGPIPE handler */  
-    signal(SIGPIPE,sigpipe_handle);
+	/* Set up a SIGPIPE handler */
+	signal (SIGPIPE, sigpipe_handle);
 
-    /* Create our context*/
-    meth=SSLv23_method();
-    ctx=SSL_CTX_new(meth);
+	/* Create our context*/
+	meth = SSLv23_method ();
+	ctx = SSL_CTX_new (meth);
 
-    /* Load our keys and certificates*/
-    if(!(SSL_CTX_use_certificate_file(ctx, certiffile, SSL_FILETYPE_PEM)))
-        berr_exit("Can't read certificate file");
+	/* Load our keys and certificates*/
+	if (!(SSL_CTX_use_certificate_file (ctx, certiffile, SSL_FILETYPE_PEM)))
+		berr_exit ("Can't read certificate file");
 
-    pass=password;
-    SSL_CTX_set_default_passwd_cb(ctx,
-                                  password_cb);
-    if(!(SSL_CTX_use_PrivateKey_file(ctx,
-                                     keyfile,SSL_FILETYPE_PEM)))
-        berr_exit("Can't read key file");
+	pass = password;
+	SSL_CTX_set_default_passwd_cb (ctx, password_cb);
+	if (!(SSL_CTX_use_PrivateKey_file (ctx, keyfile, SSL_FILETYPE_PEM)))
+		berr_exit ("Can't read key file");
 
-    SSL_CTX_set_cipher_list(ctx, "AES256");
-    
-    SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, 0);
+	SSL_CTX_set_cipher_list (ctx, "AES256");
+
+	SSL_CTX_set_verify (ctx, SSL_VERIFY_NONE, 0);
 
 #if (OPENSSL_VERSION_NUMBER < 0x00905100L)
-    SSL_CTX_set_verify_depth(ctx,1);
+	SSL_CTX_set_verify_depth (ctx, 1);
 #endif
 
-    return ctx;
+	return ctx;
 }
 
-void destroy_ctx(SSL_CTX *ctx) {
-    SSL_CTX_free(ctx);
+void destroy_ctx (SSL_CTX *ctx) {
+	SSL_CTX_free (ctx);
 }
-
 
 // modif
 
@@ -137,7 +133,8 @@ int verify_callback(int ok, X509_STORE_CTX *store) {
 	return ok;
 }
 
-long post_connection_check(SSL *ssl, char *host) {
+
+long post_connection_check (SSL *ssl, char *host) {
 	X509 *cert;
 	X509_NAME *subj;
 	char data[256];
@@ -197,3 +194,4 @@ long post_connection_check(SSL *ssl, char *host) {
 }
 
 // fin modif
+

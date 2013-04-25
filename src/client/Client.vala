@@ -376,7 +376,6 @@ namespace Bavardage {
             while (true) {
                 Thread.usleep (10000);
                 m = { -1, "".data, "".data, "".data };
-                Gdk.threads_enter ();
                 if (receive_message (out m) == 0) {
                     var sender = new StringBuilder ("");
                     for (int i = 0; i < m.sender.length; i++) {
@@ -604,7 +603,6 @@ namespace Bavardage {
                     stdout.printf ("Error\n");
                     break;
                 }
-                Gdk.threads_leave ();
             }
             rooms_map_chats.clear ();
             rooms_map_entries.clear ();

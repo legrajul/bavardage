@@ -46,18 +46,18 @@
 
 extern BIO *bio_err;
 int berr_exit (char *string);
-int err_exit(char *string);
+int err_exit (char *string);
 
-SSL_CTX *initialize_ctx(char *certiffile, char *keyfile, char *password);
-void destroy_ctx(SSL_CTX *ctx);
+SSL_CTX *initialize_ctx (char *certiffile, char *keyfile, char *password);
+void destroy_ctx (SSL_CTX *ctx);
 
-void handle_error(const char *file, int lineno, const char *msg);
+void handle_error (const char *file, int lineno, const char *msg);
 
-void init_OpenSSL(void);
+void init_OpenSSL (void);
 
-int verify_callback(int ok, X509_STORE_CTX *store);
+int verify_callback (int ok, X509_STORE_CTX *store);
 
-long post_connection_check(SSL *ssl, char *host);
+long post_connection_check (SSL *ssl, char *host);
 
 int THREAD_setup(void);
 

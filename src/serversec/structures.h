@@ -5,7 +5,7 @@
  * Structure représentant un utilisateur
  */
 typedef struct USER_SEC {
-    char name[MAX_NAME_SIZE];
-    SSL *ssl;
-} *user_sec;
+	char name[MAX_NAME_SIZE];
+	SSL *ssl;
+}*user_sec;
 

@@ -1,6 +1,8 @@
 using Gtk;
 using Bavardage.ClientCore;
+using Bavardage.ClientSecCore;
 using Bavardage.Common;
+using Bavardage.CommonSec;
 
 namespace Bavardage.Widgets {
 
@@ -8,6 +10,7 @@ namespace Bavardage.Widgets {
         public Entry entry_server_ip { get; set; }
         public Entry entry_server_port { get; set; }
         public Entry entry_login { get; set; }
+        public Entry entry_password { get; set; }
 
         public Entry entry_serversec_ip { get; set; }
         public Entry entry_serversec_port { get; set; }
@@ -25,7 +28,7 @@ namespace Bavardage.Widgets {
 
         public signal void connect_regular (string server_ip, int server_port, string login);
 
-        public signal void connect_secure (string server_ip, int server_port, string login, string serversec_ip, int serversec_port, File cert_file, File private_key_file);
+        public signal void connect_secure (string server_ip, int server_port, string login, string serversec_ip, int serversec_port, File cert_file, File private_key_file, string password);
 
         public signal void update_connected (bool is_connected, string login);
 
@@ -53,6 +56,7 @@ namespace Bavardage.Widgets {
             }
 
             secure_connection_grid = new Grid (); {
+                entry_password = new Entry ();
                 entry_serversec_ip = new Entry ();
                 entry_serversec_port = new Entry ();
                 cert_file_chooser_button = new FileChooserButton ("Certificat", FileChooserAction.OPEN);
@@ -64,6 +68,15 @@ namespace Bavardage.Widgets {
                 key_file_chooser_button.add_filter (filter);
             }
 
+            /* TEST SECTION */
+            entry_server_ip.set_text ("localhost");
+            entry_server_port.set_text ("10000");
+            entry_login.set_text ("toto");
+            entry_serversec_ip.set_text ("localhost");
+            entry_serversec_port.set_text ("11000");
+            entry_password.set_text ("tata");
+            /* END TEST SECTION */
+
             connection_grid.attach (new Label ("Adresse du serveur :"), 0, 0, 1, 1);
             connection_grid.attach (entry_server_ip, 1, 0, 1, 1);
             connection_grid.attach (new Label ("Port du server :"), 0, 1, 1, 1);
@@ -71,6 +84,7 @@ namespace Bavardage.Widgets {
             connection_grid.attach (new Label ("Login :"), 0, 2, 1, 1);
             connection_grid.attach (entry_login, 1, 2, 1, 1);
             connection_grid.attach (secure_connection_checkbox, 0, 3, 2, 2);
+
 
             secure_connection_grid.attach (new Label ("Adresse du serveur sécurisé :"), 0, 0, 1, 1);
             secure_connection_grid.attach (entry_serversec_ip, 1, 0, 1, 1);
@@ -80,6 +94,8 @@ namespace Bavardage.Widgets {
             secure_connection_grid.attach (cert_file_chooser_button, 1, 2, 1, 1);
             secure_connection_grid.attach (new Label ("Clef privée :"), 0, 3, 1, 1);
             secure_connection_grid.attach (key_file_chooser_button, 1, 3, 1, 1);
+            secure_connection_grid.attach (new Label ("Mot de passe :"), 0, 4, 1, 1);
+            secure_connection_grid.attach (entry_password, 1, 4, 1, 1);
 
             var box = this.get_content_area ();
             box.set_orientation (Orientation.VERTICAL);
@@ -95,12 +111,13 @@ namespace Bavardage.Widgets {
             entry_server_ip.activate.connect ( () => {this.response (Gtk.ResponseType.ACCEPT);});
             entry_server_port.activate.connect ( () => {this.response (Gtk.ResponseType.ACCEPT);});
             entry_login.activate.connect ( () => {this.response (Gtk.ResponseType.ACCEPT);});
+            entry_password.activate.connect ( () => {this.response (Gtk.ResponseType.ACCEPT);});
             entry_serversec_ip.activate.connect ( () => {this.response (Gtk.ResponseType.ACCEPT);});
             entry_serversec_port.activate.connect ( () => {this.response (Gtk.ResponseType.ACCEPT);});
             this.response.connect ( (response_code) => {
                     if (response_code == Gtk.ResponseType.ACCEPT) {
                         if (secure_connection_checkbox.get_active ()) {
-                            this.connect_secure (entry_server_ip.get_text (), int.parse (entry_server_port.get_text ()), entry_login.get_text (), entry_serversec_ip.get_text (), int.parse (entry_serversec_ip.get_text ()), cert_file_chooser_button.get_file (), key_file_chooser_button.get_file ());
+                            this.connect_secure (entry_server_ip.get_text (), int.parse (entry_server_port.get_text ()), entry_login.get_text (), entry_serversec_ip.get_text (), int.parse (entry_serversec_port.get_text ()), cert_file_chooser_button.get_file (), key_file_chooser_button.get_file (), entry_password.get_text ());
                         } else {
                             this.connect_regular (entry_server_ip.get_text (), int.parse (entry_server_port.get_text ()), entry_login.get_text ());
                         }
@@ -150,8 +167,14 @@ namespace Bavardage.Widgets {
                     }
                 });
 
-            this.connect_secure.connect ((chatip, chatport, login, secip, secport, cert, key) => {
+            this.connect_secure.connect ((chatip, chatport, login, secip, secport, cert, key, password) => {
+                    init_OpenSSL ();
                     //TODO: implémenter les fonctions pour la partie sécurisée avec ClientCoreSec.vapi
+                    set_certif_filename (cert.get_path ());
+                    set_private_key_filename (key.get_path ());
+                    connect_with_authentication (chatip, chatport, secip, secport);
+                    string error;
+                    send_message_sec ("/CONNECT_SEC " + login + " " + password, out error);
                 });
         }
 

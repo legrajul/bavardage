@@ -12,36 +12,35 @@
 sqlite3 *database;
 sqlite3_stmt *stmt;
 
-
 /** connection la base de donnees **/
-int connect_server_database(const char *fileDb) {
+int connect_server_database (const char *fileDb) {
 
-    // creation de la base de donnÃ©e si existe pas sinon ouverture de la base
-    int open = sqlite3_open(fileDb, &database);
-    if (open != SQLITE_OK) {
-        perror("Database connection failed\n");
-        sqlite3_close(database);
-        return -1;
-    }
+	// creation de la base de donnÃ©e si existe pas sinon ouverture de la base
+	int open = sqlite3_open (fileDb, &database);
+	if (open != SQLITE_OK) {
+		perror ("Database connection failed\n");
+		sqlite3_close (database);
+		return -1;
+	}
 
-    // creation de la table users
-    char create_table[QUERY_SIZE] = "CREATE TABLE IF NOT EXISTS users (login VARCHAR(20) unique, challenge BLOB, is_connected INTEGER)";
-    int sq = sqlite3_exec(database, create_table, 0, 0, 0);
-    if (sq != SQLITE_OK) {
-        perror("Can't create table users\n");
-        return -1;
-    }
+	// creation de la table users
+	char create_table[QUERY_SIZE] =
+			"CREATE TABLE IF NOT EXISTS users (login VARCHAR(20) unique, challenge BLOB, is_connected INTEGER)";
+	int sq = sqlite3_exec (database, create_table, 0, 0, 0);
+	if (sq != SQLITE_OK) {
+		perror ("Can't create table users\n");
+		return -1;
+	}
 
-    return 1;
+	return 1;
 }
-
 
 /** fermer la base de donnÃ©es */
-int close_server_database() {
-    sqlite3_close(database);
-    return 1;
-}
+int close_server_database () {
 
+	sqlite3_close (database);
+	return 1;
+}
 
 /** ajoute un user dans la base **/
 int add_user_db(char *login, uint8_t *challenge) {
@@ -61,22 +60,21 @@ int add_user_db(char *login, uint8_t *challenge) {
     return 1;
 }
 
-
 /** supprime un user de la base **/
 int delete_user (char *login) {
 
-    char delete[QUERY_SIZE] = "";
-    sprintf (delete, "DELETE FROM users WHERE login = \'%s\'", login);
+	char delete[QUERY_SIZE] = "";
+	sprintf (delete, "DELETE FROM users WHERE login = \'%s\'", login);
 
-    int sql = sqlite3_exec(database, delete, 0, 0, 0);
-    if (sql != SQLITE_OK) {
-        perror("Can't check in server database\n");
-        return -1;
-    } else {
-        printf("User delete succesfully\n");
-    }
-    printf("END ADD_USER with login %s\n", login);
-    return 1;
+	int sql = sqlite3_exec (database, delete, 0, 0, 0);
+	if (sql != SQLITE_OK) {
+		perror ("Can't check in server database\n");
+		return -1;
+	} else {
+		printf ("User delete succesfully\n");
+	}
+	printf ("END ADD_USER with login %s\n", login);
+	return 1;
 }
 
 int check_challenge (char *login, char *challenge) {
@@ -144,15 +142,17 @@ int is_connected (char *login) {
 }
 
 /* change le status d'un utilisateur */
-int change_status(char *login) {
-    char ch[QUERY_SIZE] = "";
-    sprintf (ch, "UPDATE users set is_connected = not is_connected where login = \'%s\'", login);
-    int sq = sqlite3_exec(database, ch, 0, 0, 0);
-    if (sq != SQLITE_OK) {
-        perror("can't change status\n");
-        return -1;
-    }
-    return 1;
+int change_status (char *login) {
+	char ch[QUERY_SIZE] = "";
+	sprintf (ch,
+			"UPDATE users set is_connected = not is_connected where login = \'%s\'",
+			login);
+	int sq = sqlite3_exec (database, ch, 0, 0, 0);
+	if (sq != SQLITE_OK) {
+		perror ("can't change status\n");
+		return -1;
+	}
+	return 1;
 }
 
 
