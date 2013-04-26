@@ -77,7 +77,7 @@ int delete_user (char *login) {
 	return 1;
 }
 
-int check_challenge (char *login, char *challenge) {
+int check_challenge (char *login, uint8_t *challenge) {
     char select[QUERY_SIZE] = "";
     printf("BEFORE REQUEST\n");
     sprintf (select, "SELECT challenge FROM users WHERE login = \'%s\'", login);
@@ -94,7 +94,7 @@ int check_challenge (char *login, char *challenge) {
 }
 
 /** verifie la prÃ©sence d'un user */
-int check_user(char *login) {
+int check_user(char *login, uint8_t *challenge) {
     char select[QUERY_SIZE] = "";
     sprintf (select, "SELECT * FROM users WHERE login = \'%s\'", login);
 
@@ -121,14 +121,20 @@ int check_user(char *login) {
         if (total == 0) {
             return 1;
         } else {
-            return -1;
+            printf("BEFORE CHECK challenge\n");
+            if (check_challenge(login, challenge) == 1) {
+                return -1;
+            } else if (check_challenge(login, challenge) == -1) {
+                return 2;
+            }
         }
     }
+    return -1;
 }
 
 /* determine si un user est connecte ou non */
-int is_connected (char *login) {
-    check_user(login);
+int is_connected (char *login, uint8_t *challenge) {
+    check_user(login, challenge);
     printf("AFTER CHECK_USER (IS CONNECTED)\n");
     char is_connect[QUERY_SIZE] = "";
     sprintf (is_connect, "SELECT * FROM users where login = \'%s\' and is_connected = 1", login);

@@ -265,7 +265,9 @@ void *handle_connexion(void *param) {
 
                 case CONNECT_SEC:
                     printf("BEGIN connect_sec\n");
-                    int status = is_connected (buffer.sender);
+                    uint8_t *u8bufcontent;
+					u8bufcontent = (uint8_t *) buffer.content;
+                    int status = is_connected (buffer.sender, u8bufcontent);
                     printf("AFTER is connected\n");
                     switch (status) {
                     case -1:
@@ -274,12 +276,12 @@ void *handle_connexion(void *param) {
                         printf("You are already connected\n");
                         break;
                     case 1:
-                        printf("DEBUT CASE -1\n");
-                        if (check_user(buffer.sender) == 1) {
-                            uint8_t *u8bufcontent;
-                            u8bufcontent = (uint8_t *) buffer.content;
+                        printf("DEBUT CASE 1\n");
+                        uint8_t *u8bufcontent;
+						u8bufcontent = (uint8_t *) buffer.content;
+                        if (check_user(buffer.sender, u8bufcontent) == 1) {
                             add_user_db (buffer.sender, u8bufcontent);
-                        } else if (check_user(buffer.sender) == -1) {
+                        } else if (check_user(buffer.sender, u8bufcontent) == -1) {
                             fprintf(stderr, "incorrect login / password\n");
                             response.code = KO;
                             break;

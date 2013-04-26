@@ -158,7 +158,7 @@ long post_connection_check (SSL *ssl, char *host) {
             extstr = OBJ_nid2sn(OBJ_obj2nid(X509_EXTENSION_get_object(ext)));
             if (!strcmp(extstr, "subjectAltName")) {
                 int j;
-                unsigned char *data;
+                const unsigned char *data;
                 STACK_OF(CONF_VALUE) *val;
                 CONF_VALUE *nval;
                 const X509V3_EXT_METHOD *meth;
