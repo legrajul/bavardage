@@ -66,7 +66,7 @@ void *traitement_send (void *param) {
 }
 
 
-void *traitement_recv (void *param) {
+void *traitement_recv_sec (void *param) {
 	message mess;	
 	int lenght;
     unsigned char *plainmess;  
