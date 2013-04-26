@@ -309,7 +309,12 @@ int send_message_sec (const char *mess, char **error_mess) {
 
         case DISCONNECT_SEC:        // Cas d'une demande de déconnexion
             strcpy (msg->sender, login);
+            strcpy(conn, "/DISCONNECT ");
+            strcat(conn, login);
+            send_message (conn, &error_mess);
+            msg->code = DISCONNECT_SEC;
             disconnect_sec ();
+            printf("FIN CASE disconnect_sec\n");
             break;
 
         case CREATE_ROOM_SEC:       // Cas d'une demande de création de Salon

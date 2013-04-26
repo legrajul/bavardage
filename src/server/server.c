@@ -212,7 +212,7 @@ void *handle_connexion (void *param) {
 					break;
 
 				case DISCONNECT:
-					printf ("Disconnection\n");
+					printf ("Disconnection from server\n");
 					response.code = DISCONNECT;
 					if (u != NULL) {
 						for (room_list l = get_user_rooms (u); l != NULL;
@@ -229,6 +229,7 @@ void *handle_connexion (void *param) {
 					}
 					response.code = DISCONNECT;
 					writeSocketTCP (s, (char *) &response, sizeof(message));
+                    printf("writeSocketTCP server\n");
 					pthread_mutex_unlock (&mutex);
 					closeSocketTCP (s);
 					pthread_exit (0);
@@ -300,6 +301,7 @@ void *handle_connexion (void *param) {
 					break;
 
 				case MP:
+                    printf("debut MP server\n");
 					if (!is_login_used (buffer.receiver, server_user_map)) {
 						response.code = KO;
 						strcpy (response.content,
@@ -313,6 +315,7 @@ void *handle_connexion (void *param) {
 						break;
 					}
 
+                    printf("buffer.receiver: <%s>\n", buffer.receiver);
 					user receiver = get_user (buffer.receiver, server_user_map);
 					writeSocketTCP (receiver->socket, (char *) &buffer,
 							sizeof(message));
@@ -323,7 +326,7 @@ void *handle_connexion (void *param) {
 				default:
 					break;
 				}
-				pthread_mutex_unlock (&mutex);
+				pthread_mutex_unlock (&mutex);  
 				writeSocketTCP (s, (char *) &response, sizeof(message));
 			}
 		} else {

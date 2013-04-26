@@ -21,7 +21,7 @@
 
 
 
-pthread_t thread_send, thread_recv;
+pthread_t thread_send, thread_recv, thread_recv_sec;
 
 void *traitement_send (void *param) {
 	char mess[MAX_MESS_SIZE] = "";
@@ -54,26 +54,29 @@ void *traitement_send (void *param) {
 		} else if (ret_sec == -3) {
 			fprintf (stderr, "%s\n", error_mess);
 		}
+        if (ret_sec != -1) {
+            printf("send_message_sec fait : <mess> : %s\n", mess);
+        }
 	}
 	pthread_exit (0);
 }
 
-void *traitement_recv (void *param) {
+void *traitement_recv_sec (void *param) {
 	message mess;
 	key_iv keyiv;
     unsigned char *plainmess;
     EVP_CIPHER_CTX de;
     char room_name;
 	while (1) {
+        printf("(traitement_recv)mess.code: <%d>\n", mess.code);
+        printf("(traitement_recv)mess.content: <%s>\n", mess.content);
 		if (receive_message_sec(&mess) == -1) {
-            if (receive_message(&mess) < 0) {
-                perror("readSocketTCP");
-                pthread_detach(thread_recv);
+                perror("SSL_read");
+                pthread_detach(thread_recv_sec);
                 pthread_detach(thread_send);
                 exit(EXIT_FAILURE);
-            }
         }
-
+        printf("mess.code: <%d>\n", mess.code);
 		if(mess.code == OK) {
 		  strcpy(room_name, strtok(mess.content, "|"));
 		  memcpy(keyiv, strtok(NULL, "|"), sizeof(key_iv));
@@ -87,12 +90,12 @@ void *traitement_recv (void *param) {
         char *res = NULL;
         switch (mess.code) {
         case DISCONNECT:
-            disconnect ();
+            //disconnect ();
             printf ("You're now disconnected from the chat server\n");
             pthread_detach (thread_send);
             exit (0);
         case DISCONNECT_SEC:
-            disconnect_sec();
+            //disconnect_sec();
             printf ("You're now disconnected from the chat secure server\n");
             pthread_detach (thread_send);
             exit (0);
@@ -126,11 +129,69 @@ void *traitement_recv (void *param) {
             break;
 
 		}
+    }
 	pthread_exit (0);
-}
 } 
 
+void *traitement_recv (void *param) {
+    message mess;
+    while (1) {
+        if (receive_message (&mess) < 0) {
+            perror ("readSocketTCP");
+            pthread_detach (thread_recv);
+            pthread_detach (thread_send);
+            exit (EXIT_FAILURE);
+        }
+
+        if (mess.code == KO) {
+            printf ("Error: %s\n", mess.content);
+            continue;
+        }
+
+        char *res = NULL;
+        if (mess.code == DISCONNECT) {
+            disconnect ();
+            printf ("You're now disconnected from the chat server\n");
+            pthread_detach (thread_send);
+            exit (0);
+        }
+        switch (mess.code) {
+        case OK:
+            if (strlen (mess.content) > 0) {
+                printf ("%s\n", mess.content);
+            }
+            break;
+
+        case MESSAGE:
+            printf ("[%s @ %s] %s\n", mess.sender, mess.receiver, mess.content);
+            break;
+
+        case MP:
+            printf ("[%s > %s] %s\n", mess.sender, mess.receiver, mess.content);
+            break;
+
+        case NEW_USER:
+            printf ("The user %s joined the room %s\n", mess.sender,
+                    mess.content);
+            break;
+        case ADD_USER:
+            printf ("USER %s in %s \n", mess.sender, mess.content);
+            break;
+
+        case DELETE_ROOM:
+            printf ("The room %s has been deleted\n", mess.content);
+            break;
+
+        default:
+            break;
+        }
+
+    }
+    pthread_exit (0);
+}
+
 int start_communication () {
+    pthread_create (&thread_recv_sec, NULL, traitement_recv_sec, NULL);
 	pthread_create (&thread_recv, NULL, traitement_recv, NULL);
 	pthread_create (&thread_send, NULL, traitement_send, NULL);
 

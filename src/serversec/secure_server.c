@@ -255,12 +255,14 @@ void *handle_connexion(void *param) {
                     break;
 
                 case DISCONNECT_SEC:
-                    printf("Disconnection\n");
-                    response.code = DISCONNECT;
+                    printf("Disconnection from secure server\n");
+                    response.code = DISCONNECT_SEC;
                     SSL_write(client_ssl, &response, sizeof(message));
+                    printf("SSL_write secure server\n");
                     pthread_mutex_unlock(&mutex);
                     SSL_CTX_free(ctx);
-                    closeSocketTCP(s);
+                    SSL_free(client_ssl);
+                    //closeSocketTCP(s);
                     change_status (buffer.sender);
                     pthread_exit(0);
                     break;

@@ -83,6 +83,7 @@ int connect_socket (const char *addr, const int port) {
 }
 
 int receive_message (message *m) {
+    printf("receive_message libclient\n");
 	int ret = readSocketTCP (client_sock, (char *) m, sizeof(message));
 	if (ret == 0) {
 		return -1;
@@ -158,6 +159,7 @@ int send_message (const char *mess, char **error_mess) {
 
 		switch (code) {
 		case CONNECT:   // Cas d'une demande de connexion
+            printf("DEBUT CONNECT\n");
 			tmp = strtok (NULL, " ");
 			if (tmp != NULL) {
 				login = strdup (tmp);
@@ -167,6 +169,7 @@ int send_message (const char *mess, char **error_mess) {
 				return -1;
 			} else {
 				strcpy (msg->sender, login);
+                printf("RETURN send_command\n");
 				return send_command ();
 			}
 			break;
@@ -240,6 +243,7 @@ int send_message (const char *mess, char **error_mess) {
 			break;
 
 		case MP:  // Cas d'envoi de message prive
+            printf("debut MP libclient\n");
 			tab_string = create_table_param (buffer);
 			if (len (tab_string) < 3) {
 				*error_mess =
