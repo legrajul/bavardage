@@ -11,6 +11,7 @@
 #define CADIR NULL
 #define CERTFILE "toto_certif.pem"
 #define KEYFILE "toto_key.pem"
+#define AES_BLOCK_SIZE 256
 
 char *private_key_filename = KEYFILE;
 char *certif_request_filename;
@@ -202,6 +203,7 @@ int extract_code_sec (const char *str) {
     return -1;
 }
 
+
 int send_command_sec () {
     printf ("DEBUG_SEND_COMMAND-%d\n", debug++);
     if (secure_socket == NULL) {
@@ -251,7 +253,9 @@ char *create_challenge_sec (const char *data) {
 int send_message_sec (const char *mess, char **error_mess) {
     int code;
     char buffer[20 + MAX_NAME_SIZE + MAX_MESS_SIZE] = "";
-    strcpy (buffer, mess);
+    unsigned char *ciphermess;
+    EVP_CIPHER_CTX en;    
+    strcpy(buffer, mess);
     buffer[strlen (buffer)] = '\0';
 
     msg = (message*) malloc (sizeof(message));
@@ -341,6 +345,45 @@ int send_message_sec (const char *mess, char **error_mess) {
                 return -3;
             }
             return send_command_sec ();
+            break;
+            
+         case MESSAGE:  // Cas d'envoi de message
+            tab_string = create_table_param(buffer);
+            if (len (tab_string) < 3) {
+                *error_mess = strdup ("MESSAGE doit avoir 2 paramètres : /MESSAGE salon mon super message\n");
+                return -3;
+            }
+            strcpy(msg->receiver, tab_string[1]);
+            for (i = 2; i < len(tab_string); i++) {
+                strcat(buff, tab_string[i]);
+                strcat(buff, " ");
+            }
+            
+            ciphermess = aes_encrypt(&en, (unsigned char *)buff, strlen(buff) + 1); 
+            strcpy(msg->content, ciphermess);
+            free(tab_string);
+            free(ciphermess);
+            return send_command(); 
+            break;
+
+        case MP:  // Cas d'envoi de message prive
+            tab_string = create_table_param(buffer);
+            if (len (tab_string) < 3) {
+                *error_mess = strdup ("MP doit avoir 2 paramètres : /MP toto mon super message privé\n");
+                return -3;
+            }
+            strcpy(msg->receiver, tab_string[1]);
+            strcpy (buff, "");
+            for (i = 2; i < len(tab_string); i++) {
+                strcat(buff, tab_string[i]);
+                strcat(buff, " ");
+            }
+                        
+            ciphermess = aes_encrypt(&en, (unsigned char *)buff, strlen(buff) + 1); 
+            strcpy(msg->content, ciphermess);
+            free(tab_string);
+            free(ciphermess);
+            return send_command();
             break;
 
         }

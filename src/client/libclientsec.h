@@ -18,6 +18,7 @@
 int connect_with_authentication (char *chatservaddr, int chatservport,
 		char *secservaddr, int secservport);
 
+
 int disconnect_servers ();
 
 int generate_private_key ();
@@ -39,7 +40,7 @@ char *create_challenge_sec (const char *data);
 
 int send_command_sec ();
 
-int extract_code_sec (const char *str);
+int extract_code_sec (const char *str); 
 
 int aes_init (unsigned char *key, unsigned char *iv, EVP_CIPHER_CTX *e_ctx,
 		EVP_CIPHER_CTX *d_ctx);

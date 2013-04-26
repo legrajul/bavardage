@@ -80,6 +80,7 @@ void randomString (char *str, size_t n) {
     str[i] = 0;
 }
 
+
 unsigned int *randomInt() {
     unsigned int *c;
     c = (unsigned int *) malloc (2 * sizeof (unsigned int));
@@ -93,6 +94,7 @@ unsigned int *randomInt() {
         c[i] = v;
     }
     return c;
+
 }
 
 void gen_keyiv(key_iv keyiv, unsigned char *key_data, int key_data_len) {
@@ -166,8 +168,11 @@ void *handle_connexion(void *param) {
                         response.code = CREATE_ROOM;
                         strcpy(response.sender, buffer.sender);
                         strcpy(response.content, buffer.content);
+                        SSL_write(u->ssl, (char *) &response, sizeof (message));
+                          
                         response.code = ADMIN;
                         strcat(response.content,"|");
+
                         strcat(response.content, (char *)keyiv);
                         SSL_write(u->ssl, (char *) &response, sizeof (message));
 
@@ -177,6 +182,7 @@ void *handle_connexion(void *param) {
                         response.code = OK;
                         free(keyiv);
                     }
+
 
                     break;
 
@@ -475,7 +481,7 @@ int start_listening (const char *addr, int port) {
     return -1;
 }
 
-int main (int argc, char *argv[]) {
+int main (int argc, char *argv[]) { 
     connect_server_database ("secureserver.db");
     if (argc < 3) {
         fprintf (stderr, "Usage: ./server ip port\n");
