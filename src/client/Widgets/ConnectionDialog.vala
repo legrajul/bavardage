@@ -173,6 +173,15 @@ namespace Bavardage.Widgets {
                     set_certif_filename (cert.get_path ());
                     set_private_key_filename (key.get_path ());
                     connect_with_authentication (chatip, chatport, secip, secport);
+                    
+                    this.connect_regular (chatip, chatport, login);
+
+                    try {
+                        
+                        (application as Bavardage.Client).thread_receive_sec = new Thread<void *>.try ("recv thread", (application as Bavardage.Client).receive_thread_sec);
+                    } catch (GLib.Error e) {
+                        stderr.printf ("Error : %s\n", e.message);
+                    }
                     string error;
                     send_message_sec ("/CONNECT_SEC " + login + " " + password, out error);
                 });

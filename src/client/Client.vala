@@ -7,7 +7,9 @@
 using Gtk;
 using Gee;
 using Bavardage.ClientCore;
+using Bavardage.ClientSecCore;
 using Bavardage.Common;
+using Bavardage.CommonSec;
 
 namespace Bavardage {
     public struct Message {
@@ -37,8 +39,12 @@ namespace Bavardage {
         private Gtk.MenuItem quit_item;
         private Gtk.MenuItem about_item;
         private Statusbar statusbar;
+        private Statusbar secure_statusbar;
         private Bavardage.Widgets.ConnectionDialog conn_dial;
         public Thread<void *> thread_receive;
+        public Thread<void *> thread_receive_sec;
+
+        private bool is_secured = false;
 
         private signal void update_connected (bool is_connected, string login);
 
@@ -95,6 +101,7 @@ namespace Bavardage {
 
                 statusbar = builder.get_object ("statusbar") as Statusbar;
                 statusbar.push (statusbar.get_context_id ("status"), "Déconnecté");
+                secure_statusbar = builder.get_object ("secure_statusbar") as Statusbar;
                 window.set_application (this);
 
                 window.show_all ();
@@ -114,7 +121,11 @@ namespace Bavardage {
             window.destroy.connect ( () => {
                     // se déconnecter du serveur
                     if (disconnect_item.get_sensitive ()) {
-                        ClientCore.disconnect ();
+                        if (is_secured) {
+                            ClientSecCore.disconnect_servers ();
+                        } else {
+                            ClientCore.disconnect ();
+                        }
                     }
                     Gtk.main_quit ();
                 });
@@ -123,7 +134,11 @@ namespace Bavardage {
             quit_item.activate.connect ( () => {
                     // se déconnecter du serveur
                     if (disconnect_item.get_sensitive ()) {
-                        ClientCore.disconnect ();
+                        if (is_secured) {
+                            ClientSecCore.disconnect_servers ();
+                        } else {
+                            ClientCore.disconnect ();
+                        }
                     }
                     Gtk.main_quit ();
                 });
@@ -612,6 +627,28 @@ namespace Bavardage {
             message.set_buffer (new EntryBuffer ("".data));
             connected_users.set_model (new ListStore (2, typeof (string), typeof (string)));
             update_connected (false, "");
+            Thread.exit (null);
+            return null;
+        }
+
+        public void *receive_thread_sec () {
+            Message m = { -1, "".data, "".data, "".data };
+            TreeIter tree_iter;
+            while (true) {
+                Thread.usleep (10000);
+                m = { -1, "".data, "".data, "".data };
+                if (receive_message_sec (out m) == 0) {
+                    switch (m.code) {
+                    case CONNECT_SEC:
+                        is_secured = true;
+                        secure_statusbar.push (statusbar.get_context_id ("securestatus"), "(Connexion sécurisée)");
+                        break;
+                    default:
+                        break;
+                    }
+                    stdout.printf ("Message reçu !\n");
+                }
+            }
             Thread.exit (null);
             return null;
         }

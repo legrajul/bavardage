@@ -88,7 +88,7 @@ int connect_secure_socket (const char *addr, const int port) {
 
     if (SSL_connect (ssl) <= 0)
         berr_exit ("SSL connect error");
-
+    
     //long err;
     // modif a refaire
     /*if ((err = post_connection_check(ssl, "localhost")) != X509_V_OK) {
@@ -120,7 +120,8 @@ int connect_with_authentication (char *chatservaddr, int chatservport,
 }
 
 int disconnect_servers () {
-    //TODO
+    disconnect ();
+    disconnect_sec ();
 }
 
 int generate_private_key () {
@@ -233,6 +234,7 @@ int send_command_sec () {
 }
 
 char *create_challenge_sec (const char *data) {
+    printf ("BEGIN - create_challenge_sec with data = <%s> (%d char)\n", data, strlen (data));
     uint8_t *encryptedBytes = NULL;
     //const char* data = "Data to enrypt";
     char *private_key_file_name = KEYFILE;
