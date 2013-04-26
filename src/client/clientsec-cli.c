@@ -215,6 +215,7 @@ int start_communication () {
 
 	pthread_join (thread_recv, NULL);
 	pthread_join (thread_send, NULL);
+	pthread_join (thread_recv_sec,NULL);
 
 	return 0;
 }
