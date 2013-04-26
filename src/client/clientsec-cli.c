@@ -95,8 +95,14 @@ void *traitement_recv_sec (void *param) {
             continue;
         }
 
-        char *res = NULL;
+
+        char *res = NULL, conn[MAX_MESS_SIZE] = "";
         switch (mess.code) {
+        case CONNECT_SEC:
+            strcpy(conn, "/CONNECT ");
+            strcat(conn, mess.sender);
+            send_message (conn, NULL);
+            break;
         case DISCONNECT:
             //disconnect ();
             printf ("You're now disconnected from the chat server\n");

@@ -280,7 +280,7 @@ int send_message_sec (const char *mess, char **error_mess) {
         switch (code) {
         case CONNECT_SEC:   // Cas d'une demande de connexion 
             printf("msg-code(debut swicth): %d\n", msg->code);
-            strcpy(conn, "/CONNECT ");
+            //strcpy(conn, "/CONNECT ");
             printf ("DEBUG_SEND_MESS-%d\n", debug++);
             tmp = strtok (NULL, " ");
             if (tmp != NULL) {
@@ -298,8 +298,8 @@ int send_message_sec (const char *mess, char **error_mess) {
                 strcpy (msg->content, challenge);
             }
 
-            strcat(conn, login);
-            send_message (conn, &error_mess);
+            //strcat(conn, login);
+            //send_message (conn, &error_mess);
             msg->code = CONNECT_SEC;
             printf ("DEBUG_SEND_MESS-%d\n", debug++);
             if (login == NULL) {
