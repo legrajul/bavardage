@@ -29,20 +29,28 @@ void *traitement_send (void *param) {
 		mess[strlen (mess) - 1] = '\0';
 		int ret, ret_sec;
 		char *error_mess;
-		if (ret = send_message (mess, &error_mess) == -1) {
+		/*if (ret = send_message (mess, &error_mess) == -1) {
 			pthread_exit (NULL);
 			exit (EXIT_FAILURE);
 		} else if (ret == -2) {
 			fprintf (stderr, "Unkown command\n");
 		} else if (ret == -3) {
 			fprintf (stderr, "%s\n", error_mess);
-		}
+		}*/
 
 		if ((ret_sec = send_message_sec (mess, &error_mess)) == -1) {
 			pthread_exit (NULL);
 			exit (EXIT_FAILURE);
 		} else if (ret_sec == -2) {
-			fprintf (stderr, "Unkown command\n");
+			fprintf (stderr, "Unkown command for secure server\n");
+            if (ret = send_message (mess, &error_mess) == -1) {
+                pthread_exit (NULL);
+                exit (EXIT_FAILURE);
+            } else if (ret == -2) {
+                fprintf (stderr, "Unkown command\n");
+            } else if (ret == -3) {
+                fprintf (stderr, "%s\n", error_mess);
+            }
 		} else if (ret_sec == -3) {
 			fprintf (stderr, "%s\n", error_mess);
 		}

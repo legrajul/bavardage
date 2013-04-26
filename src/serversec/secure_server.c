@@ -150,6 +150,7 @@ void *handle_connexion(void *param) {
                 printf ("Before ssl_mutex: buffer.content: %s\n",buffer.sender);
                 //pthread_mutex_lock(&mutex);
                 printf ("After ssl_mutex\n");
+                printf("buffer.code = %d\n", buffer.code);
                 switch (buffer.code) {
                 case CREATE_ROOM_SEC:
                     printf ("Create room : %s\n", buffer.content);

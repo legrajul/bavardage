@@ -219,6 +219,8 @@ int send_command_sec () {
     printf ("DEBUG_SEND_COMMAND-%d\n", debug++);
     printf ("SIZEOF_MESSAGE-%ld\n", sizeof(message));
     printf ("MSG_SENDER-%s\n", msg->sender);
+    printf("msg->code(dans send_command_sec): %d\n", msg->code);
+    printf("msg->sender: %s\n", msg->sender);
     if (SSL_write (ssl, (char *) msg, sizeof(message)) < 0) {
         return (1);
     } else {
@@ -266,17 +268,21 @@ int send_message_sec (const char *mess, char **error_mess) {
             return -2;
         }
         msg->code = code;
-        char *tmp, *pass, buff[MAX_MESS_SIZE] = "";
+        char *tmp, *pass, buff[MAX_MESS_SIZE] = "", conn[MAX_MESS_SIZE] = "";
         uint8_t *challenge;
         int i;
         printf ("DEBUG_SEND_MESS-%d\n", debug++);
         switch (code) {
-        case CONNECT_SEC:   // Cas d'une demande de connexion
+        case CONNECT_SEC:   // Cas d'une demande de connexion 
+            printf("msg-code(debut swicth): %d\n", msg->code);
+            strcpy(conn, "/CONNECT ");
             printf ("DEBUG_SEND_MESS-%d\n", debug++);
             tmp = strtok (NULL, " ");
             if (tmp != NULL) {
                 login = strdup (tmp);
             }
+            printf("AFTER send_message\n");
+
             pass = strtok (NULL, "");
             printf ("PASS-%s\n", pass);
 
@@ -287,6 +293,10 @@ int send_message_sec (const char *mess, char **error_mess) {
                 strcpy (msg->content, challenge);
             }
 
+            strcat(conn, login);
+            printf("conn:%s\n", conn);
+            send_message (conn, &error_mess);
+            msg->code = CONNECT_SEC;
             printf ("DEBUG_SEND_MESS-%d\n", debug++);
             if (login == NULL) {
                 printf ("login null\n");
@@ -294,6 +304,7 @@ int send_message_sec (const char *mess, char **error_mess) {
             } else {
                 printf ("LOGIN-%s\n", login);
                 strcpy (msg->sender, login);
+                printf("msg->code (avant send_command_sec): %d\n", msg->code);
                 return send_command_sec ();
             }
             break;
