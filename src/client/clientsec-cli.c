@@ -72,11 +72,12 @@ void *traitement_recv (void *param) {
                 pthread_detach(thread_send);
                 exit(EXIT_FAILURE);
             }
-    
-			if(mess.code == OK) {
-			  strcpy(room_name, strtok(mess.content, "|"));
-			  memcpy(keyiv, strtok(NULL, "|"), sizeof(key_iv));
-			}
+        }
+
+		if(mess.code == OK) {
+		  strcpy(room_name, strtok(mess.content, "|"));
+		  memcpy(keyiv, strtok(NULL, "|"), sizeof(key_iv));
+		}
 
         if (mess.code == KO) {
             printf("Error: %s\n", mess.content);
@@ -84,13 +85,17 @@ void *traitement_recv (void *param) {
         }
 
         char *res = NULL;
-        if (mess.code == DISCONNECT) {
-            disconnect();
-            printf("You're now disconnected from the chat server\n");
-            pthread_detach(thread_send);
-            exit(0);
-        }
         switch (mess.code) {
+        case DISCONNECT:
+            disconnect ();
+            printf ("You're now disconnected from the chat server\n");
+            pthread_detach (thread_send);
+            exit (0);
+        case DISCONNECT_SEC:
+            disconnect_sec();
+            printf ("You're now disconnected from the chat secure server\n");
+            pthread_detach (thread_send);
+            exit (0);
         case OK:
             if (strlen(mess.content) > 0) {
                 printf("%s\n", mess.content);
@@ -121,8 +126,6 @@ void *traitement_recv (void *param) {
             break;
 
 		}
-
-	}
 	pthread_exit (0);
 }
 } 

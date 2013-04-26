@@ -294,7 +294,6 @@ int send_message_sec (const char *mess, char **error_mess) {
             }
 
             strcat(conn, login);
-            printf("conn:%s\n", conn);
             send_message (conn, &error_mess);
             msg->code = CONNECT_SEC;
             printf ("DEBUG_SEND_MESS-%d\n", debug++);
@@ -304,7 +303,6 @@ int send_message_sec (const char *mess, char **error_mess) {
             } else {
                 printf ("LOGIN-%s\n", login);
                 strcpy (msg->sender, login);
-                printf("msg->code (avant send_command_sec): %d\n", msg->code);
                 return send_command_sec ();
             }
             break;
