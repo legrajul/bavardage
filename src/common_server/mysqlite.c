@@ -82,15 +82,17 @@ int check_challenge (char *login, uint8_t *challenge) {
     printf("BEFORE REQUEST\n");
     sprintf (select, "SELECT challenge FROM users WHERE login = \'%s\'", login);
 
-    char **res = NULL;
+    uint8_t **res = NULL;
     int row_nb, col_nb;
     char *err = NULL;
     sqlite3_get_table (database, select, &res, &row_nb, &col_nb, &err);
-    if (memcmp (challenge, res[1], 256) == 0) {
-		return -1;
-    } else {
-		return 1;
+    int i;
+    for (i = 0; i < 256; i++) {
+	if (challenge[i] != 0 && res[1][i] != challenge[i]) {
+	    return 1;
+	}
     }
+    return -1;
 }
 
 /** verifie la prÃ©sence d'un user */
