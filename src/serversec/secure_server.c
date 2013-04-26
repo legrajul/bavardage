@@ -161,7 +161,7 @@ void *handle_connexion(void *param) {
                         printf ("Room already in user\n");
                     } else {
                         randomString(key_data,(sizeof key_data)-1);
-                        keyiv = malloc(sizeof keyiv);
+                        keyiv = malloc(sizeof(struct KEY_IV));
                         gen_keyiv(keyiv, (unsigned char *)key_data, sizeof(key_data));
                         add_room(buffer.content, u);
                         add_user_in_room(u, buffer.content);
@@ -172,13 +172,10 @@ void *handle_connexion(void *param) {
                         SSL_write(u->ssl, (char *) &response, sizeof (message));
                           
                         response.code = ADMIN;
-                        strcat(response.content,"|");
-
-                        strcat(response.content, (char *)keyiv);
-                        SSL_write(u->ssl, (char *) &response, sizeof (message));
-
+                        sprintf(response.content, "|%s|%s",keyiv->key,keyiv->iv);
+                       
                         strcpy (response.sender, u->name);
-                        SSL_write (u->ssl, (char *) &response, sizeof (message));
+                        SSL_write(u->ssl, (char *) &response, sizeof (message));
 
                         response.code = OK;
                         free(keyiv);
@@ -197,12 +194,11 @@ void *handle_connexion(void *param) {
                         response.code = KO;
                     } else {
                         randomString(key_data,(sizeof key_data)-1);
-                        keyiv = malloc(sizeof keyiv);
+                        keyiv = malloc(sizeof(struct KEY_IV));
                         gen_keyiv(keyiv,(unsigned char *)key_data, sizeof(key_data));
                         join_room (u, buffer.content);
                         strcpy(response.content, buffer.content);
-                        strcat(response.content,"|");
-                        strcat(response.content, (char *)keyiv);
+                        sprintf(response.content, "|%s|%s",keyiv->key,keyiv->iv);
                         response.code = OK;
                         user_list l = get_users(buffer.receiver);
                         user_list t;
@@ -228,9 +224,9 @@ void *handle_connexion(void *param) {
                         remove_user_from_room(u, buffer.content);
                         printf("User successfully deleted\n");
                         randomString(key_data,(sizeof key_data)-1);
-                        keyiv = malloc(sizeof keyiv);
+                        keyiv = malloc(sizeof(struct KEY_IV));
                         gen_keyiv(keyiv,(unsigned char *)key_data, sizeof(key_data));
-                        strcat(response.content, (char *)keyiv);
+                        sprintf(response.content, "|%s|%s",keyiv->key,keyiv->iv);
                         response.code = OK;
                         user_list l = get_users(buffer.receiver);
                         user_list t;

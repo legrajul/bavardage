@@ -3,6 +3,7 @@
 #include "../common/commonsec.h"
 #include "../common/common.h"
 #include "../common/room_manager.h"
+#include "../common/room_manager_sec.h"
 
 #include <pthread.h>
 #include <stdio.h>
@@ -22,6 +23,9 @@
 
 
 pthread_t thread_send, thread_recv, thread_recv_sec;
+key_iv keyiv;
+EVP_CIPHER_CTX en;
+EVP_CIPHER_CTX de;
 
 void *traitement_send (void *param) {
 	char mess[MAX_MESS_SIZE] = "";
@@ -61,11 +65,12 @@ void *traitement_send (void *param) {
 	pthread_exit (0);
 }
 
-void *traitement_recv_sec (void *param) {
-	message mess;
-	key_iv keyiv;
-    unsigned char *plainmess;
-    EVP_CIPHER_CTX de;
+
+void *traitement_recv (void *param) {
+	message mess;	
+	int lenght;
+    unsigned char *plainmess;  
+
     char room_name;
 	while (1) {
         printf("(traitement_recv)mess.code: <%d>\n", mess.code);
@@ -79,7 +84,10 @@ void *traitement_recv_sec (void *param) {
         printf("mess.code: <%d>\n", mess.code);
 		if(mess.code == OK) {
 		  strcpy(room_name, strtok(mess.content, "|"));
-		  memcpy(keyiv, strtok(NULL, "|"), sizeof(key_iv));
+		  strcpy(keyiv->key, strtok(NULL, "|"));
+		  strcpy(keyiv->iv, strtok(NULL, "|"));
+		  aes_init(keyiv->key, keyiv->iv, &en, &de);
+		  
 		}
 
         if (mess.code == KO) {
@@ -106,11 +114,14 @@ void *traitement_recv_sec (void *param) {
             break;
 
         case MESSAGE:
-            
-            printf("[%s @ %s] %s\n", mess.sender, mess.receiver, mess.content);
+            lenght = strlen(mess.content) + 1;
+            plainmess = aes_decrypt(&de, (unsigned char *)mess.content, &lenght);
+            printf("[%s @ %s] %s\n", mess.sender, mess.receiver, plainmess);
             break;
 
         case MP:
+            lenght = strlen(mess.content) + 1;
+            plainmess = aes_decrypt(&de, (unsigned char *)mess.content, &lenght);
             printf("[%s > %s] %s\n", mess.sender, mess.receiver, mess.content);
             break;
 
@@ -118,6 +129,7 @@ void *traitement_recv_sec (void *param) {
             printf("The user %s joined the room %s\n", mess.sender, mess.content);
             break;
         case ADD_USER:
+            set_keyiv_in_room(mess.content, keyiv);           
             printf("USER %s in %s \n", mess.sender, mess.content); 
             break;
 

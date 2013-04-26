@@ -6,6 +6,8 @@
 
 #include "../common/common.h"
 #include "../common/commonsec.h"
+#include "../common/room_manager.h"
+#include "../common/room_manager_sec.h"
 
 #define CAFILE "root.pem"
 #define CADIR NULL
@@ -257,6 +259,9 @@ int send_message_sec (const char *mess, char **error_mess) {
     char buffer[20 + MAX_NAME_SIZE + MAX_MESS_SIZE] = "";
     unsigned char *ciphermess;
     EVP_CIPHER_CTX en;    
+    EVP_CIPHER_CTX de;
+    key_iv keyiv;
+    aes_init ((unsigned char *)keyiv->key, (unsigned char *)keyiv->iv, &en, &de);
     strcpy(buffer, mess);
     buffer[strlen (buffer)] = '\0';
 

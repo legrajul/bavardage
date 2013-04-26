@@ -9,9 +9,9 @@ add_library(clientsec STATIC ${libclientsec_SRCS})
 
 
 # Partie client sécurisé (TEST)
-set(CLIENTSEC_CLI_FLAGS -w -pthread -std=c99)
+set(CLIENTSEC_CLI_FLAGS -w -pthread -std=gnu99)
 add_definitions(${CLIENTSEC_CLI_FLAGS})
-set(client_cli_sec_SRCS clientsec-cli.c)
+set(client_cli_sec_SRCS ../common/user_manager.c ../common/room_manager.c ../common/room_manager_sec.c   clientsec-cli.c)
 find_package(Threads)
 add_executable(clientsec-cli ${client_cli_sec_SRCS})
 target_link_libraries(clientsec-cli ${CMAKE_THREAD_LIBS_INIT} client clientsec ssl crypto)

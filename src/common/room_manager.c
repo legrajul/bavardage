@@ -269,3 +269,5 @@ room_list get_user_rooms (user u) {
 	}
 	return res;
 }
+
+
