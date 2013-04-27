@@ -24,6 +24,13 @@
 #define RM_USER 17
 #define NEW_USER 18
 #define ADMIN 19
+#define CREATE_ROOM_KO 20
+#define JOIN_ROOM_KO 21
+#define DELETE_ROOM_KO 22
+#define CONNECT_KO 23
+#define MESSAGE_KO 24
+#define MP_KO 25
+#define QUIT_ROOM_KO 26
 
 typedef struct {
 	int code;

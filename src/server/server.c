@@ -131,7 +131,7 @@ void *handle_connexion (void *param) {
 				case CREATE_ROOM:
 					printf ("Create room : %s\n", buffer.content);
 					if (is_room_used (buffer.content)) {
-						response.code = KO;
+						response.code = CREATE_ROOM_KO;
 						strcpy (response.content,
 								"This room name is already in use");
 						printf ("Room already in user\n");
@@ -159,11 +159,11 @@ void *handle_connexion (void *param) {
 					printf ("Join room : %s\n", buffer.content);
 					if (!is_room_used (buffer.content)) {
 						strcpy (response.content, "The room does not exist");
-						response.code = KO;
+						response.code = JOIN_ROOM_KO;
 					} else if (is_user_in_room (u, buffer.content)) {
 						strcpy (response.content,
 								"You're already in this room");
-						response.code = KO;
+						response.code = JOIN_ROOM_KO;
 					} else {
 						join_room (u, buffer.content);
 						strcpy (response.content, buffer.content);
@@ -173,11 +173,11 @@ void *handle_connexion (void *param) {
 
 				case QUIT_ROOM:
 					if (!is_room_used (buffer.content)) {
-						response.code = KO;
+						response.code = QUIT_ROOM_KO;
 						strcpy (response.content, "This room does not exist");
 						break;
 					} else if (strcmp (home_room, buffer.content) == 0) {
-						response.code = KO;
+						response.code = QUIT_ROOM_KO;
 						strcpy (response.content,
 								"You cannot leave the home room");
 						break;
@@ -189,7 +189,7 @@ void *handle_connexion (void *param) {
 						strcpy (response.content, buffer.content);
 						break;
 					} else if (!is_user_in_room (u, buffer.content)) {
-						response.code = KO;
+						response.code = QUIT_ROOM_KO;
 						strcpy (response.content, "You are not in this room");
 						break;
 					}
@@ -198,10 +198,10 @@ void *handle_connexion (void *param) {
 					printf ("Room deletion request with name %s by %s\n",
 							buffer.content, buffer.sender);
 					if (!is_room_used (buffer.content)) {
-						response.code = KO;
+						response.code = DELETE_ROOM_KO;
 						strcpy (response.content, "This room doesn\'t exist");
 					} else if (u != get_admin (buffer.content)) {
-						response.code = KO;
+						response.code = DELETE_ROOM_KO;
 						strcpy (response.content,
 								"You're not admin, you can't delete this room");
 					} else {
@@ -237,15 +237,15 @@ void *handle_connexion (void *param) {
 
 				case CONNECT:
 					if (u != NULL) {
-						response.code = KO;
+						response.code = CONNECT_KO;
 						strcpy (response.content, "You are already connected");
 					} else if (!is_login_valid (buffer.sender)) {
-						response.code = KO;
+						response.code = CONNECT_KO;
 						strcpy (response.content, "Login not acceptable");
 					} else if (is_login_used (buffer.sender, server_user_map)
 							== 1) {
 						printf ("login already in use : %s\n", buffer.sender);
-						response.code = KO;
+						response.code = CONNECT_KO;
 						strcpy (response.content,
 								"Login already in use, change your login");
 					} else {
@@ -266,19 +266,19 @@ void *handle_connexion (void *param) {
 
 				case MESSAGE:
 					if (buffer.receiver == NULL) {
-						response.code = KO;
+						response.code = MESSAGE_KO;
 						strcpy (response.content,
 								"Error this command is not allowed");
 						break;
 					}
 					if (buffer.content == NULL) {
-						response.code = KO;
+						response.code = MESSAGE_KO;
 						strcpy (response.content,
 								"You can not send an empty message");
 						break;
 					}
 					if (is_room_used (buffer.receiver) != 1) {
-						response.code = KO;
+						response.code = MESSAGE_KO;
 						strcpy (response.content, "This room does not exist");
 						break;
 					}
@@ -286,7 +286,7 @@ void *handle_connexion (void *param) {
 					;
 					strcpy (sender->name, buffer.sender);
 					if (is_user_in_room (u, buffer.content) == 1) {
-						response.code = KO;
+						response.code = MESSAGE_KO;
 						strcpy (response.content,
 								"You are not allowed to send a message to this room");
 						break;
@@ -303,13 +303,13 @@ void *handle_connexion (void *param) {
 				case MP:
                     printf("debut MP server\n");
 					if (!is_login_used (buffer.receiver, server_user_map)) {
-						response.code = KO;
+						response.code = MP_KO;
 						strcpy (response.content,
 								"You can not send a message to an non-existing user");
 						break;
 					}
 					if (buffer.content == NULL) {
-						response.code = KO;
+						response.code = MP_KO;
 						strcpy (response.content,
 								"You can not send an empty message");
 						break;

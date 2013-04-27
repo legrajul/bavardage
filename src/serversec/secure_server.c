@@ -155,7 +155,7 @@ void *handle_connexion(void *param) {
                 case CREATE_ROOM_SEC:
                     printf ("Create room : %s\n", buffer.content);
                     if (is_room_used(buffer.content)) {
-                        response.code = KO;
+                        response.code = CREATE_ROOM_SEC_KO;
                         strcpy(response.content,
                                "This room name is already in use");
                         printf ("Room already in user\n");
@@ -188,10 +188,10 @@ void *handle_connexion(void *param) {
                     printf ("Join room : %s\n", buffer.content);
                     if (!is_room_used (buffer.content)) {
                         strcpy (response.content, "The room does not exist");
-                        response.code = KO;
+                        response.code = JOIN_ROOM_SEC_KO;
                     } else if (is_user_in_room (u, buffer.content)) {
                         strcpy (response.content, "You're already in this room");
-                        response.code = KO;
+                        response.code = JOIN_ROOM_SEC_KO;
                     } else {
                         randomString(key_data,(sizeof key_data)-1);
                         keyiv = malloc(sizeof(struct KEY_IV));
@@ -212,11 +212,11 @@ void *handle_connexion(void *param) {
                     break;
                 case QUIT_ROOM_SEC:
                     if (!is_room_used (buffer.content)) {
-                        response.code = KO;
+                        response.code = QUIT_ROOM_SEC_KO;
                         strcpy (response.content, "This room does not exist");
                         break;
                     } else if (strcmp (home_room, buffer.content) == 0) {
-                        response.code = KO;
+                        response.code = QUIT_ROOM_SEC_KO;
                         strcpy (response.content, "You cannot leave the home room");
                         break;
                     } else if (u != get_admin(buffer.content)) {
@@ -240,7 +240,7 @@ void *handle_connexion(void *param) {
                         free(keyiv);
                         break;
                     } else if (!is_user_in_room (u, buffer.content)) {
-                        response.code = KO;
+                        response.code = QUIT_ROOM_SEC_KO;
                         strcpy (response.content, "You are not in this room");
                         break;
                     }
@@ -271,7 +271,7 @@ void *handle_connexion(void *param) {
                     printf("AFTER is connected\n");
                     switch (status) {
                     case -1:
-                        response.code = KO;
+                        response.code = CONNECT_SEC_KO;
                         strcpy (response.content, "you are already connected!\n");
                         printf("You are already connected\n");
                         break;
@@ -283,7 +283,7 @@ void *handle_connexion(void *param) {
                             add_user_db (buffer.sender, u8bufcontent);
                         } else if (check_user(buffer.sender, u8bufcontent) == -1) {
                             fprintf(stderr, "incorrect login / password\n");
-                            response.code = KO;
+                            response.code = CONNECT_SEC_KO;
                             break;
                         }
                         printf("AFTER CHECK_USER\n");

@@ -257,6 +257,7 @@ char *create_challenge_sec (const char *data) {
 }
 
 int send_message_sec (const char *mess, char **error_mess) {
+    printf("DEBUT send_message_sec\n");
     int code;
     char buffer[20 + MAX_NAME_SIZE + MAX_MESS_SIZE] = "";
     unsigned char *ciphermess;
@@ -264,6 +265,7 @@ int send_message_sec (const char *mess, char **error_mess) {
     EVP_CIPHER_CTX de;
     key_iv keyiv;
     //~ aes_init ((unsigned char *)keyiv->key, (unsigned char *)keyiv->iv, &en, &de);
+
     strcpy(buffer, mess);
     buffer[strlen (buffer)] = '\0';
 

@@ -100,6 +100,7 @@ void *traitement_recv_sec (void *param) {
         switch (mess.code) {
         case CONNECT_SEC:
             strcpy(conn, "/CONNECT ");
+            printf("mess.sender: <%s>\n", mess.sender);
             strcat(conn, mess.sender);
             send_message (conn, NULL);
             break;
