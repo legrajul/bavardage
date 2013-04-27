@@ -405,6 +405,12 @@ namespace Bavardage {
                         receiver.append_c ((char) m.receiver[i]);
                     }
                     switch (m.code) {
+                    case CREATE_ROOM_KO:
+                    case JOIN_ROOM_KO:
+                    case DELETE_ROOM_KO:
+                    case MESSAGE_KO:
+                    case MP_KO:
+                    case QUIT_ROOM_KO:
                     case KO:
                         stdout.printf ("Error : %s\n", content.str);
                         string s = "Erreur : " + content.str + "\n";

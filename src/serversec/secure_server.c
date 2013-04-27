@@ -284,6 +284,8 @@ void *handle_connexion(void *param) {
                         } else if (check_user(buffer.sender, u8bufcontent) == -1) {
                             fprintf(stderr, "incorrect login / password\n");
                             response.code = CONNECT_SEC_KO;
+			    strcpy (response.content, "Incorrect password\n");
+                            response.code = KO;
                             break;
                         }
                         printf("AFTER CHECK_USER\n");
