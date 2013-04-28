@@ -114,6 +114,7 @@ void *traitement_recv_sec (void *param) {
             strcpy(room_name, strtok(mess.content, "|"));
 		    strcpy(keyiv->key, strtok(NULL, "|"));
 		    strcpy(keyiv->iv, strtok(NULL, "|"));
+		    set_keyiv_in_room(room_name, keyiv);
 		   // aes_init(keyiv->key, keyiv->iv, &en, &de);
             if (strlen(mess.content) > 0) {
                 printf("%s\n", mess.content);
@@ -121,7 +122,7 @@ void *traitement_recv_sec (void *param) {
             break;
 
         case MESSAGE:
-            memcpy(keyiv, get_keyiv_in_room(mess.receiver), sizeof(struct KEY_IV)); 
+            keyiv = get_keyiv_in_room(mess.receiver); 
             aes_init(keyiv->key, keyiv->iv, &en, &de);
             lenght = strlen(mess.content) + 1;
             plainmess = aes_decrypt(&de, (unsigned char *)mess.content, &lenght);
@@ -129,7 +130,7 @@ void *traitement_recv_sec (void *param) {
             break;
 
         case MP:
-            memcpy(keyiv, get_keyiv_in_room(mess.receiver), sizeof(struct KEY_IV)); 
+            keyiv = get_keyiv_in_room(mess.receiver); 
             aes_init(keyiv->key, keyiv->iv, &en, &de);
             lenght = strlen(mess.content) + 1;
             plainmess = aes_decrypt(&de, (unsigned char *)mess.content, &lenght);
@@ -163,6 +164,7 @@ void *traitement_recv_sec (void *param) {
 
 void *traitement_recv (void *param) {
     message mess;
+    char *text = "/CREATE_ROOM_SEC ";
     while (1) {
         if (receive_message (&mess) < 0) {
             perror ("readSocketTCP");
@@ -173,10 +175,7 @@ void *traitement_recv (void *param) {
 
         if (mess.code == KO) {
             printf ("Error: %s\n", mess.content);
-            
-           // if (msg->code == CREATE_ROOM_SEC) {
-			//	send_message_sec ("/ROOM_SEC_KO", NULL);
-			//}
+          
             continue;
         }
 
@@ -192,9 +191,7 @@ void *traitement_recv (void *param) {
             if (strlen (mess.content) > 0) {
                 printf ("%s\n", mess.content);
             }
-           // if (msg->code == CREATE_ROOM_SEC) {
-			//	send_message_sec("/CREATE_ROOM_SEC nom", NULL);
-			//}
+          
             break;
 
         case MESSAGE:
@@ -216,7 +213,15 @@ void *traitement_recv (void *param) {
         case DELETE_ROOM:
             printf ("The room %s has been deleted\n", mess.content);
             break;
-
+            
+        case CREATE_ROOM:
+            
+            strcat(text,mess.receiver);
+			send_message_sec(text, NULL); 
+			
+		case CREATE_ROOM_KO:
+			 printf ("Error: %s\n", mess.content);
+			
         default:
             break;
         }

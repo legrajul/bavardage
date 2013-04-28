@@ -152,9 +152,7 @@ void *handle_connexion(void *param) {
                 printf ("After ssl_mutex\n");
                 printf("buffer.code = %d\n", buffer.code);
                 switch (buffer.code) {
-				case ROOM_SEC_KO:
-					 printf("room already in used");
-					break;
+				
                 case CREATE_ROOM_SEC:
 					
                     printf ("Create room : %s\n", buffer.content);
@@ -247,7 +245,7 @@ void *handle_connexion(void *param) {
                         strcpy (response.content, "You are not in this room");
                         break;
                     }
-
+ 
 
                 case DELETE_ROOM_SEC:
                     //TODO

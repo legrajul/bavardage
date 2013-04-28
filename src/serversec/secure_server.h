@@ -53,7 +53,7 @@ int create_main_room();
  * @param room_name le nom du salon
  * @return -1 si erreur, 0 sinon
  */
-int create_room(char *room_name);
+int create_room(char *room_name); 
 
 /**
  * Ajouter un utilisateur dans un salon
