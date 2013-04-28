@@ -152,7 +152,11 @@ void *handle_connexion(void *param) {
                 printf ("After ssl_mutex\n");
                 printf("buffer.code = %d\n", buffer.code);
                 switch (buffer.code) {
+				case ROOM_SEC_KO:
+					 printf("room already in used");
+					break;
                 case CREATE_ROOM_SEC:
+					
                     printf ("Create room : %s\n", buffer.content);
                     if (is_room_used(buffer.content)) {
                         response.code = CREATE_ROOM_SEC_KO;
@@ -180,7 +184,6 @@ void *handle_connexion(void *param) {
                         response.code = OK;
                         free(keyiv);
                     }
-
 
                     break;
 
@@ -226,7 +229,7 @@ void *handle_connexion(void *param) {
                         randomString(key_data,(sizeof key_data)-1);
                         keyiv = malloc(sizeof(struct KEY_IV));
                         gen_keyiv(keyiv,(unsigned char *)key_data, sizeof(key_data));
-                        sprintf(response.content, "|%s|%s",keyiv->key,keyiv->iv);
+                        sprintf(response.content, "%s|%s|%s",buffer.content,keyiv->key,keyiv->iv);
                         response.code = OK;
                         user_list l = get_users(buffer.receiver);
                         user_list t;

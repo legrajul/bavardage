@@ -4,7 +4,7 @@ add_library(client STATIC ${libclient_SRCS})
 
 # Partie libclientsec.a
 find_package(OpenSSL)
-set(libclientsec_SRCS ../common/SocketTCP.c libclient.c ../common/commonsec.c libclientsec.c ../common/SocketTCP.h libclient.h)
+set(libclientsec_SRCS ../common/user_manager.c ../common/room_manager.c ../common/room_manager_sec.c ../common/SocketTCP.c libclient.c ../common/commonsec.c libclientsec.c ../common/SocketTCP.h libclient.h)
 add_library(clientsec STATIC ${libclientsec_SRCS})
 
 

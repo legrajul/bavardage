@@ -32,6 +32,7 @@
 #define MP_KO 25
 #define QUIT_ROOM_KO 26
 
+
 typedef struct {
 	int code;
 	char sender[MAX_NAME_SIZE];
