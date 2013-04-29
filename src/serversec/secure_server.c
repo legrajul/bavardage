@@ -285,7 +285,6 @@ void *handle_connexion(void *param) {
 						}
 						//------------------------------------------------
 						delete_user(buffer.sender);
-						//~ u->ssl = client_ssl;
 						response.code = DEL_ACCOUNT_SEC;
                         strcpy (response.content, "you have been deleted\n");
 					}	
