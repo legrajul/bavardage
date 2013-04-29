@@ -60,7 +60,7 @@ void *traitement_send (void *param) {
 			fprintf (stderr, "%s\n", error_mess);
 		}
         if (ret_sec != -1) {
-            printf("send_message_sec fait : <mess> : %s\n", mess);
+            printf("Clientsec-cli.c: traitement_send: send_message_sec fait : <%s>\n", mess);
         }
 	}
 	pthread_exit (0);
@@ -75,8 +75,8 @@ void *traitement_recv_sec (void *param) {
     key_iv keyiv;
     
 	while (1) {
-        printf("(traitement_recv)mess.code: <%d>\n", mess.code);
-        printf("(traitement_recv)mess.content: <%s>\n", mess.content);
+        printf("Clientsec-cli.c: recv: mess.code: <%d>\n", mess.code);
+        printf("Clientsec-cli.c: recv: mess.content:<%s>\n", mess.content);
 		if (receive_message_sec(&mess) == -1) {
                 perror("SSL_read");
                 pthread_detach(thread_recv_sec);
@@ -84,7 +84,6 @@ void *traitement_recv_sec (void *param) {
                 exit(EXIT_FAILURE);
         }
         printf("mess.code: <%d>\n", mess.code);
-
         if (mess.code == KO) {
             printf("Error: %s\n", mess.content);
             continue;
@@ -100,16 +99,23 @@ void *traitement_recv_sec (void *param) {
             send_message (conn, NULL);
             init_rooms();
             break;
+            
         case DISCONNECT:
             //disconnect ();
             printf ("You're now disconnected from the chat server\n");
             pthread_detach (thread_send);
             exit (0);
+            
         case DISCONNECT_SEC:
             //disconnect_sec();
             printf ("You're now disconnected from the chat secure server\n");
             pthread_detach (thread_send);
             exit (0);
+            
+        case DEL_ACCOUNT_SEC:
+			printf("your account %s have been deleted\n", mess.content);
+			break;
+        
         case OK:
             strcpy(room_name, strtok(mess.content, "|"));
 		    strcpy(keyiv->key, strtok(NULL, "|"));
