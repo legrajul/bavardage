@@ -79,7 +79,7 @@ int delete_user (char *login) {
 
 int check_challenge (char *login, uint8_t *challenge) {
     char select[QUERY_SIZE] = "";
-    printf("BEFORE REQUEST\n");
+    printf("mysql.c: check_challenge: BEFORE REQUEST\n");
     sprintf (select, "SELECT challenge FROM users WHERE login = \'%s\'", login);
 
     char **res = NULL;
@@ -121,7 +121,7 @@ int check_user(char *login, uint8_t *challenge) {
         if (total == 0) {
             return 1;
         } else {
-            printf("BEFORE CHECK challenge\n");
+            printf("mysql.c: check_user: BEFORE CHECK challenge\n");
             if (check_challenge(login, challenge) == 1) {
                 return -1;
             } else if (check_challenge(login, challenge) == -1) {
@@ -135,7 +135,7 @@ int check_user(char *login, uint8_t *challenge) {
 /* determine si un user est connecte ou non */
 int is_connected (char *login, uint8_t *challenge) {
     check_user(login, challenge);
-    printf("AFTER CHECK_USER (IS CONNECTED)\n");
+    printf("mysql.c: is_connected: AFTER CHECK_USER (IS CONNECTED)\n");
     char is_connect[QUERY_SIZE] = "";
     sprintf (is_connect, "SELECT * FROM users where login = \'%s\' and is_connected = 1", login);
 

@@ -159,7 +159,7 @@ int send_message (const char *mess, char **error_mess) {
 
 		switch (code) {
 		case CONNECT:   // Cas d'une demande de connexion
-            printf("DEBUT CONNECT\n");
+            printf("libclient.c: send_message: DEBUT CONNECT\n");
 			tmp = strtok (NULL, " ");
 			if (tmp != NULL) {
 				login = strdup (tmp);

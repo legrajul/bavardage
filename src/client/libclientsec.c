@@ -22,13 +22,10 @@ char *certif_filename = CERTFILE;
 SocketTCP *secure_socket;
 
 int is_connected = 0;
-
 SSL_CTX *ctx;
 SSL *ssl;
 BIO *sbio;
-
 message *msg;
-
 int debug = 0;
 
 extern char *login, **tab_string;
@@ -201,8 +198,9 @@ int extract_code_sec (const char *str) {
         return QUIT_ROOM_SEC;
     } else if (strcmp (command, "JOIN_ROOM_SEC") == 0) {
         return JOIN_ROOM_SEC;
+    } else if (strcmp (command, "DEL_ACCOUNT_SEC") == 0) {
+        return DEL_ACCOUNT_SEC;
     }
-
     return -1;
 }
 
@@ -219,11 +217,12 @@ int send_command_sec () {
         strcpy (msg->sender, login);
     else
         return -1;
-    printf ("DEBUG_SEND_COMMAND-%d\n", debug++);
-    printf ("SIZEOF_MESSAGE-%ld\n", sizeof(message));
-    printf ("MSG_SENDER-%s\n", msg->sender);
-    printf("msg->code(dans send_command_sec): %d\n", msg->code);
-    printf("msg->sender: %s\n", msg->sender);
+    printf ("libclientsec.c: send_command: DEBUG_SEND_COMMAND-%d\n", debug++);
+    printf ("libclientsec.c: send_command: SIZEOF_MESSAGE-%ld\n", sizeof(message));
+    printf ("libclientsec.c: send_command: MSG_SENDER-%s\n", msg->sender);
+    printf ("libclientsec.c: send_command: msg->code(dans send_command_sec): %d\n", msg->code);
+    printf ("libclientsec.c: send_command: msg->sender: %s\n", msg->sender);
+    printf ("libclientsec.c: send_command: msg->content: %s\n", msg->content);
     if (SSL_write (ssl, (char *) msg, sizeof(message)) < 0) {
         return (1);
     } else {
@@ -234,7 +233,7 @@ int send_command_sec () {
 }
 
 char *create_challenge_sec (const char *data) {
-    printf ("BEGIN - create_challenge_sec with data = <%s> (%d char)\n", data, strlen (data));
+    printf ("libclientsec.c: create_challenge: BEGIN - create_challenge_sec with data = <%s> (%d char)\n", data, strlen (data));
     uint8_t *encryptedBytes = NULL;
     //const char* data = "Data to enrypt";
     char *private_key_file_name = KEYFILE;
@@ -278,20 +277,20 @@ int send_message_sec (const char *mess, char **error_mess) {
         char *tmp, *pass, buff[MAX_MESS_SIZE] = "", conn[MAX_MESS_SIZE] = "";
         uint8_t *challenge;
         int i;
-        printf ("DEBUG_SEND_MESS-%d\n", debug++);
+        printf ("libclientsec.c: send_mess: DEBUG_SEND_MESS-%d\n", debug++);
         switch (code) {
         case CONNECT_SEC:   // Cas d'une demande de connexion 
-            printf("msg-code(debut swicth): %d\n", msg->code);
+            printf("libclientsec.c: send_mess: msg-code(debut swicth): %d\n", msg->code);
             //strcpy(conn, "/CONNECT ");
             printf ("DEBUG_SEND_MESS-%d\n", debug++);
             tmp = strtok (NULL, " ");
             if (tmp != NULL) {
                 login = strdup (tmp);
             }
-            printf("AFTER send_message\n");
+            printf("libclientsec.c: send_mess: AFTER send_message\n");
 
             pass = strtok (NULL, "");
-            printf ("PASS-%s\n", pass);
+            printf ("libclientsec.c: send_mess: PASS-%s\n", pass);
 
             challenge = create_challenge_sec (pass);
 
@@ -303,17 +302,36 @@ int send_message_sec (const char *mess, char **error_mess) {
             //strcat(conn, login);
             //send_message (conn, &error_mess);
             msg->code = CONNECT_SEC;
-            printf ("DEBUG_SEND_MESS-%d\n", debug++);
+            printf ("libclientsec.c: send_mess: DEBUG_SEND_MESS-%d\n", debug++);
             if (login == NULL) {
                 printf ("login null\n");
                 return -1;
             } else {
-                printf ("LOGIN-%s\n", login);
+                printf ("libclientsec.c: send_mess: LOGIN-%s\n", login);
                 strcpy (msg->sender, login);
                 return send_command_sec ();
             }
             break;
 
+		 case DEL_ACCOUNT_SEC:
+			printf("libclientsec.c: case del account sec\n");
+			//~ tab_string = create_table_param(buffer);
+			//~ if (len (tab_string) < 3) {
+                //~ *error_mess = strdup ("use: /DEL_ACCOUNT_SEC user password\n");
+                //~ return -3;
+            //~ }
+            tmp = strtok (NULL, " ");
+            if (tmp != NULL) {
+                login = strdup (tmp);
+            }
+            strcpy(msg->sender, login);
+            pass = strtok (NULL, "");
+            challenge = create_challenge_sec (pass);
+            
+            strcat(msg->content, challenge);
+            return send_command_sec();
+            break;
+            
         case DISCONNECT_SEC:        // Cas d'une demande de déconnexion
             strcpy (msg->sender, login);
             strcpy(conn, "/DISCONNECT ");
@@ -321,7 +339,7 @@ int send_message_sec (const char *mess, char **error_mess) {
             send_message (conn, &error_mess);
             msg->code = DISCONNECT_SEC;
             disconnect_sec ();
-            printf("FIN CASE disconnect_sec\n");
+            printf("libclientsec.c: send_mess: FIN CASE disconnect_sec\n");
             break;
 
         case CREATE_ROOM_SEC:       // Cas d'une demande de création de Salon
@@ -334,6 +352,7 @@ int send_message_sec (const char *mess, char **error_mess) {
             }
             return send_command_sec ();
             break;
+            
         case DELETE_ROOM_SEC:
             tmp = strtok (NULL, " ");
             if (tmp != NULL) {
@@ -344,6 +363,7 @@ int send_message_sec (const char *mess, char **error_mess) {
             }
             return send_command_sec ();
             break;
+            
         case QUIT_ROOM_SEC:         // Cas d'une demande pour quitter une room
             tmp = strtok (NULL, " ");
             if (tmp != NULL) {
@@ -406,7 +426,6 @@ int send_message_sec (const char *mess, char **error_mess) {
             free(ciphermess);
             return send_command();
             break;
-
         }
     }
     return 0;
@@ -419,3 +438,4 @@ int disconnect_sec () {
     }
     return 0;
 }
+	

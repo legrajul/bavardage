@@ -28,6 +28,7 @@
 SocketTCP *listen_socket;
 pthread_mutex_t mutex;
 user_map server_user_map;
+room_map server_room_map;
 char *home_room = "accueil";
 
 SSL_CTX *ctx;
@@ -116,8 +117,8 @@ void *handle_connexion(void *param) {
     int bytes = 0;
     user u;
     key_iv keyiv;
-
     char key_data[KEY_DATA_SIZE];
+	uint8_t *u8bufcontent;
 
 
     if (SSL_accept(client_ssl) <= 0) {     /* do SSL-protocol accept */
@@ -147,7 +148,7 @@ void *handle_connexion(void *param) {
             //            printf ("SSL_read : %d bytes\n", bytes);
             if (bytes > 0) {
                 printf ("SSL_read : %d bytes\n", bytes);
-                printf ("Before ssl_mutex: buffer.content: %s\n",buffer.sender);
+                printf ("Before ssl_mutex: buffer.content: %s\n",buffer.content);
                 //pthread_mutex_lock(&mutex);
                 printf ("After ssl_mutex\n");
                 printf("buffer.code = %d\n", buffer.code);
@@ -185,7 +186,7 @@ void *handle_connexion(void *param) {
                     break;
 
                 case JOIN_ROOM_SEC:
-                    printf ("Join room : %s\n", buffer.content);
+                    printf ("secure_server.c: handle_connexion: %s\n", buffer.content);
                     if (!is_room_used (buffer.content)) {
                         strcpy (response.content, "The room does not exist");
                         response.code = KO;
@@ -210,6 +211,7 @@ void *handle_connexion(void *param) {
 
                     }
                     break;
+                    
                 case QUIT_ROOM_SEC:
                     if (!is_room_used (buffer.content)) {
                         response.code = KO;
@@ -263,12 +265,38 @@ void *handle_connexion(void *param) {
                     pthread_exit(0);
                     break;
 
+				case DEL_ACCOUNT_SEC:
+					printf("serversec.c: buffer.sender = %s : buffer.content = %s\n", buffer.sender, buffer.content);
+					printf("serversec.c: buffer.code = %d\n", buffer.code);
+					u8bufcontent = (uint8_t *) buffer.content;
+					if (is_connected(buffer.sender, u8bufcontent) == -1) {
+						response.code = KO;
+						strcpy (response.content, "bad user / password\n");
+					} else if (is_connected(buffer.sender, u8bufcontent) == 1) {
+						u = (user) malloc(sizeof(struct USER));
+						strcpy(u->name, buffer.sender);
+						room_list p;
+						//------------------------------------------------
+						printf("disconnection from all current room...\n");
+						for (p = server_room_map; p != NULL; p = p->next) {
+							if (is_user_in_room (u, p->current->name))
+								remove_user_from_room (u, p->current->name);
+						}
+						//------------------------------------------------
+						delete_user(buffer.sender);
+						//~ u->ssl = client_ssl;
+						response.code = DEL_ACCOUNT_SEC;
+                        strcpy (response.content, "you have been deleted\n");
+					}	
+					//TODO revoquer le certicat ??
+					break;
+					
                 case CONNECT_SEC:
-                    printf("BEGIN connect_sec\n");
-                    uint8_t *u8bufcontent;
+                    printf("secure_server.c: handle_connexion: BEGIN connect_sec\n");
+                    printf("serversec.c: buffer.sender = %s:\nbuffer.content = %s\n", buffer.sender, buffer.content);
 					u8bufcontent = (uint8_t *) buffer.content;
                     int status = is_connected (buffer.sender, u8bufcontent);
-                    printf("AFTER is connected\n");
+                    printf("secure_server.c: handle_connexion: AFTER is connected\n");
                     switch (status) {
                     case -1:
                         response.code = KO;
@@ -276,8 +304,7 @@ void *handle_connexion(void *param) {
                         printf("You are already connected\n");
                         break;
                     case 1:
-                        printf("DEBUT CASE 1\n");
-                        uint8_t *u8bufcontent;
+                        printf("secure_server.c: handle_connexion: connect_sec: DEBUT CASE 1\n");
 						u8bufcontent = (uint8_t *) buffer.content;
                         if (check_user(buffer.sender, u8bufcontent) == 1) {
                             add_user_db (buffer.sender, u8bufcontent);
@@ -286,7 +313,7 @@ void *handle_connexion(void *param) {
                             response.code = KO;
                             break;
                         }
-                        printf("AFTER CHECK_USER\n");
+                        printf("secure_server.c: handle_connexion: connect_sec: AFTER CHECK_USER\n");
                         change_status(buffer.sender);
                         printf("successful connection : %s\n", buffer.sender);
                         u = (user) malloc(sizeof(struct USER));
@@ -410,6 +437,7 @@ int create_main_room() {
     init_rooms();
     add_room(home_room, NULL);
     server_user_map = (user_map) malloc(HASH_USER_MAP_SIZE * sizeof(user_list));
+    server_room_map = (room_map) malloc(HASH_ROOM_SIZE * sizeof(room_list));
     return 0;
 }
 
