@@ -256,13 +256,15 @@ char *create_challenge_sec (const char *data) {
 }
 
 int send_message_sec (const char *mess, char **error_mess) {
+    printf("DEBUT send_message_sec\n");
     int code;
     char buffer[20 + MAX_NAME_SIZE + MAX_MESS_SIZE] = "";
     unsigned char *ciphermess;
     EVP_CIPHER_CTX en;    
     EVP_CIPHER_CTX de;
+    int lenght;
     key_iv keyiv;
-    //~ aes_init ((unsigned char *)keyiv->key, (unsigned char *)keyiv->iv, &en, &de);
+
     strcpy(buffer, mess);
     buffer[strlen (buffer)] = '\0';
 
@@ -343,14 +345,19 @@ int send_message_sec (const char *mess, char **error_mess) {
             break;
 
         case CREATE_ROOM_SEC:       // Cas d'une demande de création de Salon
-            tmp = strtok (NULL, " ");
-            if (tmp != NULL) {
-                strcpy (msg->content, tmp);
+			strcpy(conn, "/CREATE_ROOM ");
+			strcat(conn, msg->content);
+			return send_message (conn, &error_mess);
+			
+			//msg->code = CREATE_ROOM_SEC;
+            //tmp = strtok (NULL, " ");
+            //if (tmp != NULL) {
+            /*    strcpy (msg->content, tmp);
             } else {
                 *error_mess = strdup ("CREATE_ROOM a besoin d'un paramètre\n");
                 return -3;
             }
-            return send_command_sec ();
+            return send_command_sec ();*/ 
             break;
             
         case DELETE_ROOM_SEC:
@@ -399,11 +406,15 @@ int send_message_sec (const char *mess, char **error_mess) {
                 strcat(buff, tab_string[i]);
                 strcat(buff, " ");
             }
-            
-            ciphermess = aes_encrypt(&en, (unsigned char *)buff, strlen(buff) + 1); 
+            lenght = strlen(buff) + 1;
+            keyiv = malloc(sizeof (struct KEY_IV));
+            keyiv = get_keyiv_in_room(msg->receiver);
+            aes_init(keyiv->key, keyiv->iv, &en, &de);
+            ciphermess = aes_encrypt(&en, (unsigned char *)buff, &lenght); 
             strcpy(msg->content, ciphermess);
             free(tab_string);
             free(ciphermess);
+            free(keyiv);
             return send_command(); 
             break;
 
@@ -420,10 +431,15 @@ int send_message_sec (const char *mess, char **error_mess) {
                 strcat(buff, " ");
             }
                         
-            ciphermess = aes_encrypt(&en, (unsigned char *)buff, strlen(buff) + 1); 
+            lenght = strlen(buff) + 1;
+            keyiv = malloc(sizeof (struct KEY_IV));
+            keyiv = get_keyiv_in_room(msg->receiver);
+            aes_init(keyiv->key, keyiv->iv, &en, &de);
+            ciphermess = aes_encrypt(&en, (unsigned char *)buff, &lenght); 
             strcpy(msg->content, ciphermess);
             free(tab_string);
             free(ciphermess);
+            free(keyiv);
             return send_command();
             break;
         }

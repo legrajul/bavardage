@@ -27,6 +27,7 @@ key_iv keyiv;
 EVP_CIPHER_CTX en;
 EVP_CIPHER_CTX de;
 
+
 void *traitement_send (void *param) {
 	char mess[MAX_MESS_SIZE] = "";
 	while (fgets (mess, MAX_MESS_SIZE, stdin) != NULL) {
@@ -70,8 +71,9 @@ void *traitement_recv_sec (void *param) {
 	message mess;	
 	int lenght;
     unsigned char *plainmess;  
-
     char room_name;
+    key_iv keyiv;
+    
 	while (1) {
         printf("(traitement_recv)mess.code: <%d>\n", mess.code);
         printf("(traitement_recv)mess.content: <%s>\n", mess.content);
@@ -82,26 +84,21 @@ void *traitement_recv_sec (void *param) {
                 exit(EXIT_FAILURE);
         }
         printf("mess.code: <%d>\n", mess.code);
-		if(mess.code == OK) {
-		  strcpy(room_name, strtok(mess.content, "|"));
-		  strcpy(keyiv->key, strtok(NULL, "|"));
-		  strcpy(keyiv->iv, strtok(NULL, "|"));
-		  aes_init(keyiv->key, keyiv->iv, &en, &de);
-		  
-		}
 
         if (mess.code == KO) {
             printf("Error: %s\n", mess.content);
             continue;
         }
-
+       
 
         char *res = NULL, conn[MAX_MESS_SIZE] = "";
         switch (mess.code) {
         case CONNECT_SEC:
             strcpy(conn, "/CONNECT ");
+            printf("mess.sender: <%s>\n", mess.sender);
             strcat(conn, mess.sender);
             send_message (conn, NULL);
+            init_rooms();
             break;
         case DISCONNECT:
             //disconnect ();
@@ -114,24 +111,38 @@ void *traitement_recv_sec (void *param) {
             pthread_detach (thread_send);
             exit (0);
         case OK:
+            strcpy(room_name, strtok(mess.content, "|"));
+		    strcpy(keyiv->key, strtok(NULL, "|"));
+		    strcpy(keyiv->iv, strtok(NULL, "|"));
+		    set_keyiv_in_room(room_name, keyiv);
+		   // aes_init(keyiv->key, keyiv->iv, &en, &de);
             if (strlen(mess.content) > 0) {
                 printf("%s\n", mess.content);
             }
             break;
 
         case MESSAGE:
+            keyiv = get_keyiv_in_room(mess.receiver); 
+            aes_init(keyiv->key, keyiv->iv, &en, &de);
             lenght = strlen(mess.content) + 1;
             plainmess = aes_decrypt(&de, (unsigned char *)mess.content, &lenght);
             printf("[%s @ %s] %s\n", mess.sender, mess.receiver, plainmess);
             break;
 
         case MP:
+            keyiv = get_keyiv_in_room(mess.receiver); 
+            aes_init(keyiv->key, keyiv->iv, &en, &de);
             lenght = strlen(mess.content) + 1;
             plainmess = aes_decrypt(&de, (unsigned char *)mess.content, &lenght);
-            printf("[%s > %s] %s\n", mess.sender, mess.receiver, mess.content);
+            printf("[%s > %s] %s\n", mess.sender, mess.receiver, plainmess);
             break;
-
+            
+        case CREATE_ROOM_SEC:
+             add_room_client(mess.receiver);
+             break;
+                        
         case NEW_USER:
+            set_keyiv_in_room(mess.content, keyiv);           
             printf("The user %s joined the room %s\n", mess.sender, mess.content);
             break;
         case ADD_USER:
@@ -153,6 +164,7 @@ void *traitement_recv_sec (void *param) {
 
 void *traitement_recv (void *param) {
     message mess;
+    char *text = "/CREATE_ROOM_SEC ";
     while (1) {
         if (receive_message (&mess) < 0) {
             perror ("readSocketTCP");
@@ -163,6 +175,7 @@ void *traitement_recv (void *param) {
 
         if (mess.code == KO) {
             printf ("Error: %s\n", mess.content);
+          
             continue;
         }
 
@@ -178,6 +191,7 @@ void *traitement_recv (void *param) {
             if (strlen (mess.content) > 0) {
                 printf ("%s\n", mess.content);
             }
+          
             break;
 
         case MESSAGE:
@@ -199,7 +213,15 @@ void *traitement_recv (void *param) {
         case DELETE_ROOM:
             printf ("The room %s has been deleted\n", mess.content);
             break;
-
+            
+        case CREATE_ROOM:
+            
+            strcat(text,mess.receiver);
+			send_message_sec(text, NULL); 
+			
+		case CREATE_ROOM_KO:
+			 printf ("Error: %s\n", mess.content);
+			
         default:
             break;
         }

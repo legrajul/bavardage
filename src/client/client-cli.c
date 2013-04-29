@@ -78,7 +78,18 @@ void *traitement_recv (void *param) {
 		case DELETE_ROOM:
 			printf ("The room %s has been deleted\n", mess.content);
 			break;
-
+        case CREATE_ROOM_KO:
+            break;
+        case QUIT_ROOM_KO:
+            break;
+        case DELETE_ROOM_KO:
+            break;
+        case MESSAGE_KO:
+            break;
+        case MP_KO:
+            break;
+        case CONNECT_KO:
+            break;
 		default:
 			break;
 		}

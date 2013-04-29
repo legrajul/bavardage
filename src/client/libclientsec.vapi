@@ -7,6 +7,13 @@ namespace Bavardage {
         public const int JOIN_ROOM_SEC;
         public const int DISCONNECT_SEC;
         public const int CONNECT_SEC;
+        public const int CREATE_ROOM_SEC_KO;
+        public const int JOIN_ROOM_SEC_KO;
+        public const int DELETE_ROOM_SEC_KO;
+        public const int MESSAGE_SEC_KO;
+        public const int MP_SEC_KO;
+        public const int QUIT_ROOM_SEC_KO;
+
 
         public void init_OpenSSL ();
     }

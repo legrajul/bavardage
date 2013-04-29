@@ -122,7 +122,6 @@ namespace Bavardage.Widgets {
                             this.connect_regular (entry_server_ip.get_text (), int.parse (entry_server_port.get_text ()), entry_login.get_text ());
                         }
                     }
-                    this.hide ();
                 });
 
             this.connect_regular.connect ((chatip, chatport, login) => {
@@ -152,6 +151,7 @@ namespace Bavardage.Widgets {
                                 var msg = new MessageDialog (this, DialogFlags.MODAL | DialogFlags.DESTROY_WITH_PARENT, MessageType.ERROR, ButtonsType.OK, content_str.str);
                                 msg.response.connect ((response_id2) => {
                                         msg.hide_on_delete ();
+                                        this.present ();
                                     });
                                 msg.present ();
                             } else {
@@ -173,17 +173,35 @@ namespace Bavardage.Widgets {
                     set_certif_filename (cert.get_path ());
                     set_private_key_filename (key.get_path ());
                     connect_with_authentication (chatip, chatport, secip, secport);
-                    
-                    this.connect_regular (chatip, chatport, login);
 
-                    try {
-                        
-                        (application as Bavardage.Client).thread_receive_sec = new Thread<void *>.try ("recv thread", (application as Bavardage.Client).receive_thread_sec);
-                    } catch (GLib.Error e) {
-                        stderr.printf ("Error : %s\n", e.message);
-                    }
                     string error;
+                    Message m;
                     send_message_sec ("/CONNECT_SEC " + login + " " + password, out error);
+
+                    receive_message_sec (out m);
+                    if (m.code == KO) {
+                        if (m.code == KO) {
+                            var content_str = new StringBuilder ("");
+                            for (int i = 0; i < m.content.length; i++) {
+                                content_str.append_c ((char) m.content[i]);
+                            }
+                            var msg = new MessageDialog (this, DialogFlags.MODAL | DialogFlags.DESTROY_WITH_PARENT, MessageType.ERROR, ButtonsType.OK, content_str.str);
+                            msg.response.connect ((response_id2) => {
+                                    msg.hide_on_delete ();
+                                    this.present ();
+                                });
+                            msg.present ();
+                        } else {
+                            this.connect_regular (chatip, chatport, login);
+                            update_connected (true, entry_login.get_text ());
+                            this.hide ();
+                            try {
+                                (application as Bavardage.Client).thread_receive_sec = new Thread<void *>.try ("recv thread sec", (application as Bavardage.Client).receive_thread_sec);
+                            } catch (GLib.Error e) {
+                                stderr.printf ("Error : %s\n", e.message);
+                            }
+                        }
+                    }
                 });
         }
 

@@ -188,6 +188,7 @@ long post_connection_check (SSL *ssl, char *host) {
     X509_free(cert);
     return SSL_get_verify_result(ssl);
  err_occured:
+    printf("debut err_occured\n");
     if (cert)
         X509_free(cert);
     return X509_V_ERR_APPLICATION_VERIFICATION;
