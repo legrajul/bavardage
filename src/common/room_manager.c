@@ -41,23 +41,26 @@ int hash_room_name (char *room_name) {
 }
 
 int is_room_used (char *room_name) {
-	/* printf ("---- BEGIN is_room_used ----\n"); */
+	//printf ("---- BEGIN is_room_used ----\n"); 
 	if (room_name == NULL) {
 		return -1;
 	}
 
 	// On récupère la liste correspondant au haché du nom de salon
 	int index = hash_room_name (room_name);
+	//printf("room_name: <%s>\n", room_name);
+	//printf("index: <%d>\n", index);
+	//printf("rooms est null\n");
 	room_list l = rooms[index];
 	room_list t;
-
+	//printf("apres hash room name\n");
 	// On parcourt cette liste
 	for (t = l; t != NULL; t = t->next) {
 		if (strcmp (t->current->name, room_name) == 0) {
 			return 1;
 		}
-	}
-	/* printf ("---- END is_room_used ----\n"); */
+	}		
+	//printf ("---- END is_room_used ----\n");
 	return 0;
 }
 

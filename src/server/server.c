@@ -129,22 +129,23 @@ void *handle_connexion (void *param) {
 				pthread_mutex_lock (&mutex);
 				switch (buffer.code) {
 				case CREATE_ROOM:
-					printf ("Create room : %s\n", buffer.content);
+					printf ("debut Create room : %s\n", buffer.content);
 					if (is_room_used (buffer.content)) {
 						response.code = CREATE_ROOM_KO;
 						strcpy (response.content,
 								"This room name is already in use");
-						printf ("Room already in user\n");
+						printf ("Room already in user server\n");
 					} else {
 						add_room (buffer.content, u);
 						add_user_in_room (u, buffer.content);
-						printf("Avant response code create room au client securisé\n");
+						
 						response.code = CREATE_ROOM;
 						strcpy (response.sender, buffer.sender);
 						strcpy (response.content, buffer.content);
-						printf("\n avant le write socket %s \n",response.content);
+						printf("Avant response au client securisé\n");
 						writeSocketTCP (u->socket, (char *) &response,
 								sizeof(message));
+						printf("Après response au client securisé\n");
 
 						response.code = ADMIN;
 						strcpy (response.content, buffer.content);

@@ -6,7 +6,7 @@
 #include "user_manager.h"
 #include "room_manager_sec.h"
 
-room_map rooms;
+extern room_map rooms;
 
 int set_keyiv_in_room (char *room_name, key_iv keyiv) {
 	/* printf ("---- BEGIN is_room_used ----\n"); */

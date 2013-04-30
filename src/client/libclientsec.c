@@ -26,6 +26,7 @@ SSL *ssl;
 BIO *sbio;
 message *msg;
 int debug = 0;
+ int is_room_create = 0;
 
 extern char *login, **tab_string;
 //partie test échange sec
@@ -287,6 +288,7 @@ int send_message_sec (const char *mess, char **error_mess) {
     unsigned char key[32], iv[32];
     unsigned char *keydata="test";
 
+
     strcpy(buffer, mess);
     buffer[strlen (buffer)] = '\0';
 
@@ -360,23 +362,31 @@ int send_message_sec (const char *mess, char **error_mess) {
             printf("libclientsec.c: send_mess: FIN CASE disconnect_sec\n");
             break;
 
-        case CREATE_ROOM_SEC:       // Cas d'une demande de création de Salon
-            printf("debut create room sec\n");
+        case CREATE_ROOM_SEC:       // Cas d'une demande de création de Salon         
             tmp = strtok (NULL, " ");
+            printf("tmp = %s \n", tmp);
             if (tmp != NULL) {
                 strcpy (msg->content, tmp);
             } else {
                 *error_mess = strdup ("CREATE_ROOM a besoin d'un paramètre\n");
                 return -3;
             }
-            strcpy(conn, "/CREATE_ROOM ");
-            strcat(conn, msg->content);
-            strcpy(msg->content, conn);
-            printf("avant send message conn=%s \n",msg->content);
-            return send_message (conn, &error_mess);
-            //return send_command ();
+  
+            if ((is_room_create == 0) && (strcmp(msg->content, "accueil") != 0)) {
+			strcpy(conn, "/CREATE_ROOM ");
+			strcat(conn, msg->content);
+			is_room_create = !is_room_create;
+			return send_message (conn, &error_mess);
+		   }
+		   else if (is_room_create == 1) {
+			    msg->code = CREATE_ROOM_SEC;
+			    is_room_create = !is_room_create;
+			   return send_command_sec ();
+			   
+		   }
+								
+			//msg->code = CREATE_ROOM_SEC;
 
-            //msg->code = CREATE_ROOM_SEC;
             //tmp = strtok (NULL, " ");
             //if (tmp != NULL) {
             /*    strcpy (msg->content, tmp);

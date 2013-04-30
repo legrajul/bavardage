@@ -153,14 +153,15 @@ void *handle_connexion(void *param) {
                 switch (buffer.code) {
 				
                 case CREATE_ROOM_SEC:					
-                    printf ("Create room : %s\n", buffer.content);
+                    printf ("Create room : <%s>\n", buffer.content);
                     if (is_room_used(buffer.content)) {
+						printf("debut is_room_used\n");
                         response.code = CREATE_ROOM_SEC_KO;
                         strcpy(response.content,
                                "This room name is already in use");
                         printf ("Room already in user\n");
                     } else {
-						printf("Debut create room sec");
+						printf("Debut create room sec\n");
                         randomString(key_data,(sizeof key_data)-1);
                         keyiv = malloc(sizeof(struct KEY_IV));
                         gen_keyiv(keyiv, (unsigned char *)key_data, sizeof(key_data));
@@ -173,14 +174,13 @@ void *handle_connexion(void *param) {
                         SSL_write(u->ssl, (char *) &response, sizeof (message));
                           
                         response.code = ADMIN;
-                        sprintf(response.content, "|%s|%s",keyiv->key,keyiv->iv);
-                       
+                        sprintf(response.content, "|%s|%s|%s",buffer.content,keyiv->key,keyiv->iv);
                         strcpy (response.sender, u->name);
                         SSL_write(u->ssl, (char *) &response, sizeof (message));
 
                         response.code = OK;
-                        free(keyiv);
-                        printf("Fin create room sec");
+                        //free(keyiv);
+                        printf("Fin create room sec\n");
                     }
 
                     break;
@@ -513,6 +513,7 @@ int start_listening (const char *addr, int port) {
 
 int main (int argc, char *argv[]) { 
     connect_server_database ("secureserver.db");
+    create_main_room();
     if (argc < 3) {
         fprintf (stderr, "Usage: ./server ip port\n");
         exit (EXIT_FAILURE);
