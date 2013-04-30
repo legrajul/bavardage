@@ -4,6 +4,9 @@
 #define CertFile "toto_certif.pem"
 #define KeyFile "toto.pem"
 
+#define AES_BLOCK_SIZE 256
+#define MAX_CIPHERED_SIZE 1024
+
 #include "libclient.h"
 
 #include "../common/SocketTCP.h"
