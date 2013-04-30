@@ -43,10 +43,23 @@ int set_private_key_filename (const char *private_key_f) {
 }
 
 //modif
+char *pass = "";
+int password_cb(char *buf,int num, int rwflag,void *userdata) {
+    if(num<strlen(pass)+1)
+        return(0);
+
+    strcpy(buf,pass);
+    return(strlen(pass));
+}
+
+void set_private_key_password (char *password) {
+    pass = strdup (password);
+}
 
 SSL_CTX *setup_client_ctx (void) {
     //SSL_CTX *ctx;
     ctx = SSL_CTX_new (SSLv23_method ());
+    SSL_CTX_set_default_passwd_cb (ctx, password_cb);
     if (SSL_CTX_load_verify_locations (ctx, CAFILE, CADIR) != 1)
         fprintf (stderr, "Error loading CA file and/or directory\n");
     if (SSL_CTX_set_default_verify_paths (ctx) != 1)
@@ -85,7 +98,7 @@ int connect_secure_socket (const char *addr, const int port) {
 
     if (SSL_connect (ssl) <= 0)
         berr_exit ("SSL connect error");
-    
+
     //long err;
     // modif a refaire
     /*if ((err = post_connection_check(ssl, "localhost")) != X509_V_OK) {
@@ -260,7 +273,7 @@ int send_message_sec (const char *mess, char **error_mess) {
     int code;
     char buffer[20 + MAX_NAME_SIZE + MAX_MESS_SIZE] = "";
     unsigned char *ciphermess;
-    EVP_CIPHER_CTX en;    
+    EVP_CIPHER_CTX en;
     EVP_CIPHER_CTX de;
     int lenght;
     key_iv keyiv;
@@ -281,7 +294,7 @@ int send_message_sec (const char *mess, char **error_mess) {
         int i;
         printf ("libclientsec.c: send_mess: DEBUG_SEND_MESS-%d\n", debug++);
         switch (code) {
-        case CONNECT_SEC:   // Cas d'une demande de connexion 
+        case CONNECT_SEC:   // Cas d'une demande de connexion
             printf("libclientsec.c: send_mess: msg-code(debut swicth): %d\n", msg->code);
             //strcpy(conn, "/CONNECT ");
             printf ("DEBUG_SEND_MESS-%d\n", debug++);
@@ -307,12 +320,12 @@ int send_message_sec (const char *mess, char **error_mess) {
             }
             break;
 
-		 case DEL_ACCOUNT_SEC:
-			printf("libclientsec.c: case del account sec\n");
-			//~ tab_string = create_table_param(buffer);
-			//~ if (len (tab_string) < 3) {
-                //~ *error_mess = strdup ("use: /DEL_ACCOUNT_SEC user password\n");
-                //~ return -3;
+        case DEL_ACCOUNT_SEC:
+            printf("libclientsec.c: case del account sec\n");
+            //~ tab_string = create_table_param(buffer);
+            //~ if (len (tab_string) < 3) {
+            //~ *error_mess = strdup ("use: /DEL_ACCOUNT_SEC user password\n");
+            //~ return -3;
             //~ }
             
             tmp = strtok (NULL, " ");
@@ -323,10 +336,9 @@ int send_message_sec (const char *mess, char **error_mess) {
                 *error_mess = strdup ("use: /DEL_ACCOUNT_SEC user \n");
                 return -3;
             }
-           
             return send_command_sec ();
             break;
-            
+
         case DISCONNECT_SEC:        // Cas d'une demande de déconnexion
             strcpy (msg->sender, login);
             strcpy(conn, "/DISCONNECT ");
@@ -346,24 +358,24 @@ int send_message_sec (const char *mess, char **error_mess) {
                 *error_mess = strdup ("CREATE_ROOM a besoin d'un paramètre\n");
                 return -3;
             }
-			strcpy(conn, "/CREATE_ROOM ");
-			strcat(conn, msg->content);
-			strcpy(msg->content, conn);
-			printf("avant send message conn=%s \n",msg->content);
-			return send_message (conn, &error_mess);		
-			//return send_command ();
-					
-			//msg->code = CREATE_ROOM_SEC;
+            strcpy(conn, "/CREATE_ROOM ");
+            strcat(conn, msg->content);
+            strcpy(msg->content, conn);
+            printf("avant send message conn=%s \n",msg->content);
+            return send_message (conn, &error_mess);
+            //return send_command ();
+
+            //msg->code = CREATE_ROOM_SEC;
             //tmp = strtok (NULL, " ");
             //if (tmp != NULL) {
             /*    strcpy (msg->content, tmp);
-            } else {
-                *error_mess = strdup ("CREATE_ROOM a besoin d'un paramètre\n");
-                return -3;
-            }
-            return send_command_sec ();*/ 
+                  } else {
+                  *error_mess = strdup ("CREATE_ROOM a besoin d'un paramètre\n");
+                  return -3;
+                  }
+                  return send_command_sec ();*/
             break;
-            
+
         case DELETE_ROOM_SEC:
             tmp = strtok (NULL, " ");
             if (tmp != NULL) {
@@ -374,7 +386,7 @@ int send_message_sec (const char *mess, char **error_mess) {
             }
             return send_command_sec ();
             break;
-            
+
         case QUIT_ROOM_SEC:         // Cas d'une demande pour quitter une room
             tmp = strtok (NULL, " ");
             if (tmp != NULL) {
@@ -398,8 +410,8 @@ int send_message_sec (const char *mess, char **error_mess) {
             }
             return send_command_sec ();
             break;
-            
-         case MESSAGE:  // Cas d'envoi de message
+
+        case MESSAGE:  // Cas d'envoi de message
             tab_string = create_table_param(buffer);
             if (len (tab_string) < 3) {
                 *error_mess = strdup ("MESSAGE doit avoir 2 paramètres : /MESSAGE salon mon super message\n");
@@ -411,20 +423,20 @@ int send_message_sec (const char *mess, char **error_mess) {
                 strcat(buff, " ");
             }
             if(is_room_used(msg->receiver) == -1) {
-				strcpy (msg->content, buff);
-			}
-			else {
-            lenght = strlen(buff) + 1;
-            keyiv = malloc(sizeof (struct KEY_IV));
-            keyiv = get_keyiv_in_room(msg->receiver);
-            aes_init(keyiv->key, keyiv->iv, &en, &de);
-            ciphermess = aes_encrypt(&en, (unsigned char *)buff, &lenght); 
-            strcpy(msg->content, ciphermess);        
-            free(ciphermess);
-            free(keyiv);
-           } 
+                strcpy (msg->content, buff);
+            }
+            else {
+                lenght = strlen(buff) + 1;
+                keyiv = malloc(sizeof (struct KEY_IV));
+                keyiv = get_keyiv_in_room(msg->receiver);
+                aes_init(keyiv->key, keyiv->iv, &en, &de);
+                ciphermess = aes_encrypt(&en, (unsigned char *)buff, &lenght);
+                strcpy(msg->content, ciphermess);
+                free(ciphermess);
+                free(keyiv);
+            }
             free(tab_string);
-            return send_command(); 
+            return send_command();
             break;
 
         case MP:  // Cas d'envoi de message prive
@@ -439,20 +451,20 @@ int send_message_sec (const char *mess, char **error_mess) {
                 strcat(buff, tab_string[i]);
                 strcat(buff, " ");
             }
-             if(is_room_used(msg->receiver) == -1) {
-				strcpy (msg->content, buff);
-			}
-			else {            
-            lenght = strlen(buff) + 1;
-            keyiv = malloc(sizeof (struct KEY_IV));
-            keyiv = get_keyiv_in_room(msg->receiver);
-            aes_init(keyiv->key, keyiv->iv, &en, &de);
-            ciphermess = aes_encrypt(&en, (unsigned char *)buff, &lenght); 
-            strcpy(msg->content, ciphermess);       
-            free(ciphermess);
-            free(keyiv);
-		    }
-		    free(tab_string);
+            if(is_room_used(msg->receiver) == -1) {
+                strcpy (msg->content, buff);
+            }
+            else {
+                lenght = strlen(buff) + 1;
+                keyiv = malloc(sizeof (struct KEY_IV));
+                keyiv = get_keyiv_in_room(msg->receiver);
+                aes_init(keyiv->key, keyiv->iv, &en, &de);
+                ciphermess = aes_encrypt(&en, (unsigned char *)buff, &lenght);
+                strcpy(msg->content, ciphermess);
+                free(ciphermess);
+                free(keyiv);
+            }
+            free(tab_string);
             return send_command();
             break;
         }
@@ -467,4 +479,4 @@ int disconnect_sec () {
     }
     return 0;
 }
-	
+

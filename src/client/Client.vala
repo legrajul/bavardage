@@ -317,7 +317,10 @@ namespace Bavardage {
                 });
 
             // Écoute les changements d'état connecté/déconnecté
-            conn_dial.update_connected.connect ( (is_connected, login) => {
+            conn_dial.update_connected.connect ( (is_connected, login, is_secure) => {
+                    if (is_secure) {
+                        secure_statusbar.push (statusbar.get_context_id ("securestatus"), "(Connexion sécurisée)");
+                    }
                     update_statusbar (is_connected, login);
                 });
             this.update_connected.connect ( (is_connected, login) => {

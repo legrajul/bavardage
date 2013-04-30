@@ -15,6 +15,8 @@
 #include <openssl/bio.h>
 #include <openssl/err.h>
 
+void set_private_key_password (char *password);
+
 int connect_with_authentication (char *chatservaddr, int chatservport,
 		char *secservaddr, int secservport);
 

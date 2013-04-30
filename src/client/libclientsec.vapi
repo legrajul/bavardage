@@ -21,6 +21,8 @@ namespace Bavardage {
     
     [CCode (cprefix = "", lower_case_cprefix = "", cheader_filename = "libclientsec.h")]
     namespace ClientSecCore {
+        public void set_private_key_password (string password);
+
         public int connect_with_authentication (string chatservaddr, int chatservport, string secservaddr, int secservport);
 
         public int disconnect_servers ();

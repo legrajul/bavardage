@@ -30,7 +30,7 @@ namespace Bavardage.Widgets {
 
         public signal void connect_secure (string server_ip, int server_port, string login, string serversec_ip, int serversec_port, File cert_file, File private_key_file, string password);
 
-        public signal void update_connected (bool is_connected, string login);
+        public signal void update_connected (bool is_connected, string login, bool is_secure);
 
         public ConnectionDialog (Gtk.Window parent, Gtk.Application app) {
             this.add_buttons (Gtk.Stock.CANCEL, Gtk.ResponseType.CANCEL, Gtk.Stock.CONNECT, Gtk.ResponseType.ACCEPT);
@@ -155,7 +155,7 @@ namespace Bavardage.Widgets {
                                     });
                                 msg.present ();
                             } else {
-                                update_connected (true, entry_login.get_text ());
+                                update_connected (true, entry_login.get_text (),false);
                                 this.hide ();
                                 try {
                                     (application as Bavardage.Client).thread_receive = new Thread<void *>.try ("recv thread", (application as Bavardage.Client).receive_thread);
@@ -172,34 +172,33 @@ namespace Bavardage.Widgets {
                     //TODO: implémenter les fonctions pour la partie sécurisée avec ClientCoreSec.vapi
                     set_certif_filename (cert.get_path ());
                     set_private_key_filename (key.get_path ());
+                    set_private_key_password (password);
                     connect_with_authentication (chatip, chatport, secip, secport);
 
                     string error;
                     Message m;
-                    send_message_sec ("/CONNECT_SEC " + login + " " + password, out error);
-
-                    receive_message_sec (out m);
+                    int ret = send_message_sec ("/CONNECT_SEC " + login, out error);
+                    
+                    ret = receive_message_sec (out m);
                     if (m.code == KO) {
-                        if (m.code == KO) {
-                            var content_str = new StringBuilder ("");
-                            for (int i = 0; i < m.content.length; i++) {
-                                content_str.append_c ((char) m.content[i]);
-                            }
-                            var msg = new MessageDialog (this, DialogFlags.MODAL | DialogFlags.DESTROY_WITH_PARENT, MessageType.ERROR, ButtonsType.OK, content_str.str);
-                            msg.response.connect ((response_id2) => {
-                                    msg.hide_on_delete ();
-                                    this.present ();
-                                });
-                            msg.present ();
-                        } else {
-                            this.connect_regular (chatip, chatport, login);
-                            update_connected (true, entry_login.get_text ());
-                            this.hide ();
-                            try {
-                                (application as Bavardage.Client).thread_receive_sec = new Thread<void *>.try ("recv thread sec", (application as Bavardage.Client).receive_thread_sec);
-                            } catch (GLib.Error e) {
-                                stderr.printf ("Error : %s\n", e.message);
-                            }
+                        var content_str = new StringBuilder ("");
+                        for (int i = 0; i < m.content.length; i++) {
+                            content_str.append_c ((char) m.content[i]);
+                        }
+                        var msg = new MessageDialog (this, DialogFlags.MODAL | DialogFlags.DESTROY_WITH_PARENT, MessageType.ERROR, ButtonsType.OK, content_str.str);
+                        msg.response.connect ((response_id2) => {
+                                msg.hide_on_delete ();
+                                this.present ();
+                            });
+                        msg.present ();
+                    } else {
+                        this.connect_regular (chatip, chatport, login);
+                        update_connected (true, entry_login.get_text (), true);
+                        this.hide ();
+                        try {
+                            (application as Bavardage.Client).thread_receive_sec = new Thread<void *>.try ("recv thread sec", (application as Bavardage.Client).receive_thread_sec);
+                        } catch (GLib.Error e) {
+                            stderr.printf ("Error : %s\n", e.message);
                         }
                     }
                 });
