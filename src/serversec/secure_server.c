@@ -118,9 +118,7 @@ void *handle_connexion(void *param) {
     user u;
     key_iv keyiv;
     char key_data[KEY_DATA_SIZE];
-	uint8_t *u8bufcontent;
-
-
+	
     if (SSL_accept(client_ssl) <= 0) {     /* do SSL-protocol accept */
         ERR_print_errors_fp(stderr);
     } else {
@@ -270,11 +268,10 @@ void *handle_connexion(void *param) {
 				case DEL_ACCOUNT_SEC:
 					printf("serversec.c: buffer.sender = %s : buffer.content = %s\n", buffer.sender, buffer.content);
 					printf("serversec.c: buffer.code = %d\n", buffer.code);
-					u8bufcontent = (uint8_t *) buffer.content;
-					if (is_connected(buffer.sender, u8bufcontent) == -1) {
+					if (is_connected(buffer.sender) == -1) {
 						response.code = KO;
 						strcpy (response.content, "bad user / password\n");
-					} else if (is_connected(buffer.sender, u8bufcontent) == 1) {
+					} else if (is_connected(buffer.sender) == 1) {
 						u = (user) malloc(sizeof(struct USER));
 						strcpy(u->name, buffer.sender);
 						room_list p;
@@ -285,9 +282,17 @@ void *handle_connexion(void *param) {
 								remove_user_from_room (u, p->current->name);
 						}
 						//------------------------------------------------
-						delete_user(buffer.sender);
-						response.code = DEL_ACCOUNT_SEC;
-                        strcpy (response.content, "you have been deleted\n");
+						if (strcmp(buffer.sender, buffer.content) != 0) 
+							printf("bad login, please retry...\n");
+						else {
+							if (delete_user(buffer.content) == -1) {
+								printf ("you haven't been deleted!!\n");
+								break;
+							} else {
+								response.code = DEL_ACCOUNT_SEC;
+		                        strcpy (response.content, "you have been deleted\n");
+		                    }
+		                }
 					}	
 					//TODO revoquer le certicat ??
 					break;
@@ -295,8 +300,7 @@ void *handle_connexion(void *param) {
                 case CONNECT_SEC:
                     printf("secure_server.c: handle_connexion: BEGIN connect_sec\n");
                     printf("serversec.c: buffer.sender = %s:\nbuffer.content = %s\n", buffer.sender, buffer.content);
-					u8bufcontent = (uint8_t *) buffer.content;
-                    int status = is_connected (buffer.sender, u8bufcontent);
+                    int status = is_connected (buffer.sender);
                     printf("secure_server.c: handle_connexion: AFTER is connected\n");
                     switch (status) {
                     case -1:
@@ -306,16 +310,9 @@ void *handle_connexion(void *param) {
                         break;
                     case 1:
                         printf("secure_server.c: handle_connexion: connect_sec: DEBUT CASE 1\n");
-						u8bufcontent = (uint8_t *) buffer.content;
-                        if (check_user(buffer.sender, u8bufcontent) == 1) {
-                            add_user_db (buffer.sender, u8bufcontent);
-                        } else if (check_user(buffer.sender, u8bufcontent) == -1) {
-                            fprintf(stderr, "incorrect login / password\n");
-                            response.code = CONNECT_SEC_KO;
-			    strcpy (response.content, "Incorrect password\n");
-                            response.code = KO;
-                            break;
-                        }
+                        if (check_user(buffer.sender) == 1) {
+                            add_user_db (buffer.sender);
+                        } 
                         printf("secure_server.c: handle_connexion: connect_sec: AFTER CHECK_USER\n");
                         change_status(buffer.sender);
                         printf("successful connection : %s\n", buffer.sender);

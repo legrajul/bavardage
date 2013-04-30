@@ -290,17 +290,9 @@ int send_message_sec (const char *mess, char **error_mess) {
                 login = strdup (tmp);
             }
             printf("libclientsec.c: send_mess: AFTER send_message\n");
-
-            pass = strtok (NULL, "");
-            printf ("libclientsec.c: send_mess: PASS-%s\n", pass);
-
-            challenge = create_challenge_sec (pass);
-
+            
             //printf("CHALLENGE_SIZE-%s\n", RSA_size(rsa));
-            if (pass != NULL) {
-                strcpy (msg->content, challenge);
-            }
-
+           
             //strcat(conn, login);
             //send_message (conn, &error_mess);
             msg->code = CONNECT_SEC;
@@ -322,16 +314,17 @@ int send_message_sec (const char *mess, char **error_mess) {
                 //~ *error_mess = strdup ("use: /DEL_ACCOUNT_SEC user password\n");
                 //~ return -3;
             //~ }
-            tmp = strtok (NULL, " ");
-            if (tmp != NULL) {
-                login = strdup (tmp);
-            }
-            strcpy(msg->sender, login);
-            pass = strtok (NULL, "");
-            challenge = create_challenge_sec (pass);
             
-            strcat(msg->content, challenge);
-            return send_command_sec();
+            tmp = strtok (NULL, " ");
+           
+            if (tmp != NULL) {
+                strcpy (msg->content, tmp);
+            } else {
+                *error_mess = strdup ("use: /DEL_ACCOUNT_SEC user \n");
+                return -3;
+            }
+           
+            return send_command_sec ();
             break;
             
         case DISCONNECT_SEC:        // Cas d'une demande de déconnexion

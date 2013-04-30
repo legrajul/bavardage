@@ -16,7 +16,7 @@ int connect_server_database (const char *fileDb);
  *       @param login
  *   @return 1 si la l'ajout s'est bien effectuÃ©, -1 sinon
  */
-int add_user_db (char *login, uint8_t *challenge);
+int add_user_db (char *login);
 
 /**
  *   Supprime un utilisateur dans la base de donnÃ©es
@@ -30,7 +30,7 @@ int delete_user (char *login);
  *       @param login
  *   @return 1 si la vÃ©rification s'est bien effectuÃ©e, -1 sinon
  */
-int check_user(char *login, uint8_t *challenge);
+int check_user(char *login);
 
 /**
  *   DÃ©connecte le serveur de la base de donnÃ©es
@@ -43,7 +43,7 @@ int close_server_database ();
  * @return -1 si l'utilisateur  n'est pas connecte, 1 sinon
  */
 
-int is_connected(char *login, uint8_t *challenge);
+int is_connected(char *login);
 
 /**
  * change le status de connection d'un utilisateur
@@ -57,5 +57,5 @@ int change_status(char *login);
  * @param login, challenge
  * @return 1 si le challenge est non null, -1 sinon
  */
-int check_challenge (char *login, uint8_t *challenge);
+int check_challenge (char *login, char *pass);
 #endif
