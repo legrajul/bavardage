@@ -154,8 +154,7 @@ void *handle_connexion(void *param) {
                 printf("buffer.code = %d\n", buffer.code);
                 switch (buffer.code) {
 				
-                case CREATE_ROOM_SEC:
-					
+                case CREATE_ROOM_SEC:					
                     printf ("Create room : %s\n", buffer.content);
                     if (is_room_used(buffer.content)) {
                         response.code = CREATE_ROOM_SEC_KO;
@@ -163,6 +162,7 @@ void *handle_connexion(void *param) {
                                "This room name is already in use");
                         printf ("Room already in user\n");
                     } else {
+						printf("Debut create room sec");
                         randomString(key_data,(sizeof key_data)-1);
                         keyiv = malloc(sizeof(struct KEY_IV));
                         gen_keyiv(keyiv, (unsigned char *)key_data, sizeof(key_data));
@@ -182,6 +182,7 @@ void *handle_connexion(void *param) {
 
                         response.code = OK;
                         free(keyiv);
+                        printf("Fin create room sec");
                     }
 
                     break;
@@ -320,6 +321,7 @@ void *handle_connexion(void *param) {
                         printf("successful connection : %s\n", buffer.sender);
                         u = (user) malloc(sizeof(struct USER));
                         strcpy(u->name, buffer.sender);
+                        strcpy(response.sender, buffer.sender);
                         u->ssl = client_ssl;
                         response.code = CONNECT_SEC;
                         break;

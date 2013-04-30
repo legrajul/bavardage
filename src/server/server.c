@@ -138,10 +138,11 @@ void *handle_connexion (void *param) {
 					} else {
 						add_room (buffer.content, u);
 						add_user_in_room (u, buffer.content);
-
+						printf("Avant response code create room au client securisé\n");
 						response.code = CREATE_ROOM;
 						strcpy (response.sender, buffer.sender);
 						strcpy (response.content, buffer.content);
+						printf("\n avant le write socket %s \n",response.content);
 						writeSocketTCP (u->socket, (char *) &response,
 								sizeof(message));
 
@@ -225,7 +226,8 @@ void *handle_connexion (void *param) {
 							}
 						}
 						remove_user (u, server_user_map);
-						free (u);
+						free (u);//DISCONNECT_SEC
+
 					}
 					response.code = DISCONNECT;
 					writeSocketTCP (s, (char *) &response, sizeof(message));

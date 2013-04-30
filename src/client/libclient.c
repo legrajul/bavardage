@@ -180,13 +180,19 @@ int send_message (const char *mess, char **error_mess) {
 			break;
 
 		case CREATE_ROOM:       // Cas d'une demande de création de Salon
+		    printf("debut create room 1 \n");
 			tmp = strtok (NULL, " ");
+			printf("msg content = %s \n", tmp);
 			if (tmp != NULL) {
+				 printf("debut create room 2 \n");
+				 printf("msg content = %s \n", tmp);
 				strcpy (msg->content, tmp);
+				printf("msg content = %s \n", msg->content);
 			} else {
 				*error_mess = strdup ("CREATE_ROOM a besoin d'un paramètre\n");
 				return -3;
 			}
+			printf("debut create room 3 \n");
 			return send_command ();
 			break;
 		case DELETE_ROOM:

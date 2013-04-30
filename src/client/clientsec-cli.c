@@ -127,7 +127,7 @@ void *traitement_recv_sec (void *param) {
             }
             break;
 
-        case MESSAGE:
+      /*  case MESSAGE:
             keyiv = get_keyiv_in_room(mess.receiver); 
             aes_init(keyiv->key, keyiv->iv, &en, &de);
             lenght = strlen(mess.content) + 1;
@@ -141,7 +141,7 @@ void *traitement_recv_sec (void *param) {
             lenght = strlen(mess.content) + 1;
             plainmess = aes_decrypt(&de, (unsigned char *)mess.content, &lenght);
             printf("[%s > %s] %s\n", mess.sender, mess.receiver, plainmess);
-            break;
+            break; */
             
         case CREATE_ROOM_SEC:
              add_room_client(mess.receiver);
@@ -170,7 +170,10 @@ void *traitement_recv_sec (void *param) {
 
 void *traitement_recv (void *param) {
     message mess;
-    char *text = "/CREATE_ROOM_SEC ";
+    int lenght;
+    unsigned char *plainmess;  
+    key_iv keyiv;
+    char text[MAX_MESS_SIZE] = " ";
     while (1) {
         if (receive_message (&mess) < 0) {
             perror ("readSocketTCP");
@@ -201,12 +204,42 @@ void *traitement_recv (void *param) {
             break;
 
         case MESSAGE:
+             if (get_keyiv_in_room(mess.receiver) == NULL) {
+			    printf ("[%s @ %s] %s\n", mess.sender, mess.receiver, mess.content);
+			}
+			else {
+			keyiv = malloc(sizeof (struct KEY_IV));	
+            keyiv = get_keyiv_in_room(mess.receiver); 
+            aes_init(keyiv->key, keyiv->iv, &en, &de);
+            lenght = strlen(mess.content) + 1;
+            plainmess = aes_decrypt(&de, (unsigned char *)mess.content, &lenght);
+            printf("[%s @ %s] %s\n", mess.sender, mess.receiver, plainmess);
+		  }
+            break;
+
+        case MP:
+             if (get_keyiv_in_room(mess.receiver) == NULL) {
+			    printf ("[%s @ %s] %s\n", mess.sender, mess.receiver, mess.content);
+			}
+			else {
+            keyiv = malloc(sizeof (struct KEY_IV));	
+            keyiv = get_keyiv_in_room(mess.receiver); 
+            aes_init(keyiv->key, keyiv->iv, &en, &de);
+            lenght = strlen(mess.content) + 1;
+            plainmess = aes_decrypt(&de, (unsigned char *)mess.content, &lenght);
+            printf("[%s > %s] %s\n", mess.sender, mess.receiver, plainmess);
+		  }
+            break;
+
+
+       /* case MESSAGE:
+            
             printf ("[%s @ %s] %s\n", mess.sender, mess.receiver, mess.content);
             break;
 
         case MP:
             printf ("[%s > %s] %s\n", mess.sender, mess.receiver, mess.content);
-            break;
+            break; */
 
         case NEW_USER:
             printf ("The user %s joined the room %s\n", mess.sender,
@@ -221,9 +254,11 @@ void *traitement_recv (void *param) {
             break;
             
         case CREATE_ROOM:
-            
-            strcat(text,mess.receiver);
+            strcpy(text, "/CREATE_ROOM ");
+            printf("Reponse server non sécurisé,room create\n"); 
+            strcat(text,mess.content);
 			send_message_sec(text, NULL); 
+			break;
 			
 		case CREATE_ROOM_KO:
 			 printf ("Error: %s\n", mess.content);
