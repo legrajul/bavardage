@@ -42,6 +42,7 @@
 #define CONNECT_SEC		  611
 #define DEL_ACCOUNT_SEC   711
 
+
 #define CREATE_ROOM_SEC_KO 811
 #define JOIN_ROOM_SEC_KO 911
 #define DELETE_ROOM_SEC_KO 1011
@@ -49,7 +50,7 @@
 #define MESSAGE_SEC_KO 1211
 #define MP_SEC_KO 1311
 #define QUIT_ROOM_SEC_KO 1411
-
+#define MP_SEC  1511
 
 #define BUFSIZZ 1024
 #define AES_BLOCK_SIZE 256

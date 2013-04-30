@@ -3,7 +3,7 @@
 #include <openssl/ssl.h>
 
 #define MAX_NAME_SIZE 64
-#define MAX_MESS_SIZE 512
+#define MAX_MESS_SIZE 2048
 #define MAX_ROOM_NAME_SIZE 64
 #define KEY_DATA_SIZE 10
 

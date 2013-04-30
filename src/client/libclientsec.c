@@ -29,6 +29,10 @@ message *msg;
 int debug = 0;
 
 extern char *login, **tab_string;
+//partie test échange sec
+unsigned int salt[] = {12345, 54321};
+int leng;
+//fin partie test échange
 
 int set_certif_filename (const char *certif_f) {
     certif_filename = strdup (certif_f);
@@ -158,11 +162,11 @@ int aes_init (unsigned char *key, unsigned char *iv, EVP_CIPHER_CTX *e_ctx,
     return 0;
 }
 
-unsigned char *aes_encrypt (EVP_CIPHER_CTX *e, unsigned char *plaintext,
+char *aes_encrypt (EVP_CIPHER_CTX *e, char *plaintext,
                             int *len) {
 
     int c_len = *len + AES_BLOCK_SIZE, f_len = 0;
-    unsigned char *ciphertext = malloc (c_len);
+    char *ciphertext = malloc (c_len);
 
     EVP_EncryptInit_ex (e, NULL, NULL, NULL, NULL);
     EVP_EncryptUpdate (e, ciphertext, &c_len, plaintext, *len);
@@ -172,11 +176,11 @@ unsigned char *aes_encrypt (EVP_CIPHER_CTX *e, unsigned char *plaintext,
     return ciphertext;
 }
 
-unsigned char *aes_decrypt (EVP_CIPHER_CTX *e, unsigned char *ciphertext,
+char *aes_decrypt (EVP_CIPHER_CTX *e, char *ciphertext,
                             int *len) {
 
     int p_len = *len, f_len = 0;
-    unsigned char *plaintext = malloc (p_len + AES_BLOCK_SIZE);
+    char *plaintext = malloc (p_len + AES_BLOCK_SIZE);
 
     EVP_DecryptInit_ex (e, NULL, NULL, NULL, NULL);
     EVP_DecryptUpdate (e, plaintext, &p_len, ciphertext, *len);
@@ -213,7 +217,9 @@ int extract_code_sec (const char *str) {
         return JOIN_ROOM_SEC;
     } else if (strcmp (command, "DEL_ACCOUNT_SEC") == 0) {
         return DEL_ACCOUNT_SEC;
-    }
+    } else if (strcmp (command, "MP_SEC") == 0){
+		return MP_SEC;
+	}
     return -1;
 }
 
@@ -277,6 +283,8 @@ int send_message_sec (const char *mess, char **error_mess) {
     EVP_CIPHER_CTX de;
     int lenght;
     key_iv keyiv;
+	unsigned char key[32], iv[32];
+	unsigned char *keydata="test";
 
     strcpy(buffer, mess);
     buffer[strlen (buffer)] = '\0';
@@ -289,6 +297,8 @@ int send_message_sec (const char *mess, char **error_mess) {
             return -2;
         }
         msg->code = code;
+        
+        printf("%d\n",code);
         char *tmp, *pass, buff[MAX_MESS_SIZE] = "", conn[MAX_MESS_SIZE] = "";
         uint8_t *challenge;
         int i;
@@ -439,10 +449,10 @@ int send_message_sec (const char *mess, char **error_mess) {
             return send_command();
             break;
 
-        case MP:  // Cas d'envoi de message prive
+        case MP_SEC:  // Cas d'envoi de message prive
             tab_string = create_table_param(buffer);
             if (len (tab_string) < 3) {
-                *error_mess = strdup ("MP doit avoir 2 paramètres : /MP toto mon super message privé\n");
+                *error_mess = strdup ("MP_SEC doit avoir 2 paramètres : /MP toto mon super message privé\n");
                 return -3;
             }
             strcpy(msg->receiver, tab_string[1]);
@@ -451,20 +461,26 @@ int send_message_sec (const char *mess, char **error_mess) {
                 strcat(buff, tab_string[i]);
                 strcat(buff, " ");
             }
-            if(is_room_used(msg->receiver) == -1) {
-                strcpy (msg->content, buff);
-            }
-            else {
-                lenght = strlen(buff) + 1;
-                keyiv = malloc(sizeof (struct KEY_IV));
-                keyiv = get_keyiv_in_room(msg->receiver);
-                aes_init(keyiv->key, keyiv->iv, &en, &de);
-                ciphermess = aes_encrypt(&en, (unsigned char *)buff, &lenght);
-                strcpy(msg->content, ciphermess);
-                free(ciphermess);
-                free(keyiv);
-            }
+            lenght = strlen(buff) + 1;
+            //keyiv = malloc(sizeof (struct KEY_IV));
+            //
+            msg->code=MP;
+            
+            EVP_BytesToKey(EVP_aes_256_cbc(), EVP_sha512(), (unsigned char*)&salt, keydata, strlen(keydata), 5, key, iv); 
+            EVP_CIPHER_CTX_init(&en);
+			EVP_EncryptInit_ex(&en, EVP_aes_256_cbc(), NULL, key, iv);
+            //
+            //keyiv = get_keyiv_in_room(msg->receiver);
+            //aes_init(keyiv->key, keyiv->iv, &en, &de);
+            ciphermess = aes_encrypt(&en, (char *)buff, &lenght); 
+            if (strlen(ciphermess)> MAX_MESS_SIZE) {
+				*error_mess = strdup ("ce message est trop long pour être envoyé chiffré\n");
+				return -3;
+			}
+            strcpy(msg->content, ciphermess);
             free(tab_string);
+            //free(ciphermess);
+            //free(keyiv);
             return send_command();
             break;
         }

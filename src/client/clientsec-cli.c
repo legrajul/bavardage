@@ -27,6 +27,7 @@ key_iv keyiv;
 EVP_CIPHER_CTX en;
 EVP_CIPHER_CTX de;
 
+int leng;
 
 void *traitement_send (void *param) {
 	char mess[MAX_MESS_SIZE] = "";
@@ -174,6 +175,12 @@ void *traitement_recv (void *param) {
     unsigned char *plainmess;  
     key_iv keyiv;
     char text[MAX_MESS_SIZE] = " ";
+    
+    unsigned char *plaintext;
+	unsigned char key[32], iv[32];
+	unsigned char *keydata="test";
+	unsigned int salt[] = {12345, 54321};
+
     while (1) {
         if (receive_message (&mess) < 0) {
             perror ("readSocketTCP");
@@ -218,7 +225,7 @@ void *traitement_recv (void *param) {
             break;
 
         case MP:
-             if (get_keyiv_in_room(mess.receiver) == NULL) {
+            /*if (get_keyiv_in_room(mess.receiver) == NULL) {
 			    printf ("[%s @ %s] %s\n", mess.sender, mess.receiver, mess.content);
 			}
 			else {
@@ -228,7 +235,15 @@ void *traitement_recv (void *param) {
             lenght = strlen(mess.content) + 1;
             plainmess = aes_decrypt(&de, (unsigned char *)mess.content, &lenght);
             printf("[%s > %s] %s\n", mess.sender, mess.receiver, plainmess);
-		  }
+		  }*/
+		  	lenght =strlen(mess.content)+1;
+            EVP_BytesToKey(EVP_aes_256_cbc(), EVP_sha512(), (unsigned char*)&salt, keydata, strlen(keydata), 5, key, iv); 
+            EVP_CIPHER_CTX_init(&de);
+            EVP_DecryptInit_ex(&de, EVP_aes_256_cbc(), NULL, key, iv);
+//            printf("le message chiffré est :%d\n",mess.content);
+            plaintext= (char *)aes_decrypt(&de, mess.content, &lenght); 
+            printf ("[%s > %s] %s\n", mess.sender, mess.receiver, plaintext);
+            break;
             break;
 
 
@@ -238,8 +253,10 @@ void *traitement_recv (void *param) {
             break;
 
         case MP:
+<<<<<<< Updated upstream
             printf ("[%s > %s] %s\n", mess.sender, mess.receiver, mess.content);
             break; */
+
 
         case NEW_USER:
             printf ("The user %s joined the room %s\n", mess.sender,
