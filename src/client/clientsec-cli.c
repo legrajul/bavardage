@@ -81,7 +81,6 @@ void *traitement_recv_sec (void *param) {
             pthread_detach(thread_send);
             exit(EXIT_FAILURE);
         }
-        printf("mess.code: <%d>\n", mess.code);
         if (mess.code == KO) {
             printf("Error: %s\n", mess.content);
             continue;
@@ -144,7 +143,7 @@ void *traitement_recv_sec (void *param) {
             
         case CREATE_ROOM:
              printf("Création room réussie \n");
-             add_room_client(mess.receiver);
+             add_room(mess.content,NULL);
              break;                       
 
         case NEW_USER:

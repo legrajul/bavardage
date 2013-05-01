@@ -172,11 +172,9 @@ void *handle_connexion(void *param) {
                         strcpy(response.sender, buffer.sender);
                         strcpy(response.content, buffer.content);
                         SSL_write(u->ssl, (char *) &response, sizeof (message));
-                          
-                        response.code = ADMIN;
+                        
                         sprintf(response.content, "|%s|%s|%s",buffer.content,keyiv->key,keyiv->iv);
                         strcpy (response.sender, u->name);
-                        SSL_write(u->ssl, (char *) &response, sizeof (message));
 
                         response.code = OK;
                         //free(keyiv);
