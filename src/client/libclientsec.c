@@ -32,6 +32,7 @@ extern char *login, **tab_string;
 //partie test échange sec
 unsigned int salt[] = {12345, 54321};
 int leng;
+
 //fin partie test échange
 
 int set_certif_filename (const char *certif_f) {
@@ -151,8 +152,7 @@ int get_certificate (char *pkiaddr) {
     //TODO
 }
 
-int aes_init (unsigned char *key, unsigned char *iv, EVP_CIPHER_CTX *e_ctx,
-              EVP_CIPHER_CTX *d_ctx) {
+int aes_init (unsigned char *key, unsigned char *iv, EVP_CIPHER_CTX *e_ctx, EVP_CIPHER_CTX *d_ctx) {
 
     EVP_CIPHER_CTX_init (e_ctx);
     EVP_EncryptInit_ex (e_ctx, EVP_aes_256_cbc (), NULL, key, iv);
@@ -162,30 +162,33 @@ int aes_init (unsigned char *key, unsigned char *iv, EVP_CIPHER_CTX *e_ctx,
     return 0;
 }
 
-char *aes_encrypt (EVP_CIPHER_CTX *e, char *plaintext,
-                   int *len) {
+char *aes_encrypt (unsigned char *key, unsigned char *iv, char *plaintext, int *len) {
     printf ("AES_ENCRYPT BEGIN plaintext = <%s>, len = <%d>\n", plaintext, *len);
+    EVP_CIPHER_CTX e_ctx, d_ctx;
+    aes_init (key, iv, &e_ctx, &d_ctx);
     int c_len = *len + AES_BLOCK_SIZE, f_len = 0;
     char *ciphertext = malloc (c_len);
 
-    EVP_EncryptInit_ex (e, NULL, NULL, NULL, NULL);
-    EVP_EncryptUpdate (e, ciphertext, &c_len, plaintext, *len);
-    EVP_EncryptFinal_ex (e, ciphertext + c_len, &f_len);
+    EVP_EncryptInit_ex (&e_ctx, NULL, NULL, NULL, NULL);
+    EVP_EncryptUpdate (&e_ctx, ciphertext, &c_len, plaintext, *len);
+    EVP_EncryptFinal_ex (&e_ctx, ciphertext + c_len, &f_len);
 
     *len = c_len + f_len;
     printf ("AES ENCRYPT END len = <%d>, ret = <%s>\n", *len, ciphertext);
     return ciphertext;
 }
 
-char *aes_decrypt (EVP_CIPHER_CTX *e, char *ciphertext,
+char *aes_decrypt (unsigned char *key, unsigned char *iv, char *ciphertext,
                    int *len) {
     printf ("AES_DECRYPT BEGIN ciphertext = <%s>, len = <%d>\n", ciphertext, *len);
+    EVP_CIPHER_CTX e_ctx, d_ctx;
+    aes_init (key, iv, &e_ctx, &d_ctx);
     int p_len = *len, f_len = 0;
     char *plaintext = malloc (p_len + AES_BLOCK_SIZE);
 
-    EVP_DecryptInit_ex (e, NULL, NULL, NULL, NULL);
-    EVP_DecryptUpdate (e, plaintext, &p_len, ciphertext, *len);
-    EVP_DecryptFinal_ex (e, plaintext + p_len, &f_len);
+    EVP_DecryptInit_ex (&d_ctx, NULL, NULL, NULL, NULL);
+    EVP_DecryptUpdate (&d_ctx, plaintext, &p_len, ciphertext, *len);
+    EVP_DecryptFinal_ex (&d_ctx, plaintext + p_len, &f_len);
 
     *len = p_len + f_len;
     printf ("AES DECRYPT END len = <%d>, ret = <%s>\n", *len, plaintext);
@@ -450,8 +453,7 @@ int send_message_sec (const char *mess, char **error_mess) {
                 lenght = strlen(buff) + 1;
                 keyiv = malloc(sizeof (struct KEY_IV));
                 keyiv = get_keyiv_in_room(msg->receiver);
-                aes_init(keyiv->key, keyiv->iv, &en, &de);
-                ciphermess = aes_encrypt(&en, (unsigned char *)buff, &lenght);
+                ciphermess = aes_encrypt(keyiv->key, keyiv->iv, (unsigned char *)buff, &lenght);
                 strcpy(msg->content, ciphermess);
                 free(ciphermess);
                 free(keyiv);
@@ -483,7 +485,7 @@ int send_message_sec (const char *mess, char **error_mess) {
             //
             //keyiv = get_keyiv_in_room(msg->receiver);
             //aes_init(keyiv->key, keyiv->iv, &en, &de);
-            ciphermess = aes_encrypt(&en, (char *)buff, &lenght);
+            ciphermess = aes_encrypt(key, iv, (char *)buff, &lenght);
             if (lenght > MAX_MESS_SIZE) {
                 *error_mess = strdup ("ce message est trop long pour être envoyé chiffré\n");
                 return -3;

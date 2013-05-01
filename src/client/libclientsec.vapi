@@ -34,5 +34,9 @@ namespace Bavardage {
         public int send_message_sec (string message, out string error);
         
         public int receive_message_sec (out Message m);
+
+        public int8[] aes_encrypt (uint8[] key, uint8[] iv, string plaintext, out int len);
+        
+        public string aes_decrypt (uint8[] key, uint8[] iv, int8[] ciphertext, out int len);
     }
 }

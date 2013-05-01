@@ -22,8 +22,6 @@
 
 pthread_t thread_send, thread_recv, thread_recv_sec;
 key_iv keyiv;
-EVP_CIPHER_CTX en;
-EVP_CIPHER_CTX de;
 
 int leng;
 
@@ -219,9 +217,8 @@ void *traitement_recv (void *param) {
             else {
                 keyiv = malloc(sizeof (struct KEY_IV));
                 keyiv = get_keyiv_in_room(mess.receiver);
-                aes_init(keyiv->key, keyiv->iv, &en, &de);
                 lenght = MAX_CIPHERED_SIZE;
-                plainmess = aes_decrypt(&de, (unsigned char *)mess.content, &lenght);
+                plainmess = aes_decrypt(keyiv->key, keyiv->iv, (unsigned char *)mess.content, &lenght);
                 printf("[%s @ %s] %s\n", mess.sender, mess.receiver, plainmess);
             }
             break;
@@ -240,10 +237,8 @@ void *traitement_recv (void *param) {
               }*/
             lenght = MAX_CIPHERED_SIZE;
             EVP_BytesToKey(EVP_aes_256_cbc(), EVP_sha512(), (unsigned char*)&salt, keydata, strlen(keydata), 5, key, iv);
-            EVP_CIPHER_CTX_init(&de);
-            EVP_DecryptInit_ex(&de, EVP_aes_256_cbc(), NULL, key, iv);
             //            printf("le message chiffré est :%d\n",mess.content);
-            plaintext= (char *)aes_decrypt(&de, mess.content, &lenght);
+            plaintext= (char *)aes_decrypt(key, iv, mess.content, &lenght);
             printf ("[%s > %s] %s\n", mess.sender, mess.receiver, plaintext);
             break;
             break;
