@@ -21,7 +21,7 @@
 #define SECPORT  11000
 
 pthread_t thread_send, thread_recv, thread_recv_sec;
-key_iv keyiv;
+//key_iv keyiv;
 
 int leng;
 
@@ -66,9 +66,9 @@ void *traitement_send (void *param) {
 
 void *traitement_recv_sec (void *param) {
 
-    message mess;
-    int lenght;
-    unsigned char *plainmess;
+	message mess;	
+	int lenght;
+    char *plainmess;  
     char *room_name;
     key_iv keyiv;
     
@@ -184,14 +184,10 @@ void *traitement_recv_sec (void *param) {
 void *traitement_recv (void *param) {
     message mess;
     int lenght;
-    unsigned char *plainmess;
+    char *plainmess;
     key_iv keyiv;
     char text[MAX_MESS_SIZE] = " ";
 
-    unsigned char *plaintext;
-    unsigned char key[32], iv[32];
-    unsigned char *keydata="test";
-    unsigned int salt[] = {12345, 54321};
 
     while (1) {
         if (receive_message (&mess) < 0) {
@@ -227,11 +223,13 @@ void *traitement_recv (void *param) {
                 printf ("[%s @ %s] %s\n", mess.sender, mess.receiver, mess.content);
             }
             else {
-                keyiv = malloc(sizeof (struct KEY_IV));
+                //keyiv = malloc(sizeof (struct KEY_IV));
                 keyiv = get_keyiv_in_room(mess.receiver);
                 lenght = MAX_CIPHERED_SIZE;
-                plainmess = aes_decrypt(keyiv->key, keyiv->iv, (unsigned char *)mess.content, &lenght);
+                plainmess = aes_decrypt(keyiv->key, keyiv->iv, (char *)mess.content, &lenght);
                 printf("[%s @ %s] %s\n", mess.sender, mess.receiver, plainmess);
+                //free(keyiv);
+                //free(plainmess);
             }
             break;
 
@@ -251,7 +249,7 @@ void *traitement_recv (void *param) {
             break;
 
         case CREATE_ROOM:
-    printf ("The room %s has been created\n", mess.content);
+			printf ("The room %s has been created\n", mess.content);
             break;
         case CONNECT_KO:
             printf("DEBUT CONNECT_KO clientsec-cli\n");

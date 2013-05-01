@@ -286,9 +286,8 @@ void *handle_connexion (void *param) {
                         break;
                     }
                     user sender = (user) malloc (sizeof(struct USER));
-                    ;
                     strcpy (sender->name, buffer.sender);
-                    if (is_user_in_room (u, buffer.content) == 1) {
+                    if (is_user_in_room (u, buffer.receiver) != 1) {
                         response.code = MESSAGE_KO;
                         strcpy (response.content,
                                 "You are not allowed to send a message to this room");

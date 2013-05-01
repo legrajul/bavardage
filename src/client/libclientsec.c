@@ -222,11 +222,13 @@ int extract_code_sec (const char *str) {
         return JOIN_ROOM_SEC;
     } else if (strcmp (command, "DEL_ACCOUNT_SEC") == 0) {
         return DEL_ACCOUNT_SEC;
-    } else if (strcmp (command, "MP_SEC") == 0){
+    } else if (strcmp (command, "MP_SEC") == 0) {
         return MP_SEC;
     } else if (strcmp(command, "CONNECT_KO_SEC_OK") == 0) {
         return CONNECT_KO_SEC_OK;
-    }
+    } else if (strcmp (command, "MESSAGE") == 0) {
+		return MESSAGE;
+	}
     return -1;
 }
 
@@ -285,7 +287,7 @@ int send_message_sec (const char *mess, char **error_mess) {
     printf("DEBUT send_message_sec\n");
     int code;
     char buffer[20 + MAX_NAME_SIZE + MAX_MESS_SIZE] = "";
-    unsigned char *ciphermess;
+    char *ciphermess;
     EVP_CIPHER_CTX en;
     EVP_CIPHER_CTX de;
     int lenght;
@@ -448,17 +450,17 @@ int send_message_sec (const char *mess, char **error_mess) {
                 strcat(buff, tab_string[i]);
                 strcat(buff, " ");
             }
-            if(is_room_used(msg->receiver) == -1) {
+            if(is_room_used(msg->receiver) == 0) {
                 strcpy (msg->content, buff);
             }
             else {
                 lenght = strlen(buff) + 1;
-                keyiv = malloc(sizeof (struct KEY_IV));
+                //keyiv = malloc(sizeof (struct KEY_IV));
                 keyiv = get_keyiv_in_room(msg->receiver);
-                ciphermess = aes_encrypt(keyiv->key, keyiv->iv, (unsigned char *)buff, &lenght);
+                ciphermess = aes_encrypt(keyiv->key, keyiv->iv, (char *)buff, &lenght);
                 strcpy(msg->content, ciphermess);
-                free(ciphermess);
-                free(keyiv);
+                //free(ciphermess);
+                //free(keyiv);
             }
             free(tab_string);
             return send_command();
