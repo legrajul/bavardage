@@ -158,7 +158,8 @@ namespace Bavardage.Widgets {
                                 update_connected (true, entry_login.get_text (),false);
                                 this.hide ();
                                 try {
-                                    (application as Bavardage.Client).thread_receive = new Thread<void *>.try ("recv thread", (application as Bavardage.Client).receive_thread);
+                                    var threadrcv = new Bavardage.Threads.ReceiveThread ("receive thread", this.application as Bavardage.Client);
+                                    (application as Bavardage.Client).thread_receive = new Thread<void *>.try ("recv thread", threadrcv.thread_func);
                                 } catch (GLib.Error e) {
                                     stderr.printf ("Error : %s\n", e.message);
                                 }
@@ -196,7 +197,8 @@ namespace Bavardage.Widgets {
                         update_connected (true, entry_login.get_text (), true);
                         this.hide ();
                         try {
-                            (application as Bavardage.Client).thread_receive_sec = new Thread<void *>.try ("recv thread sec", (application as Bavardage.Client).receive_thread_sec);
+                            var threadrcvsec = new Bavardage.Threads.ReceiveSecThread ("receive thread", this.application as Bavardage.Client);
+                            (application as Bavardage.Client).thread_receive_sec = new Thread<void *>.try ("recv thread sec", threadrcvsec.thread_func);
                         } catch (GLib.Error e) {
                             stderr.printf ("Error : %s\n", e.message);
                         }

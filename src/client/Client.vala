@@ -21,32 +21,32 @@ namespace Bavardage {
 
     public class Client: Gtk.Application {
         private Gtk.Builder builder;
-        private static HashMap<string, ListStore> rooms_map_users = new HashMap<string, ListStore> ();
-        private HashMap<string, TextBuffer> rooms_map_chats = new HashMap<string, TextBuffer> ();
-        private HashMap<string, EntryBuffer> rooms_map_entries = new HashMap<string, EntryBuffer> ();
-        private Gtk.Window window;
-        private TreeView open_rooms;
-        private TreeView connected_users;
-        private TextView chat;
-        private Entry message;
-        private Button create_room_button;
-        private Button quit_room_button;
-        private Button join_room_button;
-        private Button send_mp_button;
-        private Button invite_button;
-        private Gtk.MenuItem connect_item;
-        private Gtk.MenuItem disconnect_item;
-        private Gtk.MenuItem quit_item;
-        private Gtk.MenuItem about_item;
-        private Statusbar statusbar;
-        private Statusbar secure_statusbar;
-        private Bavardage.Widgets.ConnectionDialog conn_dial;
+        public HashMap<string, ListStore> rooms_map_users = new HashMap<string, ListStore> ();
+        public HashMap<string, TextBuffer> rooms_map_chats = new HashMap<string, TextBuffer> ();
+        public HashMap<string, EntryBuffer> rooms_map_entries = new HashMap<string, EntryBuffer> ();
+        public Gtk.Window window;
+        public TreeView open_rooms;
+        public TreeView connected_users;
+        public TextView chat;
+        public Entry message;
+        public Button create_room_button;
+        public Button quit_room_button;
+        public Button join_room_button;
+        public Button send_mp_button;
+        public Button invite_button;
+        public Gtk.MenuItem connect_item;
+        public Gtk.MenuItem disconnect_item;
+        public Gtk.MenuItem quit_item;
+        public Gtk.MenuItem about_item;
+        public Statusbar statusbar;
+        public Statusbar secure_statusbar;
+        public Bavardage.Widgets.ConnectionDialog conn_dial;
         public Thread<void *> thread_receive;
         public Thread<void *> thread_receive_sec;
 
-        private bool is_secured = false;
+        public bool is_secured = false;
 
-        private signal void update_connected (bool is_connected, string login);
+        public signal void update_connected (bool is_connected, string login);
 
         /*
          * Constructeur d'un client
@@ -388,280 +388,6 @@ namespace Bavardage {
             invite_button.set_sensitive (is_connected);
         }
 
-        public void *receive_thread () {
-            Message m = { -1, "".data, "".data, "".data };
-            TreeIter tree_iter;
-            while (true) {
-                Thread.usleep (10000);
-                m = { -1, "".data, "".data, "".data };
-                if (receive_message (out m) == 0) {
-                    var sender = new StringBuilder ("");
-                    for (int i = 0; i < m.sender.length; i++) {
-                        sender.append_c((char) m.sender[i]);
-                    }
-                    var content = new StringBuilder ("");
-                    for (int i = 0; i < m.content.length; i++) {
-                        content.append_c ((char) m.content[i]);
-                    }
-                    var receiver = new StringBuilder ("");
-                    for (int i = 0; i < m.receiver.length; i++) {
-                        receiver.append_c ((char) m.receiver[i]);
-                    }
-                    switch (m.code) {
-                    case CREATE_ROOM_KO:
-                    case JOIN_ROOM_KO:
-                    case DELETE_ROOM_KO:
-                    case MESSAGE_KO:
-                    case MP_KO:
-                    case QUIT_ROOM_KO:
-                    case KO:
-                        stdout.printf ("Error : %s\n", content.str);
-                        string s = "Erreur : " + content.str + "\n";
-                        TextIter iter;
-                        chat.get_buffer ().get_end_iter (out iter);
-                        chat.get_buffer ().insert_text (ref iter, s, s.length);
-
-                        break;
-                    case OK:
-
-                        break;
-                    case CREATE_ROOM:
-                        var rooms = open_rooms.get_model () as ListStore;
-                        rooms.append (out tree_iter);
-                        rooms.set (tree_iter, 0, content.str, -1);
-
-                        rooms_map_users.set (content.str, new ListStore (2, typeof (string), typeof (string)));
-                        var buffer = new TextBuffer (new TextTagTable ());
-                        buffer.create_tag ("blue", "foreground", "#0000FF", "underline", Pango.Underline.SINGLE);
-                        rooms_map_chats.set (content.str, buffer);
-                        rooms_map_entries.set (content.str, new EntryBuffer ("".data));
-
-                        open_rooms.get_selection ().select_iter (tree_iter);
-                        open_rooms.cursor_changed ();
-                        break;
-                    case DELETE_ROOM:
-                        Value v;
-                        var model = open_rooms.get_model () as ListStore;
-                        model.get_iter_first (out tree_iter);
-                        do {
-                            model.get_value (tree_iter, 0, out v);
-                            if (content.str == (string) v) {
-                                break;
-                            }
-                        } while (model.iter_next (ref tree_iter));
-                        model.remove (tree_iter);
-                        rooms_map_chats.unset (content.str);
-                        rooms_map_entries.unset (content.str);
-                        rooms_map_users.unset (content.str);
-                        model.get_iter_first (out tree_iter);
-                        open_rooms.get_selection ().select_iter (tree_iter);
-                        open_rooms.cursor_changed ();
-                        break;
-                    case MESSAGE:
-                        string s = "<" + sender.str + "> " + content.str + "\n";
-                        TextIter iter;
-                        rooms_map_chats.get (receiver.str).get_end_iter (out iter);
-                        rooms_map_chats.get (receiver.str).insert_text (ref iter, s, s.length);
-
-                        TextIter start, end;
-                        rooms_map_chats.get (receiver.str).get_end_iter (out end);
-                        rooms_map_chats.get (receiver.str).get_start_iter (out start);
-                        string buffer_text = rooms_map_chats.get (receiver.str).get_text (start, end, true);
-                        if (buffer_text.contains ("://")) {
-                            int idx = buffer_text.index_of ("://");
-
-                            int old_idx = 0;
-                            while (idx != -1) {
-                                while (idx > 0 && buffer_text[idx] != ' ') {
-                                    idx--;
-                                }
-                                idx++;
-                                StringBuilder url = new StringBuilder ("");
-                                int i = 0;
-                                for (i = idx; i < buffer_text.length; i++) {
-                                    if (buffer_text[i] == ' ' || buffer_text[i] == '\n') {
-                                        break;
-                                    } else {
-                                        url.append_c ((char) buffer_text[i]);
-                                    }
-                                }
-
-                                rooms_map_chats.get (receiver.str).get_iter_at_offset (out start, idx);
-                                rooms_map_chats.get (receiver.str).get_iter_at_offset (out end, idx + url.str.length);
-                                rooms_map_chats.get (receiver.str).apply_tag_by_name ("blue", start, end);
-
-                                old_idx = idx;
-                                idx = buffer_text.index_of ("://", i + 1);
-                            }
-                        }
-                        if (chat.get_buffer () == rooms_map_chats.get (receiver.str)) {
-                            chat.get_buffer ().get_iter_at_line (out iter, chat.get_buffer ().get_line_count ());
-                            chat.scroll_to_iter (iter, 0.0, false, 0.0, 1.0);
-                            chat.get_buffer ().set_modified (true);
-                        }
-                        break;
-
-                    case MP:
-                        string s = "[" + sender.str + "] " + content.str + "\n";
-                        TextIter iter;
-                        string room_name = "[" + sender.str + "]";
-                        if (sender.str == ClientCore.get_login ()) {
-                            room_name = "[" + receiver.str + "]";
-                        }
-                        if (rooms_map_chats.get (room_name) == null) {
-                            var rooms = open_rooms.get_model () as ListStore;
-                            rooms.append (out tree_iter);
-                            rooms.set (tree_iter, 0, room_name, -1);
-
-                            rooms_map_users.set (room_name, new ListStore (2, typeof (string), typeof (string)));
-                            var buffer = new TextBuffer (new TextTagTable ());
-                            buffer.create_tag ("blue", "foreground", "#0000FF", "underline", Pango.Underline.SINGLE);
-                            rooms_map_chats.set (room_name, buffer);
-                            rooms_map_entries.set (room_name, new EntryBuffer ("".data));
-                            open_rooms.get_selection ().select_iter (tree_iter);
-                            open_rooms.cursor_changed ();
-                        }
-                        rooms_map_chats.get (room_name).get_end_iter (out iter);
-                        rooms_map_chats.get (room_name).insert_text (ref iter, s, s.length);
-
-                        TextIter start, end;
-                        rooms_map_chats.get (room_name).get_start_iter (out start);
-                        rooms_map_chats.get (room_name).get_end_iter (out end);
-                        string buffer_text = rooms_map_chats.get (room_name).get_text (start, end, true);
-                        if (buffer_text.contains ("://")) {
-                            int idx = buffer_text.index_of ("://");
-
-                            int old_idx = 0;
-                            while (idx != -1) {
-                                while (idx > 0 && buffer_text[idx] != ' ') {
-                                    idx--;
-                                }
-                                idx++;
-                                int i = 0;
-                                StringBuilder url = new StringBuilder ("");
-                                for (i = idx; i < buffer_text.length; i++) {
-                                    if (buffer_text[i] == ' ' || buffer_text[i] == '\n') {
-                                        break;
-                                    } else {
-                                        url.append_c ((char) buffer_text[i]);
-                                    }
-                                }
-
-                                rooms_map_chats.get (room_name).get_iter_at_offset (out start, idx);
-                                rooms_map_chats.get (room_name).get_iter_at_offset (out end, idx + url.str.length);
-                                rooms_map_chats.get (room_name).apply_tag_by_name ("blue", start, end);
-
-                                old_idx = idx;
-                                idx = buffer_text.index_of ("://", i + 1);
-                            }
-                        }
-
-                        if (chat.get_buffer () == rooms_map_chats.get (receiver.str)) {
-                            chat.get_buffer ().get_iter_at_line (out iter, chat.get_buffer ().get_line_count ());
-                            chat.scroll_to_iter (iter, 0.0, false, 0.0, 1.0);
-                            chat.get_buffer ().set_modified (true);
-                        }
-                        break;
-                    case NEW_USER:
-                        string s = sender.str + " vient de rejoindre le salon\n";
-                        TextIter iter;
-                        string room_name = content.str;
-                        rooms_map_chats.get (room_name).get_end_iter (out iter);
-                        rooms_map_chats.get (room_name).insert_text (ref iter, s, s.length);
-                        var users = rooms_map_users.get (content.str) as ListStore;
-                        users.append (out tree_iter);
-                        users.set (tree_iter, 0, sender.str, 1, "", -1);
-                        if (chat.get_buffer () == rooms_map_chats.get (receiver.str)) {
-                            chat.get_buffer ().get_iter_at_line (out iter, chat.get_buffer ().get_line_count ());
-                            chat.scroll_to_iter (iter, 0.0, false, 0.0, 1.0);
-                            chat.get_buffer ().set_modified (true);
-                        }
-                        break;
-                    case ADD_USER:
-                        var users = rooms_map_users.get (content.str) as ListStore;
-                        users.append (out tree_iter);
-                        users.set (tree_iter, 0, sender.str, 1, "", -1);
-                        break;
-                    case RM_USER:
-                        string s = sender.str + " vient de quitter le salon\n";
-                        TextIter iter;
-                        string room_name = content.str;
-                        rooms_map_chats.get (room_name).get_end_iter (out iter);
-                        rooms_map_chats.get (room_name).insert_text (ref iter, s, s.length);
-                        Value v;
-                        var model = rooms_map_users.get (content.str)as ListStore;
-                        model.get_iter_first (out tree_iter);
-                        do {
-                            model.get_value (tree_iter, 0, out v);
-                            if (sender.str == (string) v) {
-                                break;
-                            }
-                        } while (model.iter_next (ref tree_iter));
-                        model.remove (tree_iter);
-                        if (chat.get_buffer () == rooms_map_chats.get (receiver.str)) {
-                            chat.get_buffer ().get_iter_at_line (out iter, chat.get_buffer ().get_line_count ());
-                            chat.scroll_to_iter (iter, 0.0, false, 0.0, 1.0);
-                            chat.get_buffer ().set_modified (true);
-                        }
-                        break;
-                    case DISCONNECT:
-                        rooms_map_chats.clear ();
-                        rooms_map_entries.clear ();
-                        rooms_map_users.clear ();
-                        open_rooms.set_model (new ListStore (1, typeof (string)));
-                        chat.set_buffer (new TextBuffer (new TextTagTable ()));
-                        message.set_buffer (new EntryBuffer ("".data));
-                        connected_users.set_model (new ListStore (2, typeof (string), typeof (string)));
-                        update_connected (false, "");
-                        Thread.exit (null);
-                        break;
-                    case ADMIN:
-                        var users = rooms_map_users.get (content.str) as ListStore;
-                        users.append (out tree_iter);
-                        users.set (tree_iter, 0, sender.str, 1, "(admin)", -1);
-                        break;
-                    default:
-                        break;
-                    }
-                } else {
-                    stdout.printf ("Error\n");
-                    break;
-                }
-            }
-            rooms_map_chats.clear ();
-            rooms_map_entries.clear ();
-            rooms_map_users.clear ();
-            open_rooms.set_model (new ListStore (1, typeof (string)));
-            chat.set_buffer (new TextBuffer (new TextTagTable ()));
-            message.set_buffer (new EntryBuffer ("".data));
-            connected_users.set_model (new ListStore (2, typeof (string), typeof (string)));
-            update_connected (false, "");
-            Thread.exit (null);
-            return null;
-        }
-
-        public void *receive_thread_sec () {
-            Message m = { -1, "".data, "".data, "".data };
-            TreeIter tree_iter;
-            while (true) {
-                Thread.usleep (10000);
-                m = { -1, "".data, "".data, "".data };
-                if (receive_message_sec (out m) == 0) {
-                    switch (m.code) {
-                    case CONNECT_SEC:
-                        is_secured = true;
-                        secure_statusbar.push (statusbar.get_context_id ("securestatus"), "(Connexion sécurisée)");
-                        break;
-                    default:
-                        break;
-                    }
-                    stdout.printf ("Message reçu !\n");
-                }
-            }
-            Thread.exit (null);
-            return null;
-        }
-
         private async void send_message_entry () {
             var msg = message.get_text ();
             string error_msg;
@@ -692,57 +418,6 @@ namespace Bavardage {
             }
             message.set_text("");
         }
-        /*
-         * Fonction qui met des valeurs dans les différents éléments
-         * graphiques pour tester l'application
-         */
-        public void setup_test () {
-
-            var users_room1 = new ListStore (1, typeof (string));
-            TreeIter iter;
-            users_room1.append (out iter);
-            users_room1.set (iter, 0, "Admin");
-            users_room1.append (out iter);
-            users_room1.set (iter, 0, "Titi");
-
-            var users_room2 = new ListStore (1, typeof (string));
-            users_room2.append (out iter);
-            users_room2.set (iter, 0, "Admin");
-            users_room2.append (out iter);
-            users_room2.set (iter, 0, "Toto");
-
-            var rooms_view = builder.get_object ("open_rooms") as TreeView;
-            var rooms = new ListStore (1, typeof (string));
-            rooms.append (out iter);
-            rooms.set (iter, 0, "salon 1", -1);
-            rooms.append (out iter);
-            rooms.set (iter, 0, "salon 2", -1);
-            rooms.append (out iter);
-            rooms.set (iter, 0, "accueil", -1);
-            rooms_view.set_model (rooms);
-
-            rooms_map_users.set ("salon 1", users_room1);
-            rooms_map_users.set ("salon 2", users_room2);
-            rooms_map_users.set ("accueil", new ListStore (1, typeof (string)));
-
-            var buffer1 = new TextBuffer (new TextTagTable ());
-            buffer1.set_text ("Texte du salon 1...");
-            var buffer2 = new TextBuffer (new TextTagTable ());
-            buffer2.set_text ("Texte du salon 2...");
-
-            rooms_map_chats.set ("salon 1", buffer1);
-            rooms_map_chats.set ("salon 2", buffer2);
-            rooms_map_chats.set ("accueil", new TextBuffer (new TextTagTable ()));
-
-            var entry1 = new EntryBuffer ("Message 1...".data);
-            var entry2 = new EntryBuffer ("Message 2...".data);
-
-            rooms_map_entries.set ("salon 1", entry1);
-            rooms_map_entries.set ("salon 2", entry2);
-            rooms_map_entries.set ("accueil", new EntryBuffer ({}));
-
-        }
-
     }
 
     /*
