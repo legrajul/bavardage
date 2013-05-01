@@ -51,6 +51,7 @@
 #define MP_SEC_KO 1311
 #define QUIT_ROOM_SEC_KO 1411
 #define MP_SEC  1511
+#define CONNECT_KO_SEC_OK 1611
 
 #define BUFSIZZ 1024
 #define AES_BLOCK_SIZE 256

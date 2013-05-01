@@ -253,15 +253,18 @@ void *traitement_recv (void *param) {
         case CREATE_ROOM:
     printf ("The room %s has been created\n", mess.content);
             break;
+        case CONNECT_KO:
+            printf("DEBUT CONNECT_KO clientsec-cli\n");
+            strcpy(text, "/CONNECT_KO_SEC_OK");
+            send_message_sec(text, NULL);
+            printf ("Error: %s\n", mess.content);
+            break;
         case QUIT_ROOM_KO:
         case DELETE_ROOM_KO:
         case MESSAGE_KO:
         case MP_KO:
-        case CONNECT_KO:
             printf ("Error: %s\n", mess.content);
             break;
-
-
         case CREATE_ROOM_KO:
             printf ("Error: the room %s is already in use\n", mess.content);
 	    if (is_room_used (mess.content)) {

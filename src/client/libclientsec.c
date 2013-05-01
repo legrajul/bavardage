@@ -224,6 +224,8 @@ int extract_code_sec (const char *str) {
         return DEL_ACCOUNT_SEC;
     } else if (strcmp (command, "MP_SEC") == 0){
         return MP_SEC;
+    } else if (strcmp(command, "CONNECT_KO_SEC_OK") == 0) {
+        return CONNECT_KO_SEC_OK;
     }
     return -1;
 }
@@ -310,6 +312,10 @@ int send_message_sec (const char *mess, char **error_mess) {
         int i;
         printf ("libclientsec.c: send_mess: DEBUG_SEND_MESS-%d\n", debug++);
         switch (code) {
+        case CONNECT_KO_SEC_OK:
+            printf("DEBUT CONNECT_KO_SEC_OK\n");
+            disconnect_sec();
+            break;
         case CONNECT_SEC:   // Cas d'une demande de connexion
             printf("libclientsec.c: send_mess: msg-code(debut swicth): %d\n", msg->code);
             //strcpy(conn, "/CONNECT ");
