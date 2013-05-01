@@ -245,13 +245,16 @@ int send_message (const char *mess, char **error_mess) {
 
 		case MP:  // Cas d'envoi de message prive
             printf("debut MP libclient\n");
+            printf("BUFFER: <%s>\n", buffer);
 			tab_string = create_table_param (buffer);
-			if (len (tab_string) < 3) {
+			// code en commentaire au cas ou mais ne doit plus servir
+			// gestion du message vide dans le server
+			/*if (len (tab_string) < 3) {
 				*error_mess =
 						strdup (
 								"MP doit avoir 2 paramètres : /MP toto mon super message privé\n");
 				return -3;
-			}
+			}*/
 			strcpy (msg->receiver, tab_string[1]);
 			strcpy (buff, "");
 			for (i = 2; i < len (tab_string); i++) {
@@ -259,6 +262,8 @@ int send_message (const char *mess, char **error_mess) {
 				strcat (buff, " ");
 			}
 
+			printf("liblclient - msg->content: <%s>\n", msg->content);
+			printf("liblcient - msg->code: <%d>\n", msg->code);
 			strcpy (msg->content, buff);
 			return send_command ();
 			break;

@@ -311,7 +311,7 @@ void *handle_connexion (void *param) {
 								"You can not send a message to an non-existing user");
 						break;
 					}
-					if (buffer.content == NULL) {
+					if (strcmp(buffer.content, "") == 0) {
 						response.code = MP_KO;
 						strcpy (response.content,
 								"You can not send an empty message");
@@ -323,6 +323,7 @@ void *handle_connexion (void *param) {
 					writeSocketTCP (receiver->socket, (char *) &buffer,
 							sizeof(message));
 
+					printf("buffer.code: <%d>\n", buffer.code);
 					response = buffer;
 					break;
 

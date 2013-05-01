@@ -34,7 +34,6 @@ char *home_room = "accueil";
 SSL_CTX *ctx;
 SSL *ssl;
 BIO *sbio;
-
 // modif
 
 SSL_CTX *setup_server_ctx (void) {
@@ -51,6 +50,7 @@ SSL_CTX *setup_server_ctx (void) {
 
     SSL_CTX_set_verify (ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
                         verify_callback);
+
     SSL_CTX_set_verify_depth (ctx, 4);
     return ctx;
 }
@@ -113,6 +113,9 @@ void *handle_connexion(void *param) {
     client_ssl = SSL_new(ctx);              /* get new SSL state with context */
     SSL_set_fd(client_ssl, s->socket);      /* set connection socket to SSL state */
 
+    X509 *cert;
+    char data[256];
+
     message buffer, response;
     int bytes = 0;
     user u;
@@ -127,9 +130,11 @@ void *handle_connexion(void *param) {
         SSL_CTX_set_verify_depth(ctx,1);
 
         //SSL_connect(client_ssl);
-        if (SSL_get_peer_certificate(client_ssl) != NULL) {
+        if ((cert = SSL_get_peer_certificate(client_ssl)) != NULL) {
             if(SSL_get_verify_result(client_ssl) == X509_V_OK) {
                 printf("client verification with SSL_get_verify_result() succeeded.\n");
+                X509_NAME_oneline(X509_get_subject_name(cert), data, 256);
+                fprintf(stderr, "subject = %s\n", data);
             }
             else {
                 printf("client verification with SSL_get_verify_result() failed.\n");
@@ -266,10 +271,10 @@ void *handle_connexion(void *param) {
 				case DEL_ACCOUNT_SEC:
 					printf("serversec.c: buffer.sender = %s : buffer.content = %s\n", buffer.sender, buffer.content);
 					printf("serversec.c: buffer.code = %d\n", buffer.code);
-					if (is_connected(buffer.sender) == -1) {
+					if (is_connected(buffer.sender, data) == -1) {
 						response.code = KO;
 						strcpy (response.content, "bad user / password\n");
-					} else if (is_connected(buffer.sender) == 1) {
+					} else if (is_connected(buffer.sender, data) == 1) {
 						u = (user) malloc(sizeof(struct USER));
 						strcpy(u->name, buffer.sender);
 						room_list p;
@@ -298,7 +303,8 @@ void *handle_connexion(void *param) {
                 case CONNECT_SEC:
                     printf("secure_server.c: handle_connexion: BEGIN connect_sec\n");
                     printf("serversec.c: buffer.sender = %s:\nbuffer.content = %s\n", buffer.sender, buffer.content);
-                    int status = is_connected (buffer.sender);
+                    printf("Data: <%s>\n", data);
+                    int status = is_connected (buffer.sender, data);
                     printf("secure_server.c: handle_connexion: AFTER is connected\n");
                     switch (status) {
                     case -1:
@@ -308,8 +314,13 @@ void *handle_connexion(void *param) {
                         break;
                     case 1:
                         printf("secure_server.c: handle_connexion: connect_sec: DEBUT CASE 1\n");
-                        if (check_user(buffer.sender) == 1) {
-                            add_user_db (buffer.sender);
+                        if (check_user(buffer.sender, data) == 1) {
+                            if (check_certificate(data) == -1) {
+                                fprintf(stderr, "This certificate is already in use\n");
+                                response.code = CONNECT_SEC_KO;
+                                break;
+                            } else
+                                add_user_db (buffer.sender, data);
                         } 
                         printf("secure_server.c: handle_connexion: connect_sec: AFTER CHECK_USER\n");
                         change_status(buffer.sender);

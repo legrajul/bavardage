@@ -159,7 +159,14 @@ void *traitement_recv_sec (void *param) {
         case DELETE_ROOM:
             printf("The room %s has been deleted\n", mess.content);
             break;
-
+        case CREATE_ROOM_KO:
+        case QUIT_ROOM_KO:
+        case DELETE_ROOM_KO:
+        case MESSAGE_KO:
+        case MP_KO:
+        case CONNECT_KO:
+            printf ("Error: %s\n", mess.content);
+            break;
         default:
             break;
 
@@ -193,7 +200,7 @@ void *traitement_recv (void *param) {
 
             continue;
         }
-
+        printf("clientsec-cli- mess.code: <%d>\n", mess.code);
         char *res = NULL;
         if (mess.code == DISCONNECT) {
             disconnect ();
@@ -223,37 +230,8 @@ void *traitement_recv (void *param) {
             break;
 
         case MP:
-            /*if (get_keyiv_in_room(mess.receiver) == NULL) {
-              printf ("[%s @ %s] %s\n", mess.sender, mess.receiver, mess.content);
-              }
-              else {
-              keyiv = malloc(sizeof (struct KEY_IV));
-              keyiv = get_keyiv_in_room(mess.receiver);
-              aes_init(keyiv->key, keyiv->iv, &en, &de);
-              lenght = strlen(mess.content) + 1;
-              plainmess = aes_decrypt(&de, (unsigned char *)mess.content, &lenght);
-              printf("[%s > %s] %s\n", mess.sender, mess.receiver, plainmess);
-              }*/
-            lenght = MAX_CIPHERED_SIZE;
-            EVP_BytesToKey(EVP_aes_256_cbc(), EVP_sha512(), (unsigned char*)&salt, keydata, strlen(keydata), 5, key, iv);
-            //            printf("le message chiffré est :%d\n",mess.content);
-            plaintext= (char *)aes_decrypt(key, iv, mess.content, &lenght);
-            printf ("[%s > %s] %s\n", mess.sender, mess.receiver, plaintext);
+            printf ("[%s > %s] %s\n", mess.sender, mess.receiver, mess.content);
             break;
-            break;
-
-
-            /* case MESSAGE:
-
-               printf ("[%s @ %s] %s\n", mess.sender, mess.receiver, mess.content);
-               break;
-
-               case MP:
-               <<<<<<< Updated upstream
-               printf ("[%s > %s] %s\n", mess.sender, mess.receiver, mess.content);
-               break; */
-
-
         case NEW_USER:
             printf ("The user %s joined the room %s\n", mess.sender,
                     mess.content);
@@ -271,10 +249,14 @@ void *traitement_recv (void *param) {
             strcat(text,mess.content);
             send_message_sec(text, NULL);
             break;
-
-        case CREATE_ROOM_KO:
+		case CREATE_ROOM_KO:
+        case QUIT_ROOM_KO:
+        case DELETE_ROOM_KO:
+        case MESSAGE_KO:
+        case MP_KO:
+        case CONNECT_KO:
             printf ("Error: %s\n", mess.content);
-
+            break;
         default:
             break;
         }

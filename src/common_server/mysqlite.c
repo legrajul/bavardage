@@ -25,7 +25,7 @@ int connect_server_database (const char *fileDb) {
 
 	// creation de la table users
 	char create_table[QUERY_SIZE] =
-			"CREATE TABLE IF NOT EXISTS users (login VARCHAR(20) unique, is_connected INTEGER)";
+			"CREATE TABLE IF NOT EXISTS users (login VARCHAR(20) unique, cert VARCHAR(256), is_connected INTEGER)";
 	int sq = sqlite3_exec (database, create_table, 0, 0, 0);
 	if (sq != SQLITE_OK) {
 		perror ("Can't create table users\n");
@@ -42,11 +42,11 @@ int close_server_database () {
 }
 
 /** ajoute un user dans la base **/
-int add_user_db(char *login) {
+int add_user_db(char *login, char *data) {
     printf("mysqlite.c: add_user: BEGIN ADD_USER with login %s\n", login);
     // creation de la requete insertion
     char insert[QUERY_SIZE] = "";
-    sprintf (insert, "INSERT INTO users values (\'%s\', 0)", login); 
+    sprintf (insert, "INSERT INTO users values (\'%s\', \'%s\', 0)", login, data); 
     int sql = sqlite3_exec(database, insert, 0, 0, 0);
 	if (sql != SQLITE_OK) {
         perror("Can't insert in server database");
@@ -91,10 +91,47 @@ int check_challenge (char *login, char *pass) {
 		
 }
 
-/** verifie la prÃ©sence d'un user */
-int check_user(char *login) {
+int check_certificate (char *data) {
     char select[QUERY_SIZE] = "";
-    sprintf (select, "SELECT * FROM users WHERE login = \'%s\'", login);
+    printf("mysql.c: check_certificate: BEFORE REQUEST\n");
+    sprintf (select, "SELECT cert FROM users WHERE cert = \'%s\'", data);
+    
+    //int sql = sqlite3_exec (database, select, 0, 0, 0);
+    int sql = sqlite3_prepare_v2(database, select, -1, &stmt, 0);
+    if (sql) {
+        perror("Bad request check_certificate\n");
+        return -1;
+    } else {
+        int fetch = 1;
+        int total = 0;
+        while(fetch) {
+            switch (sqlite3_step(stmt)) {
+            case SQLITE_ROW:
+                total++;
+                break;
+            case SQLITE_DONE:
+                fetch = 0;
+                break;
+            default:
+                printf("Some error encountered\n");
+                return -1;
+            }
+        }
+        if (total == 0) {
+            return 1;
+        } else {
+            return -1;
+        }
+    }
+    return -1;
+        
+}
+
+
+/** verifie la prÃ©sence d'un user */
+int check_user(char *login, char *data) {
+    char select[QUERY_SIZE] = "";
+    sprintf (select, "SELECT * FROM users WHERE login = \'%s\' and cert = \'%s\'", login, data);
 
     int sql = sqlite3_prepare_v2(database, select, -1, &stmt, 0);
     if (sql) {
@@ -126,8 +163,8 @@ int check_user(char *login) {
 }
 
 /* determine si un user est connecte ou non */
-int is_connected (char *login) {
-    check_user(login);
+int is_connected (char *login, char *data) {
+    check_user(login, data);
     printf("mysql.c: is_connected: before sql\n");
     char is_connect[QUERY_SIZE] = "";
     sprintf (is_connect, "SELECT * FROM users where login = \'%s\' and is_connected = 1", login);
