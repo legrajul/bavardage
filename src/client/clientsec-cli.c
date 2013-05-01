@@ -90,13 +90,16 @@ void *traitement_recv_sec (void *param) {
         char *res = NULL, conn[MAX_MESS_SIZE] = "";
 	switch (mess.code) {
         case CONNECT_SEC:
+            printf("--------------------------DEBUT CONNECT_SEC clientsec-cli ------------------------\n");
             strcpy(conn, "/CONNECT ");
             printf("mess.sender: <%s>\n", mess.sender);
             strcat(conn, mess.sender);
             send_message (conn, NULL);
             printf("init_rooms: <%d>\n", init_rooms());
             break;
-
+        case CONNECT_SEC_OK:
+            printf("--------------------------DEBUT CONNECT_SEC_OK clientsec-cli ------------------------\n");
+            break;
         case DISCONNECT:
             //disconnect ();
             printf ("You're now disconnected from the chat server\n");
@@ -232,7 +235,12 @@ void *traitement_recv (void *param) {
                 //free(plainmess);
             }
             break;
-
+        case CONNECT:
+            printf("--------------------------DEBUT CONNECT clientsec-cli ------------------------\n");
+            printf("Debut CONNECT clientsec-cli\n");
+            strcpy(text, "/CONNECT_OK");
+            send_message_sec(text, NULL);
+            break;
         case MP:
             printf ("[%s > %s] %s\n", mess.sender, mess.receiver, mess.content);
             break;

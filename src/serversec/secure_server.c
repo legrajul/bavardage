@@ -122,6 +122,8 @@ void *handle_connexion(void *param) {
     key_iv keyiv;
     char key_data[KEY_DATA_SIZE];
 
+    int first_connection = 0;
+
     if (SSL_accept(client_ssl) <= 0) {     /* do SSL-protocol accept */
         ERR_print_errors_fp(stderr);
     } else {
@@ -254,9 +256,12 @@ void *handle_connexion(void *param) {
                 case DELETE_ROOM_SEC:
                     //TODO
                     break;
-
                 case DISCONNECT_SEC:
                     printf("Disconnection from secure server\n");
+                    printf("first_connection: <%d>\n", first_connection);
+                    if (first_connection == 1) {
+                        delete_user(buffer.sender);
+                    }
                     response.code = DISCONNECT_SEC;
                     SSL_write(client_ssl, &response, sizeof(message));
                     printf("SSL_write secure server\n");
@@ -267,7 +272,6 @@ void *handle_connexion(void *param) {
                     change_status (buffer.sender);
                     pthread_exit(0);
                     break;
-
 				case DEL_ACCOUNT_SEC:
 					printf("serversec.c: buffer.sender = %s : buffer.content = %s\n", buffer.sender, buffer.content);
 					printf("serversec.c: buffer.code = %d\n", buffer.code);
@@ -279,12 +283,13 @@ void *handle_connexion(void *param) {
 						strcpy(u->name, buffer.sender);
 						room_list p;
 						//------------------------------------------------
-						printf("disconnection from all current room...\n");
+						/*printf("disconnection from all current room...\n");
 						for (p = server_room_map; p != NULL; p = p->next) {
 							if (is_user_in_room (u, p->current->name))
 								remove_user_from_room (u, p->current->name);
-						}
+						}*/
 						//------------------------------------------------
+                        printf("DEL_ACCOUNT_SEC: buffer.sender: <%s> | buffer.content: <%s>\n", buffer.sender, buffer.content);
 						if (strcmp(buffer.sender, buffer.content) != 0) 
 							printf("bad login, please retry...\n");
 						else {
@@ -298,10 +303,14 @@ void *handle_connexion(void *param) {
 		                }
 					}	
 					//TODO revoquer le certicat ??
-					break;
-					
-
+                    break;
+                case CONNECT_OK:
+                    printf("--------------------------DEBUT CONNECT_SOK secure_server ------------------------\n");
+                    response.code = CONNECT_SEC_OK;
+                    first_connection = 0;
+                    break;
                 case CONNECT_SEC:
+                    printf("--------------------------DEBUT CONNECT_SEC secure_server ------------------------\n");
                     printf("secure_server.c: handle_connexion: BEGIN connect_sec\n");
                     printf("serversec.c: buffer.sender = %s:\nbuffer.content = %s\n", buffer.sender, buffer.content);
                     printf("Data: <%s>\n", data);
@@ -321,8 +330,10 @@ void *handle_connexion(void *param) {
                                 fprintf(stderr, "This certificate is already in use\n");
                                 response.code = CONNECT_SEC_KO;
                                 break;
-                            } else
+                            } else {
                                 add_user_db (buffer.sender, data);
+                                first_connection = 1;
+                            }
                         } 
                         printf("secure_server.c: handle_connexion: connect_sec: AFTER CHECK_USER\n");
                         change_status(buffer.sender);

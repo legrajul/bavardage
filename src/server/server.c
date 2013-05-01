@@ -239,6 +239,7 @@ void *handle_connexion (void *param) {
                     break;
 
                 case CONNECT:
+                	printf("--------------------------DEBUT CONNECT server ------------------------\n");
                     if (u != NULL) {
                         response.code = CONNECT_KO;
                         strcpy (response.content, "You are already connected");
