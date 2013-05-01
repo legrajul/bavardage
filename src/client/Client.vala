@@ -24,6 +24,9 @@ namespace Bavardage {
         public HashMap<string, ListStore> rooms_map_users = new HashMap<string, ListStore> ();
         public HashMap<string, TextBuffer> rooms_map_chats = new HashMap<string, TextBuffer> ();
         public HashMap<string, EntryBuffer> rooms_map_entries = new HashMap<string, EntryBuffer> ();
+
+        private HashSet<string> secure_rooms = new HashSet<string> ();
+
         public Gtk.Window window;
         public TreeView open_rooms;
         public TreeView connected_users;
@@ -43,6 +46,7 @@ namespace Bavardage {
         public Bavardage.Widgets.ConnectionDialog conn_dial;
         public Thread<void *> thread_receive;
         public Thread<void *> thread_receive_sec;
+        public Mutex mutex = new Mutex ();
 
         public bool is_secured = false;
 
@@ -178,15 +182,15 @@ namespace Bavardage {
             create_room_button.clicked.connect ( () => {
                     var dialog = new Bavardage.Widgets.NewRoomDialog (window, this);
                     dialog.create_new_room.connect ((room_name, is_sec) => {
+                            string error_msg;
                             if (is_sec) {
-                                //TODO
-                            } else {
-                                string error_msg;
-                                if (send_message ("/CREATE_ROOM " + room_name, out error_msg) == -3) {
-                                    TextIter iter;
-                                    chat.get_buffer ().get_end_iter (out iter);
-                                    chat.get_buffer ().insert_text (ref iter, error_msg, error_msg.length);
-                                }
+                                secure_rooms.add (room_name);
+                            }
+
+                            if (send_message ("/CREATE_ROOM " + room_name, out error_msg) == -3) {
+                                TextIter iter;
+                                chat.get_buffer ().get_end_iter (out iter);
+                                chat.get_buffer ().insert_text (ref iter, error_msg, error_msg.length);
                             }
                         });
 
@@ -417,6 +421,11 @@ namespace Bavardage {
                 }
             }
             message.set_text("");
+        }
+
+        public bool is_secure_room (string room_name) {
+            stdout.printf ("is_secure_room ? %s\n", secure_rooms.contains (room_name).to_string ());
+            return secure_rooms.contains (room_name);
         }
     }
 

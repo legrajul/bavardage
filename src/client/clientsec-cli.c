@@ -66,12 +66,12 @@ void *traitement_send (void *param) {
 
 void *traitement_recv_sec (void *param) {
 
-	message mess;	
-	int lenght;
-    unsigned char *plainmess;  
+    message mess;
+    int lenght;
+    unsigned char *plainmess;
     char *room_name;
     key_iv keyiv;
-
+    
     while (1) {
         printf("Clientsec-cli.c: recv: mess.code: <%d>\n", mess.code);
         printf("Clientsec-cli.c: recv: mess.content:<%s>\n", mess.content);
@@ -85,10 +85,10 @@ void *traitement_recv_sec (void *param) {
             printf("Error: %s\n", mess.content);
             continue;
         }
-
-
+	
+	
         char *res = NULL, conn[MAX_MESS_SIZE] = "";
-        switch (mess.code) {
+	switch (mess.code) {
         case CONNECT_SEC:
             strcpy(conn, "/CONNECT ");
             printf("mess.sender: <%s>\n", mess.sender);
@@ -116,10 +116,10 @@ void *traitement_recv_sec (void *param) {
         case OK:
             keyiv = malloc(sizeof (struct KEY_IV));
             room_name =strdup(strtok(mess.content, "|"));
-		    strcpy(keyiv->key, strtok(NULL, "|"));
-		    strcpy(keyiv->iv, strtok(NULL, "|"));
-		    set_keyiv_in_room(room_name, keyiv);
-		    free(keyiv);
+            strcpy(keyiv->key, strtok(NULL, "|"));
+            strcpy(keyiv->iv, strtok(NULL, "|"));
+            set_keyiv_in_room(room_name, keyiv);
+            free(keyiv);
             if (strlen(mess.content) > 0) {
                 printf("mess content = %s\n", mess.content);
             }
@@ -140,17 +140,23 @@ void *traitement_recv_sec (void *param) {
                 plainmess = aes_decrypt(&de, (unsigned char *)mess.content, &lenght);
                 printf("[%s > %s] %s\n", mess.sender, mess.receiver, plainmess);
                 break; */
-            
-        case CREATE_ROOM:
-             printf("Création room réussie \n");
-             add_room(mess.content,NULL);
-             break;                       
+
+        case CREATE_ROOM_SEC:
+	    keyiv = malloc(sizeof (struct KEY_IV));
+	    room_name = strdup(strtok(mess.content, "|"));
+	    memcpy (keyiv->key, mess.content + strlen (room_name) + 1, 32);
+            memcpy (keyiv->iv, mess.content + strlen (room_name) + 34, 32);;
+            set_keyiv_in_room(room_name, keyiv);
+            printf("Création room sécurisé réussie : name = %s, key = %s, iv = %s\n", room_name, keyiv->key, keyiv->iv);
+            /* add_room(mess.content,NULL); */
+            break;
+	case CREATE_ROOM_SEC_KO:
 
         case NEW_USER:
             set_keyiv_in_room(mess.content, keyiv);
             printf("The user %s joined the room %s\n", mess.sender, mess.content);
             break;
-            
+
         case ADD_USER:
             set_keyiv_in_room(mess.content, keyiv);
             printf("USER %s in %s \n", mess.sender, mess.content);
@@ -245,11 +251,8 @@ void *traitement_recv (void *param) {
             break;
 
         case CREATE_ROOM:
-            strcpy(text, "/CREATE_ROOM_SEC ");
-            strcat(text,mess.content);
-            send_message_sec(text, NULL);
+    printf ("The room %s has been created\n", mess.content);
             break;
-		case CREATE_ROOM_KO:
         case QUIT_ROOM_KO:
         case DELETE_ROOM_KO:
         case MESSAGE_KO:
@@ -257,6 +260,16 @@ void *traitement_recv (void *param) {
         case CONNECT_KO:
             printf ("Error: %s\n", mess.content);
             break;
+
+
+        case CREATE_ROOM_KO:
+            printf ("Error: the room %s is already in use\n", mess.content);
+	    if (is_room_used (mess.content)) {
+		strcpy(text, "/DELETE_ROOM_SEC ");
+		strcat(text, mess.content);
+		send_message_sec(text, NULL);
+	    }
+
         default:
             break;
         }

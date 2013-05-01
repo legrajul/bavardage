@@ -26,7 +26,7 @@ SSL *ssl;
 BIO *sbio;
 message *msg;
 int debug = 0;
- int is_room_create = 0;
+int is_room_create = 0;
 
 extern char *login, **tab_string;
 //partie test échange sec
@@ -365,7 +365,7 @@ int send_message_sec (const char *mess, char **error_mess) {
             printf("libclientsec.c: send_mess: FIN CASE disconnect_sec\n");
             break;
 
-        case CREATE_ROOM_SEC:       // Cas d'une demande de création de Salon         
+        case CREATE_ROOM_SEC:       // Cas d'une demande de création de Salon
             tmp = strtok (NULL, " ");
             printf("tmp = %s \n", tmp);
             if (tmp != NULL) {
@@ -374,21 +374,17 @@ int send_message_sec (const char *mess, char **error_mess) {
                 *error_mess = strdup ("CREATE_ROOM a besoin d'un paramètre\n");
                 return -3;
             }
-  
-            if ((is_room_create == 0) && (strcmp(msg->content, "accueil") != 0)) {
-			strcpy(conn, "/CREATE_ROOM ");
-			strcat(conn, msg->content);
-			is_room_create = !is_room_create;
-			return send_message (conn, &error_mess);
-		   }
-		   else if (is_room_create == 1) {
-			    msg->code = CREATE_ROOM_SEC;
-			    is_room_create = !is_room_create;
-			   return send_command_sec ();
-			   
-		   }
-								
-			//msg->code = CREATE_ROOM_SEC;
+	    
+	    add_room (msg->content, NULL);
+            strcpy(conn, "/CREATE_ROOM ");
+            strcat(conn, msg->content);
+            send_message (conn, &error_mess);
+
+            msg->code = CREATE_ROOM_SEC;
+            return send_command_sec ();
+
+
+            //msg->code = CREATE_ROOM_SEC;
 
             //tmp = strtok (NULL, " ");
             //if (tmp != NULL) {
@@ -490,7 +486,7 @@ int send_message_sec (const char *mess, char **error_mess) {
                 *error_mess = strdup ("ce message est trop long pour être envoyé chiffré\n");
                 return -3;
             }
-	    memset(msg->content, 0, MAX_MESS_SIZE);
+            memset(msg->content, 0, MAX_MESS_SIZE);
             memcpy(msg->content, ciphermess, lenght);
             free(tab_string);
             //free(ciphermess);

@@ -121,7 +121,7 @@ void *handle_connexion(void *param) {
     user u;
     key_iv keyiv;
     char key_data[KEY_DATA_SIZE];
-	
+
     if (SSL_accept(client_ssl) <= 0) {     /* do SSL-protocol accept */
         ERR_print_errors_fp(stderr);
     } else {
@@ -156,32 +156,32 @@ void *handle_connexion(void *param) {
                 printf ("After ssl_mutex\n");
                 printf("buffer.code = %d\n", buffer.code);
                 switch (buffer.code) {
-				
-                case CREATE_ROOM_SEC:					
+
+                case CREATE_ROOM_SEC:
                     printf ("Create room : <%s>\n", buffer.content);
                     if (is_room_used(buffer.content)) {
-						printf("debut is_room_used\n");
+                        printf("debut is_room_used\n");
                         response.code = CREATE_ROOM_SEC_KO;
                         strcpy(response.content,
-                               "This room name is already in use");
+                               buffer.content);
                         printf ("Room already in user\n");
                     } else {
-						printf("Debut create room sec\n");
+                        printf("Debut create room sec\n");
                         randomString(key_data,(sizeof key_data)-1);
                         keyiv = malloc(sizeof(struct KEY_IV));
                         gen_keyiv(keyiv, (unsigned char *)key_data, sizeof(key_data));
+			printf ("generated key = %s, iv = %s\n", keyiv->key, keyiv->iv);
                         add_room(buffer.content, u);
                         add_user_in_room(u, buffer.content);
 
-                        response.code = CREATE_ROOM;
+                        response.code = CREATE_ROOM_SEC;
                         strcpy(response.sender, buffer.sender);
                         strcpy(response.content, buffer.content);
-                        SSL_write(u->ssl, (char *) &response, sizeof (message));
-                        
-                        sprintf(response.content, "|%s|%s|%s",buffer.content,keyiv->key,keyiv->iv);
-                        strcpy (response.sender, u->name);
+			strcat(response.content, "|");
+			memcpy(response.content + strlen (buffer.content) + 1, keyiv->key, 32);
+			memcpy(response.content + strlen (buffer.content) + 33, "|", 32);
+			memcpy(response.content + strlen (buffer.content) + 34, keyiv->iv, 32);
 
-                        response.code = OK;
                         //free(keyiv);
                         printf("Fin create room sec\n");
                     }
@@ -214,7 +214,7 @@ void *handle_connexion(void *param) {
 
                     }
                     break;
-                    
+
                 case QUIT_ROOM_SEC:
                     if (!is_room_used (buffer.content)) {
                         response.code = QUIT_ROOM_SEC_KO;
@@ -249,7 +249,7 @@ void *handle_connexion(void *param) {
                         strcpy (response.content, "You are not in this room");
                         break;
                     }
- 
+
 
                 case DELETE_ROOM_SEC:
                     //TODO
@@ -300,6 +300,7 @@ void *handle_connexion(void *param) {
 					//TODO revoquer le certicat ??
 					break;
 					
+
                 case CONNECT_SEC:
                     printf("secure_server.c: handle_connexion: BEGIN connect_sec\n");
                     printf("serversec.c: buffer.sender = %s:\nbuffer.content = %s\n", buffer.sender, buffer.content);
@@ -314,6 +315,7 @@ void *handle_connexion(void *param) {
                         break;
                     case 1:
                         printf("secure_server.c: handle_connexion: connect_sec: DEBUT CASE 1\n");
+
                         if (check_user(buffer.sender, data) == 1) {
                             if (check_certificate(data) == -1) {
                                 fprintf(stderr, "This certificate is already in use\n");
@@ -520,7 +522,7 @@ int start_listening (const char *addr, int port) {
     return -1;
 }
 
-int main (int argc, char *argv[]) { 
+int main (int argc, char *argv[]) {
     connect_server_database ("secureserver.db");
     create_main_room();
     if (argc < 3) {

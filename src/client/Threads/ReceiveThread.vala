@@ -1,5 +1,7 @@
 using Bavardage.Common;
+using Bavardage.CommonSec;
 using Bavardage.ClientCore;
+using Bavardage.ClientSecCore;
 using Gtk;
 using Gee;
 
@@ -14,6 +16,7 @@ namespace Bavardage.Threads {
         }
 
         public void  *thread_func () {
+            stdout.printf ("Receive Thread starting...\n");
             Bavardage.Message m = { -1, "".data, "".data, "".data };
             TreeIter tree_iter;
             while (true) {
@@ -52,6 +55,10 @@ namespace Bavardage.Threads {
 
                         break;
                     case CREATE_ROOM:
+                        if (client.is_secure_room (content.str)) {
+                            string error;
+                            send_message_sec ("/CREATE_ROOM_SEC " + content.str, out error);
+                        }
                         var rooms = client.open_rooms.get_model () as ListStore;
                         rooms.append (out tree_iter);
                         rooms.set (tree_iter, 0, content.str, -1);
