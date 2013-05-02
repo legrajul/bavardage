@@ -234,7 +234,9 @@ int extract_code_sec (const char *str) {
 	   return ACCEPT_JOIN_ROOM_SEC;
     } else if (strcmp(command, "REFUSE_JOIN_ROOM_SEC") == 0) {
 	   return REFUSE_JOIN_ROOM_SEC;
-    } 
+    } else if (strcmp(command, "EJECT_FROM_ROOM_SEC") == 0) {
+        return EJECT_FROM_ROOM_SEC;
+    }
     return -1;
 }
 
@@ -466,7 +468,7 @@ int send_message_sec (const char *mess, char **error_mess) {
 	case ACCEPT_JOIN_ROOM_SEC:
 	    tab_string = create_table_param(buffer);
             if (len (tab_string) < 3) {
-                *error_mess = strdup ("ACCEPT_JOIN_ROOM_SEC doit avoir 2 paramètres : /MESSAGE salon utilisateur\n");
+                *error_mess = strdup ("ACCEPT_JOIN_ROOM_SEC doit avoir 2 paramètres : /ACCEPT_JOIN_ROOM_SEC salon utilisateur\n");
                 return -3;
             }
 	    strcpy (msg->content, tab_string[1]);
@@ -475,6 +477,17 @@ int send_message_sec (const char *mess, char **error_mess) {
             return send_command_sec ();
 	    break;
 
+    case EJECT_FROM_ROOM_SEC:
+        tab_string = create_table_param(buffer);
+        if (len (tab_string) < 3) {
+            *error_mess = strdup ("EJECT_FROM_ROOM_SEC doit avoir 2 paramètres : /EJECT_FROM_ROOM_SEC salon utilisateur\n");
+            return -3;
+        }
+        strcpy (msg->content, tab_string[1]);
+        strcpy (msg->receiver, tab_string[2]);
+        msg->code = EJECT_FROM_ROOM_SEC;
+        return send_command_sec ();
+        break;
 	case REFUSE_JOIN_ROOM_SEC:
 	    tab_string = create_table_param(buffer);
             if (len (tab_string) < 3) {

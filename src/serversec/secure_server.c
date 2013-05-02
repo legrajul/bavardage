@@ -192,7 +192,43 @@ void *handle_connexion(void *param) {
                     }
 
                     break;
+                case EJECT_FROM_ROOM_SEC:
+                    if (u == get_admin (buffer.content)) {
+                        printf("EJECT_FROM_ROOM_SEC -  buffer.receiver: <%s>\n", buffer.receiver);
+                        user claimer = get_user (buffer.receiver, server_user_map);
+                        remove_user_from_room (claimer, buffer.content);
+                        randomString(key_data,(sizeof key_data)-1);
+                        keyiv = malloc (sizeof(struct KEY_IV));
+                        gen_keyiv(keyiv,(unsigned char *)key_data, sizeof(key_data));
 
+                        response.code = QUIT_ROOM_SEC;
+                        
+                        strcpy(response.sender, buffer.sender);
+                        strcpy(response.content, buffer.content);
+                        strcat(response.content, "|");
+                        memcpy(response.content + strlen (buffer.content) + 1, keyiv->key, 32);
+                        memcpy(response.content + strlen (buffer.content) + 33, "|", 32);
+                        memcpy(response.content + strlen (buffer.content) + 34, keyiv->iv, 32);
+
+                        SSL_write (claimer->ssl, &response, sizeof(message));
+
+
+                        response.code = REFRESH_KEYIV;
+
+                        user_list l = get_users(buffer.content);
+                        user_list t;
+                        for (t = l; t != NULL; t = t->next) {
+                            SSL_write(t->current_user->ssl,
+                                      &response, sizeof(message));
+                        }
+                        free(keyiv);
+                        response.code = OK;
+                    } else {
+                        response.code = KO;
+                        strcpy (response.content, "You're not admin of the room ");
+                        strcat (response.content, buffer.content);
+                    }
+                    break;
                 case ACCEPT_JOIN_ROOM_SEC:
                     if (u == get_admin (buffer.content)) {
                         user claimer = get_user (buffer.receiver, server_user_map);
