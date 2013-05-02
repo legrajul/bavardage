@@ -207,12 +207,12 @@ void *handle_connexion(void *param) {
                         gen_keyiv(keyiv,(unsigned char *)key_data, sizeof(key_data));   
                         
                          response.code = JOIN_ROOM_SEC;
-                         strcpy(response.sender, buffer.sender);
+                        strcpy(response.sender, buffer.sender);
                         strcpy(response.content, buffer.content);
-			strcat(response.content, "|");
-			memcpy(response.content + strlen (buffer.content) + 1, keyiv->key, 32);
-			memcpy(response.content + strlen (buffer.content) + 33, "|", 32);
-			memcpy(response.content + strlen (buffer.content) + 34, keyiv->iv, 32);                     
+						strcat(response.content, "|");
+						memcpy(response.content + strlen (buffer.content) + 1, keyiv->key, 32);
+						memcpy(response.content + strlen (buffer.content) + 33, "|", 32);
+						memcpy(response.content + strlen (buffer.content) + 34, keyiv->iv, 32);                     
                         user_list l = get_users(buffer.content);
                         user_list t;
                         for (t = l; t != NULL; t = t->next) {
@@ -236,13 +236,18 @@ void *handle_connexion(void *param) {
                     } else if (u != get_admin(buffer.content)) {
                         quit_room (u, buffer.content);
                         remove_user_from_room(u, buffer.content);
-                        printf("User successfully deleted\n");
+                        printf("User successfully deleted in room %s\n", buffer.content);
                         randomString(key_data,(sizeof key_data)-1);
                         keyiv = malloc(sizeof(struct KEY_IV));
                         gen_keyiv(keyiv,(unsigned char *)key_data, sizeof(key_data));
-                        sprintf(response.content, "%s|%s|%s",buffer.content,keyiv->key,keyiv->iv);
-                        response.code = OK;
-                        user_list l = get_users(buffer.receiver);
+                        response.code = QUIT_ROOM;
+                        strcpy(response.sender, buffer.sender);
+                        strcpy(response.content, buffer.content);
+						strcat(response.content, "|");
+						memcpy(response.content + strlen (buffer.content) + 1, keyiv->key, 32);
+						memcpy(response.content + strlen (buffer.content) + 33, "|", 32);
+						memcpy(response.content + strlen (buffer.content) + 34, keyiv->iv, 32); 
+                        user_list l = get_users(buffer.content);
                         user_list t;
                         for (t = l; t != NULL; t = t->next) {
                             SSL_write(t->current_user->ssl,
@@ -251,7 +256,7 @@ void *handle_connexion(void *param) {
 
                         response.code = DELETE_ROOM;
                         strcpy (response.content, buffer.content);
-                        free(keyiv);
+                        //free(keyiv);
                         break;
                     } else if (!is_user_in_room (u, buffer.content)) {
                         response.code = QUIT_ROOM_SEC_KO;

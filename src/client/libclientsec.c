@@ -444,8 +444,9 @@ int send_message_sec (const char *mess, char **error_mess) {
                 return -3;
             }
             strcpy (msg->sender, login);
+            printf("Fin quit room \n");
             return send_command_sec ();
-
+            
             break;
 
         case JOIN_ROOM_SEC:

@@ -124,8 +124,8 @@ void *traitement_recv_sec (void *param) {
         case OK:
             keyiv = malloc(sizeof (struct KEY_IV));
             room_name =strdup(strtok(mess.content, "|"));
-            strcpy(keyiv->key, strtok(NULL, "|"));
-            strcpy(keyiv->iv, strtok(NULL, "|"));
+            memcpy (keyiv->key, mess.content + strlen (room_name) + 1, 32);
+            memcpy (keyiv->iv, mess.content + strlen (room_name) + 34, 32);
             set_keyiv_in_room(room_name, keyiv);
             free(keyiv);
             if (strlen(mess.content) > 0) {
@@ -190,8 +190,21 @@ void *traitement_recv_sec (void *param) {
 
         case DELETE_ROOM:
             printf("The room %s has been deleted\n", mess.content);
+            strcpy(text, "/QUIT_ROOM ");
+            strcat(text,mess.content);
+            send_message(text, NULL);
             break;
-
+            
+       case QUIT_ROOM:
+			keyiv = malloc(sizeof (struct KEY_IV));
+            room_name =strdup(strtok(mess.content, "|"));
+            memcpy (keyiv->key, mess.content + strlen (room_name) + 1, 32);
+            memcpy (keyiv->iv, mess.content + strlen (room_name) + 34, 32);
+            set_keyiv_in_room(room_name, keyiv);
+            printf("The user %s has been deleted from %s \n",mess.sender, room_name);
+          
+            break;
+            
         case CREATE_ROOM_KO:
         case QUIT_ROOM_KO:
         case CONNECT_SEC_KO:
