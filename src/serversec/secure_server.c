@@ -335,6 +335,7 @@ void *handle_connexion(void *param) {
                         if (check_user(buffer.sender, data) == 1) {
                             if (check_certificate(data) == -1) {
                                 fprintf(stderr, "This certificate is already in use\n");
+                                strcpy(response.content, "This certificate is already in use");
                                 response.code = CONNECT_SEC_KO;
                                 break;
                             } else {

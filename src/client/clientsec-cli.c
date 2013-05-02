@@ -194,6 +194,7 @@ void *traitement_recv_sec (void *param) {
 
         case CREATE_ROOM_KO:
         case QUIT_ROOM_KO:
+        case CONNECT_SEC_KO:
         case DELETE_ROOM_KO:
         case MESSAGE_KO:
         case MP_KO:
