@@ -15,8 +15,13 @@ namespace Bavardage {
     public struct Message {
         int code;
         uint8 sender[64];
-        uint8 content[512];
+        uint8 content[2048];
         uint8 receiver[64];
+    }
+
+    public struct KeyIv {
+        uint8 key[32];
+        uint8 iv[32];
     }
 
     public class Client: Gtk.Application {
@@ -46,7 +51,6 @@ namespace Bavardage {
         public Bavardage.Widgets.ConnectionDialog conn_dial;
         public Thread<void *> thread_receive;
         public Thread<void *> thread_receive_sec;
-        public Mutex mutex = new Mutex ();
 
         public bool is_secured = false;
 
@@ -409,7 +413,11 @@ namespace Bavardage {
                         }
                         send_message ("/MP " + recv_name.str + " " + msg, out error_msg);
                     } else {
-                        send_message ("/MESSAGE " + (string) v + " " + msg, out error_msg);
+                        if (is_secured) {
+                            send_message_sec ("/MESSAGE_SEC " + (string) v + " " + msg, out error_msg);
+                        } else {
+                            send_message ("/MESSAGE " + (string) v + " " + msg, out error_msg);
+                        }
                     }
 
                 }

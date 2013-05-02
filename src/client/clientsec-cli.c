@@ -122,18 +122,12 @@ void *traitement_recv_sec (void *param) {
             break;
 
         case OK:
-            keyiv = malloc(sizeof (struct KEY_IV));
-            room_name =strdup(strtok(mess.content, "|"));
-            memcpy (keyiv->key, mess.content + strlen (room_name) + 1, 32);
-            memcpy (keyiv->iv, mess.content + strlen (room_name) + 34, 32);
-            set_keyiv_in_room(room_name, keyiv);
-            free(keyiv);
-            if (strlen(mess.content) > 0) {
-                printf("mess content = %s\n", mess.content);
-            }
-
             break;
-            
+
+	case ASK_JOIN_ROOM_SEC:
+	    printf ("Request from %s to join room %s\n", mess.sender, mess.content);
+	    break;
+
         case JOIN_ROOM_SEC:
             printf("Reception join room sec \n");         
             keyiv = malloc(sizeof (struct KEY_IV));
@@ -214,7 +208,9 @@ void *traitement_recv_sec (void *param) {
         case CONNECT_KO:
             printf ("Error: %s\n", mess.content);
             break;
-
+	case JOIN_ROOM_SEC_KO:
+	    printf ("The admin of the room %s has rejected your request\n", mess.content);
+	    break;
         default:
             break;
 

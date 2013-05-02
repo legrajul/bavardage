@@ -28,7 +28,7 @@
 SocketTCP *listen_socket;
 pthread_mutex_t mutex;
 user_map server_user_map;
-room_map server_room_map;
+
 char *home_room = "accueil";
 
 SSL_CTX *ctx;
@@ -163,7 +163,7 @@ void *handle_connexion(void *param) {
                     printf ("Create room : <%s>\n", buffer.content);
                     if (is_room_used(buffer.content)) {
 
-						printf("debut is_room_used\n");
+                        printf("debut is_room_used\n");
                         response.code = CREATE_ROOM_KO;
 
                         strcpy(response.content,
@@ -174,17 +174,17 @@ void *handle_connexion(void *param) {
                         randomString(key_data,(sizeof key_data)-1);
                         keyiv = malloc(sizeof(struct KEY_IV));
                         gen_keyiv(keyiv, (unsigned char *)key_data, sizeof(key_data));
-			printf ("generated key = %s, iv = %s\n", keyiv->key, keyiv->iv);
+                        printf ("generated key = %s, iv = %s\n", keyiv->key, keyiv->iv);
                         add_room(buffer.content, u);
                         add_user_in_room(u, buffer.content);
 
                         response.code = CREATE_ROOM_SEC;
                         strcpy(response.sender, buffer.sender);
                         strcpy(response.content, buffer.content);
-			strcat(response.content, "|");
-			memcpy(response.content + strlen (buffer.content) + 1, keyiv->key, 32);
-			memcpy(response.content + strlen (buffer.content) + 33, "|", 32);
-			memcpy(response.content + strlen (buffer.content) + 34, keyiv->iv, 32);
+                        strcat(response.content, "|");
+                        memcpy(response.content + strlen (buffer.content) + 1, keyiv->key, 32);
+                        memcpy(response.content + strlen (buffer.content) + 33, "|", 32);
+                        memcpy(response.content + strlen (buffer.content) + 34, keyiv->iv, 32);
 
                         //free(keyiv);
                         printf("Fin create room sec\n");
@@ -192,8 +192,62 @@ void *handle_connexion(void *param) {
 
                     break;
 
+                case ACCEPT_JOIN_ROOM_SEC:
+                    if (u == get_admin (buffer.content)) {
+                        user claimer = get_user (buffer.receiver, server_user_map);
+                        add_user_in_room (claimer, buffer.content);
+                        randomString(key_data,(sizeof key_data)-1);
+                        keyiv = malloc (sizeof(struct KEY_IV));
+                        gen_keyiv(keyiv,(unsigned char *)key_data, sizeof(key_data));
+
+			response.code = CREATE_ROOM_SEC;
+                        
+                        strcpy(response.sender, buffer.sender);
+                        strcpy(response.content, buffer.content);
+                        strcat(response.content, "|");
+                        memcpy(response.content + strlen (buffer.content) + 1, keyiv->key, 32);
+                        memcpy(response.content + strlen (buffer.content) + 33, "|", 32);
+                        memcpy(response.content + strlen (buffer.content) + 34, keyiv->iv, 32);
+
+			SSL_write (claimer->ssl, &response, sizeof(message));
+
+
+			response.code = JOIN_ROOM_SEC;
+
+                        user_list l = get_users(buffer.content);
+                        user_list t;
+                        for (t = l; t != NULL; t = t->next) {
+                            SSL_write(t->current_user->ssl,
+                                      &response, sizeof(message));
+                        }
+                        free(keyiv);
+			response.code = OK;
+                    } else {
+			response.code = KO;
+			strcpy (response.content, "You're not admin of the room ");
+			strcat (response.content, buffer.content);
+		    }
+                    break;
+		
+		case REFUSE_JOIN_ROOM_SEC:
+		    if (u == get_admin (buffer.content)) {
+                        user claimer = get_user (buffer.receiver, server_user_map);
+
+			response.code = JOIN_ROOM_SEC_KO;
+			strcpy (response.content, buffer.content);
+
+			SSL_write (claimer->ssl, &response, sizeof(message));
+
+			response.code = OK;
+                    } else {
+			response.code = KO;
+			strcpy (response.content, "You're not admin of the room ");
+			strcat (response.content, buffer.content);
+		    }
+                    break;
+
                 case JOIN_ROOM_SEC:
-                    printf ("secure_server.c: handle_connexion: %s\n", buffer.content);
+                    printf ("secure_server.c: JOIN_ROOM_SEC: %s\n", buffer.content);
                     if (!is_room_used (buffer.content)) {
                         strcpy (response.content, "The room does not exist");
                         response.code = JOIN_ROOM_KO;
@@ -201,26 +255,14 @@ void *handle_connexion(void *param) {
                         strcpy (response.content, "You're already in this room");
                         response.code = JOIN_ROOM_KO;
                     } else {
-						add_user_in_room (u, buffer.content);
-                        randomString(key_data,(sizeof key_data)-1);
-                        keyiv = malloc(sizeof(struct KEY_IV));
-                        gen_keyiv(keyiv,(unsigned char *)key_data, sizeof(key_data));   
-                        
-                         response.code = JOIN_ROOM_SEC;
-                        strcpy(response.sender, buffer.sender);
-                        strcpy(response.content, buffer.content);
-						strcat(response.content, "|");
-						memcpy(response.content + strlen (buffer.content) + 1, keyiv->key, 32);
-						memcpy(response.content + strlen (buffer.content) + 33, "|", 32);
-						memcpy(response.content + strlen (buffer.content) + 34, keyiv->iv, 32);                     
-                        user_list l = get_users(buffer.content);
-                        user_list t;
-                        for (t = l; t != NULL; t = t->next) {
-                            SSL_write(t->current_user->ssl,
-                                      &response, sizeof(message));
-                        }
-                      //  free(keyiv);
-					printf("Send to secure client\n");
+                        // Ask for invitation to the admin
+                        user admin = get_admin (buffer.content);
+			printf ("> asking the admin for request : %s, admin->ssl == NULL ? %d\n", admin->name, (admin->ssl == NULL));
+                        response.code = ASK_JOIN_ROOM_SEC;
+                        strcpy (response.sender, u->name);
+                        strcpy (response.content, buffer.content);
+                        SSL_write (admin->ssl, &response, sizeof (message));
+                        response.code = OK;
                     }
                     break;
 
@@ -284,37 +326,37 @@ void *handle_connexion(void *param) {
                     change_status (buffer.sender);
                     pthread_exit(0);
                     break;
-				case DEL_ACCOUNT_SEC:
-					printf("serversec.c: buffer.sender = %s : buffer.content = %s\n", buffer.sender, buffer.content);
-					printf("serversec.c: buffer.code = %d\n", buffer.code);
-					if (is_connected(buffer.sender, data) == -1) {
-						response.code = KO;
-						strcpy (response.content, "bad user / password\n");
-					} else if (is_connected(buffer.sender, data) == 1) {
-						u = (user) malloc(sizeof(struct USER));
-						strcpy(u->name, buffer.sender);
-						room_list p;
-						//------------------------------------------------
-						/*printf("disconnection from all current room...\n");
-						for (p = server_room_map; p != NULL; p = p->next) {
-							if (is_user_in_room (u, p->current->name))
-								remove_user_from_room (u, p->current->name);
-						}*/
-						//------------------------------------------------
+                case DEL_ACCOUNT_SEC:
+                    printf("serversec.c: buffer.sender = %s : buffer.content = %s\n", buffer.sender, buffer.content);
+                    printf("serversec.c: buffer.code = %d\n", buffer.code);
+                    if (is_connected(buffer.sender, data) == -1) {
+                        response.code = KO;
+                        strcpy (response.content, "bad user / password\n");
+                    } else if (is_connected(buffer.sender, data) == 1) {
+                        u = (user) malloc(sizeof(struct USER));
+                        strcpy(u->name, buffer.sender);
+                        room_list p;
+                        //------------------------------------------------
+                        /*printf("disconnection from all current room...\n");
+                          for (p = server_room_map; p != NULL; p = p->next) {
+                          if (is_user_in_room (u, p->current->name))
+                          remove_user_from_room (u, p->current->name);
+                          }*/
+                        //------------------------------------------------
                         printf("DEL_ACCOUNT_SEC: buffer.sender: <%s> | buffer.content: <%s>\n", buffer.sender, buffer.content);
-						if (strcmp(buffer.sender, buffer.content) != 0) 
-							printf("bad login, please retry...\n");
-						else {
-							if (delete_user(buffer.content) == -1) {
-								printf ("you haven't been deleted!!\n");
-								break;
-							} else {
-								response.code = DEL_ACCOUNT_SEC;
-		                        strcpy (response.content, "you have been deleted\n");
-		                    }
-		                }
-					}	
-					//TODO revoquer le certicat ??
+                        if (strcmp(buffer.sender, buffer.content) != 0)
+                            printf("bad login, please retry...\n");
+                        else {
+                            if (delete_user(buffer.content) == -1) {
+                                printf ("you haven't been deleted!!\n");
+                                break;
+                            } else {
+                                response.code = DEL_ACCOUNT_SEC;
+                                strcpy (response.content, "you have been deleted\n");
+                            }
+                        }
+                    }
+                    //TODO revoquer le certicat ??
                     break;
                 case CONNECT_OK:
                     printf("--------------------------DEBUT CONNECT_SOK secure_server ------------------------\n");
@@ -347,7 +389,7 @@ void *handle_connexion(void *param) {
                                 add_user_db (buffer.sender, data);
                                 first_connection = 1;
                             }
-                        } 
+                        }
                         printf("secure_server.c: handle_connexion: connect_sec: AFTER CHECK_USER\n");
                         change_status(buffer.sender);
                         printf("successful connection : %s\n", buffer.sender);
@@ -355,6 +397,7 @@ void *handle_connexion(void *param) {
                         strcpy(u->name, buffer.sender);
                         strcpy(response.sender, buffer.sender);
                         u->ssl = client_ssl;
+			add_user (u, server_user_map);
                         response.code = CONNECT_SEC;
                         break;
                     default:
@@ -473,7 +516,6 @@ int create_main_room() {
     init_rooms();
     add_room(home_room, NULL);
     server_user_map = (user_map) malloc(HASH_USER_MAP_SIZE * sizeof(user_list));
-    server_room_map = (room_map) malloc(HASH_ROOM_SIZE * sizeof(room_list));
     return 0;
 }
 
@@ -548,7 +590,7 @@ int start_listening (const char *addr, int port) {
 
 int main (int argc, char *argv[]) {
     connect_server_database ("secureserver.db");
-    
+
     if (argc < 3) {
         fprintf (stderr, "Usage: ./server ip port\n");
         exit (EXIT_FAILURE);

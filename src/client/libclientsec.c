@@ -227,10 +227,14 @@ int extract_code_sec (const char *str) {
     } else if (strcmp(command, "CONNECT_KO_SEC_OK") == 0) {
         return CONNECT_KO_SEC_OK;
     } else if (strcmp (command, "MESSAGE") == 0) {
-		return MESSAGE;
-	} else if (strcmp(command, "CONNECT_OK") == 0) {
+        return MESSAGE;
+    } else if (strcmp(command, "CONNECT_OK") == 0) {
         return CONNECT_OK;
-    }
+    } else if (strcmp(command, "ACCEPT_JOIN_ROOM_SEC") == 0) {
+	return ACCEPT_JOIN_ROOM_SEC;
+    } else if (strcmp(command, "REFUSE_JOIN_ROOM_SEC") == 0) {
+	return REFUSE_JOIN_ROOM_SEC;
+    } 
     return -1;
 }
 
@@ -325,9 +329,9 @@ int send_message_sec (const char *mess, char **error_mess) {
         case CONNECT_KO_SEC_OK:
             printf("DEBUT CONNECT_KO_SEC_OK\n");
             /*msg->code = DEL_ACCOUNT_SEC;
-            strcpy(msg->sender, login);
-            strcpy(msg->content, login);
-            send_command_sec();*/
+              strcpy(msg->sender, login);
+              strcpy(msg->content, login);
+              send_command_sec();*/
             disconnect_sec();
             break;
         case CONNECT_SEC:   // Cas d'une demande de connexion
@@ -395,14 +399,17 @@ int send_message_sec (const char *mess, char **error_mess) {
         case CREATE_ROOM_SEC:       // Cas d'une demande de création de Salon
             tmp = strtok (NULL, " ");
             printf("tmp = %s \n", tmp);
+            if (msg == NULL) {
+                printf ("msg is null /!\\\n");
+            }
             if (tmp != NULL) {
                 strcpy (msg->content, tmp);
             } else {
                 *error_mess = strdup ("CREATE_ROOM a besoin d'un paramètre\n");
                 return -3;
             }
-	    
-	    add_room (msg->content, NULL);
+
+            add_room (msg->content, NULL);
             strcpy(conn, "/CREATE_ROOM ");
             strcat(conn, msg->content);
             send_message (conn, &error_mess);
@@ -449,17 +456,38 @@ int send_message_sec (const char *mess, char **error_mess) {
             
             break;
 
+	case ACCEPT_JOIN_ROOM_SEC:
+	    tab_string = create_table_param(buffer);
+            if (len (tab_string) < 3) {
+                *error_mess = strdup ("ACCEPT_JOIN_ROOM_SEC doit avoir 2 paramètres : /MESSAGE salon utilisateur\n");
+                return -3;
+            }
+	    strcpy (msg->content, tab_string[1]);
+	    strcpy (msg->receiver, tab_string[2]);
+	    msg->code = ACCEPT_JOIN_ROOM_SEC;
+            return send_command_sec ();
+	    break;
+
+	case REFUSE_JOIN_ROOM_SEC:
+	    tab_string = create_table_param(buffer);
+            if (len (tab_string) < 3) {
+                *error_mess = strdup ("REFUSE_JOIN_ROOM_SEC doit avoir 2 paramètres : /MESSAGE salon utilisateur\n");
+                return -3;
+            }
+	    strcpy (msg->content, tab_string[1]);
+	    strcpy (msg->receiver, tab_string[2]);
+	    msg->code = REFUSE_JOIN_ROOM_SEC;
+            return send_command_sec ();
+	    break;
+
         case JOIN_ROOM_SEC:
-            printf("Debut join room sec\n");
             tmp = strtok (NULL, " ");
             if (tmp != NULL) {
                 strcpy (msg->content, tmp);
             } else {
                 *error_mess = strdup ("JOIN_ROOM a besoin d'un paramètre\n");
                 return -3;
-            }         
-            printf(" msg->content = %s\n", msg->content);
-			printf("Fin join room sec\n");
+            }
             return send_command_sec ();
             break;
 
