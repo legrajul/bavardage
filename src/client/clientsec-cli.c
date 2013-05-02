@@ -65,13 +65,14 @@ void *traitement_send (void *param) {
 
 
 void *traitement_recv_sec (void *param) {
-
+    char text[MAX_MESS_SIZE] = " ";
 	message mess;	
 	int lenght;
     char *plainmess;  
     char *room_name;
     key_iv keyiv;
-    
+    key_iv ki;
+
     while (1) {
         printf("Clientsec-cli.c: recv: mess.code: <%d>\n", mess.code);
         printf("Clientsec-cli.c: recv: mess.content:<%s>\n", mess.content);
@@ -81,12 +82,14 @@ void *traitement_recv_sec (void *param) {
             pthread_detach(thread_send);
             exit(EXIT_FAILURE);
         }
+
+        printf("mess.codei: <%d>\n", mess.code);
+
         if (mess.code == KO) {
             printf("Error: %s\n", mess.content);
             continue;
         }
-	
-	
+
         char *res = NULL, conn[MAX_MESS_SIZE] = "";
 	switch (mess.code) {
         case CONNECT_SEC:
@@ -126,6 +129,31 @@ void *traitement_recv_sec (void *param) {
             if (strlen(mess.content) > 0) {
                 printf("mess content = %s\n", mess.content);
             }
+
+            break;
+            
+        case JOIN_ROOM_SEC:
+            printf("reception join room sec 1\n");
+           
+            keyiv = malloc(sizeof (struct KEY_IV));
+             printf("reception join room sec 2\n");
+            room_name =strdup(strtok(mess.content, "|"));
+             printf("reception join room sec 3\n");
+		    strcpy(keyiv->key, strtok(NULL, "|"));
+		     printf("reception join room sec 4\n");
+		    strcpy(keyiv->iv, strtok(NULL, "|"));
+		     printf("reception join room sec 5\n");
+		    add_room(room_name,NULL);
+		    printf("reception join room sec 6\n");
+		    set_keyiv_in_room(room_name, keyiv);
+		    free(keyiv);
+		    printf("reception join room sec 7\n");
+		    ki = get_keyiv_in_room (room_name);
+            printf("key = %s and iv = %s \n",ki->key,ki->iv);
+            strcpy(text, "/JOIN_ROOM ");
+            strcat(text,room_name);
+            send_message(text, NULL);
+
             break;
 
             /*  case MESSAGE:
@@ -144,6 +172,7 @@ void *traitement_recv_sec (void *param) {
                 printf("[%s > %s] %s\n", mess.sender, mess.receiver, plainmess);
                 break; */
 
+
         case CREATE_ROOM_SEC:
 	    keyiv = malloc(sizeof (struct KEY_IV));
 	    room_name = strdup(strtok(mess.content, "|"));
@@ -154,6 +183,7 @@ void *traitement_recv_sec (void *param) {
             /* add_room(mess.content,NULL); */
             break;
 	case CREATE_ROOM_SEC_KO:
+
 
         case NEW_USER:
             set_keyiv_in_room(mess.content, keyiv);
@@ -168,6 +198,7 @@ void *traitement_recv_sec (void *param) {
         case DELETE_ROOM:
             printf("The room %s has been deleted\n", mess.content);
             break;
+
         case CREATE_ROOM_KO:
         case QUIT_ROOM_KO:
         case DELETE_ROOM_KO:
@@ -176,6 +207,7 @@ void *traitement_recv_sec (void *param) {
         case CONNECT_KO:
             printf ("Error: %s\n", mess.content);
             break;
+
         default:
             break;
 

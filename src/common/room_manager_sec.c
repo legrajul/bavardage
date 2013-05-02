@@ -34,23 +34,23 @@ int set_keyiv_in_room (char *room_name, key_iv keyiv) {
 }
 
 key_iv get_keyiv_in_room (char *room_name) {
-	/* printf ("---- BEGIN is_room_used ----\n"); */
+	printf ("---- BEGIN get_keyiv_in_room ----\n"); 
 	if (room_name == NULL) {
 		return NULL;
 	}
-
+	printf ("---- get_keyiv_in_room 1----\n"); 
 	// On récupère la liste correspondant au haché du nom de salon
 	int index = hash_room_name (room_name);
 	room_list l = rooms[index];
 	room_list t;
-
+	printf ("---- get_keyiv_in_room 2----\n"); 
 	// On parcourt cette liste
 	for (t = l; t != NULL; t = t->next) {
 		if (strcmp (t->current->name, room_name) == 0) {			
 			return t->current->keyiv;
 		}
 	}
-	/* printf ("---- END is_room_used ----\n"); */
+	printf ("---- END get_keyiv_in_room ----\n"); 
 	return NULL;
 }
 

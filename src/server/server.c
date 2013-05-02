@@ -232,6 +232,7 @@ void *handle_connexion (void *param) {
                     }
                     response.code = DISCONNECT;
                     writeSocketTCP (s, (char *) &response, sizeof(message));
+
                     printf("writeSocketTCP server\n");
                     pthread_mutex_unlock (&mutex);
                     closeSocketTCP (s);

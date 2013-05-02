@@ -296,6 +296,7 @@ int send_message_sec (const char *mess, char **error_mess) {
     key_iv keyiv;
     unsigned char key[32], iv[32];
     unsigned char *keydata="test";
+    key_iv ki;
 
 
     strcpy(buffer, mess);
@@ -441,13 +442,19 @@ int send_message_sec (const char *mess, char **error_mess) {
             break;
 
         case JOIN_ROOM_SEC:
+            printf("debut join room sec\n");
             tmp = strtok (NULL, " ");
             if (tmp != NULL) {
                 strcpy (msg->content, tmp);
             } else {
                 *error_mess = strdup ("JOIN_ROOM a besoin d'un paramètre\n");
                 return -3;
-            }
+            }         
+            printf(" msg->content = %s\n", msg->content);
+			//strcpy(conn, "/JOIN_ROOM ");
+            //strcat(conn, msg->content);
+			//send_message (conn, &error_mess);
+			 printf("fin join room sec\n");
             return send_command_sec ();
             break;
 
