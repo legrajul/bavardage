@@ -195,26 +195,19 @@ void *handle_connexion(void *param) {
                 case JOIN_ROOM_SEC:
                     printf ("secure_server.c: handle_connexion: %s\n", buffer.content);
                     if (!is_room_used (buffer.content)) {
-						printf("debug 1");
                         strcpy (response.content, "The room does not exist");
                         response.code = JOIN_ROOM_KO;
                     } else if (is_user_in_room (u, buffer.content)) {
-						printf("debug 2");
                         strcpy (response.content, "You're already in this room");
                         response.code = JOIN_ROOM_KO;
                     } else {
 						add_user_in_room (u, buffer.content);
-						printf("debut else 1\n");
                         randomString(key_data,(sizeof key_data)-1);
-                        printf("debut else 2\n");
                         keyiv = malloc(sizeof(struct KEY_IV));
-                        printf("debut else 3\n");
-                        gen_keyiv(keyiv,(unsigned char *)key_data, sizeof(key_data)); 
-                        printf("debut else 4\n");                      
+                        gen_keyiv(keyiv,(unsigned char *)key_data, sizeof(key_data));                      
                       //  strcpy(response.content, buffer.content);
                         sprintf(response.content, "|%s|%s|%s",buffer.content,keyiv->key,keyiv->iv);
                         response.code = JOIN_ROOM_SEC;
-                        printf("debut else 5\n");
                         user_list l = get_users(buffer.receiver);
                         user_list t;
                         for (t = l; t != NULL; t = t->next) {
@@ -222,7 +215,7 @@ void *handle_connexion(void *param) {
                                       &response, sizeof(message));
                         }
                         free(keyiv);
-					printf("envoi au client\n");
+					printf("Send to secure client\n");
                     }
                     break;
 

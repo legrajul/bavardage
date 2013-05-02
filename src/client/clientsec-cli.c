@@ -83,7 +83,7 @@ void *traitement_recv_sec (void *param) {
             exit(EXIT_FAILURE);
         }
 
-        printf("mess.codei: <%d>\n", mess.code);
+        printf("mess.code: <%d>\n", mess.code);
 
         if (mess.code == KO) {
             printf("Error: %s\n", mess.content);
@@ -133,21 +133,14 @@ void *traitement_recv_sec (void *param) {
             break;
             
         case JOIN_ROOM_SEC:
-            printf("reception join room sec 1\n");
-           
+            printf("Reception join room sec \n");         
             keyiv = malloc(sizeof (struct KEY_IV));
-             printf("reception join room sec 2\n");
             room_name =strdup(strtok(mess.content, "|"));
-             printf("reception join room sec 3\n");
-		    strcpy(keyiv->key, strtok(NULL, "|"));
-		     printf("reception join room sec 4\n");
+		    strcpy(keyiv->key, strtok(NULL, "|"));		    
 		    strcpy(keyiv->iv, strtok(NULL, "|"));
-		     printf("reception join room sec 5\n");
 		    add_room(room_name,NULL);
-		    printf("reception join room sec 6\n");
 		    set_keyiv_in_room(room_name, keyiv);
 		    free(keyiv);
-		    printf("reception join room sec 7\n");
 		    ki = get_keyiv_in_room (room_name);
             printf("key = %s and iv = %s \n",ki->key,ki->iv);
             strcpy(text, "/JOIN_ROOM ");

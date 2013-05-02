@@ -442,7 +442,7 @@ int send_message_sec (const char *mess, char **error_mess) {
             break;
 
         case JOIN_ROOM_SEC:
-            printf("debut join room sec\n");
+            printf("Debut join room sec\n");
             tmp = strtok (NULL, " ");
             if (tmp != NULL) {
                 strcpy (msg->content, tmp);
@@ -451,10 +451,7 @@ int send_message_sec (const char *mess, char **error_mess) {
                 return -3;
             }         
             printf(" msg->content = %s\n", msg->content);
-			//strcpy(conn, "/JOIN_ROOM ");
-            //strcat(conn, msg->content);
-			//send_message (conn, &error_mess);
-			 printf("fin join room sec\n");
+			printf("Fin join room sec\n");
             return send_command_sec ();
             break;
 
