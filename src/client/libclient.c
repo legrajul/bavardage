@@ -199,6 +199,7 @@ int send_message (const char *mess, char **error_mess) {
 				*error_mess = strdup ("DELETE_ROOM a besoin d'un paramètre\n");
 				return -3;
 			}
+			printf("------- send_command DELETE_ROOM libclient ----------\n");
 			return send_command ();
 			break;
 		case QUIT_ROOM:         // Cas d'une demande pour quitter une room

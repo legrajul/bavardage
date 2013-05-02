@@ -195,7 +195,6 @@ void *handle_connexion (void *param) {
                         strcpy (response.content, "You are not in this room");
                         break;
                     }
-
                 case DELETE_ROOM:
                     printf ("Room deletion request with name %s by %s\n",
                             buffer.content, buffer.sender);
@@ -379,7 +378,7 @@ void new_thread (SocketTCP *socket) {
     if ((ret = pthread_create (&t, NULL, handle_connexion, (void*) socket))
         != 0) {
         fprintf (stderr, "pthead_create: %s\n", strerror (ret));
-        exit (EXIT_FAILURE);
+        exit (EXIT_FAILURE)	;
     }
 
     if ((ret = pthread_attr_destroy (&attr)) != 0) {

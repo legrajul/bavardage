@@ -128,7 +128,13 @@ void *traitement_recv_sec (void *param) {
         case ASK_JOIN_ROOM_SEC:
             printf ("Request from %s to join room %s\n", mess.sender, mess.content);
             break;
-
+        case QUIT_ROOM_SEC:
+            printf("-------- DEBUT QUIT_ROOM_SEC clientsec-cli -------\n");
+            printf("The user %s has been deleted from %s \n",mess.sender, mess.content);
+            strcpy(text, "/QUIT_ROOM ");
+            strcat(text, mess.content);
+            send_message(text, NULL);
+            break;
         case JOIN_ROOM_SEC:
             printf("Reception join room sec \n");
             keyiv = malloc(sizeof (struct KEY_IV));
@@ -189,19 +195,25 @@ void *traitement_recv_sec (void *param) {
 
         case DELETE_ROOM:
             printf("The room %s has been deleted\n", mess.content);
-            strcpy(text, "/QUIT_ROOM ");
-            strcat(text,mess.content);
-            send_message(text, NULL);
+            if (remove_room(mess.content) == -1) {
+                printf("erreur remove_room clientsec-cli\n");
+            }
+            strcpy(text, "/DELETE_ROOM_SEC ");
+            strcat(text, mess.content);
+            send_message_sec (text, NULL);
             break;
 
         case QUIT_ROOM:
+            printf("---------- DEBUT QUIT_ROOM clientsec-cli -------\n");
             keyiv = malloc(sizeof (struct KEY_IV));
             room_name =strdup(strtok(mess.content, "|"));
             memcpy (keyiv->key, mess.content + strlen (room_name) + 1, 32);
             memcpy (keyiv->iv, mess.content + strlen (room_name) + 34, 32);
             set_keyiv_in_room(room_name, keyiv);
             printf("The user %s has been deleted from %s \n",mess.sender, room_name);
-
+            //strcpy(text, "/QUIT_ROOM ");
+            //strcat(text, mess.content);
+            //send_message(text, NULL);
             break;
 
         case MP_SEC:

@@ -122,7 +122,6 @@ void *handle_connexion(void *param) {
     user u,use;
     key_iv keyiv;
     char key_data[KEY_DATA_SIZE];
-
     int first_connection = 0;
 
     if (SSL_accept(client_ssl) <= 0) {     /* do SSL-protocol accept */
@@ -269,6 +268,7 @@ void *handle_connexion(void *param) {
                     break;
 
                 case QUIT_ROOM_SEC:
+                    printf("---------- DEBUT QUIT_ROOM_SEC --------\n");
                     if (!is_room_used (buffer.content)) {
                         response.code = QUIT_ROOM_SEC_KO;
                         strcpy (response.content, "This room does not exist");
@@ -279,7 +279,7 @@ void *handle_connexion(void *param) {
                         break;
                     } else if (u != get_admin(buffer.content)) {
                         quit_room (u, buffer.content);
-                        remove_user_from_room(u, buffer.content);
+                        /*remove_user_from_room(u, buffer.content);
                         printf("User successfully deleted in room %s\n", buffer.content);
                         randomString(key_data,(sizeof key_data)-1);
                         keyiv = malloc(sizeof(struct KEY_IV));
@@ -296,10 +296,10 @@ void *handle_connexion(void *param) {
                         for (t = l; t != NULL; t = t->next) {
                             SSL_write(t->current_user->ssl,
                                       &response, sizeof(message));
-                        }
-
-                        response.code = DELETE_ROOM;
-                        strcpy (response.content, buffer.content);
+                        }*/
+                        response.code = QUIT_ROOM_SEC;
+                        //response.code = DELETE_ROOM;
+                        strcpy (response.content, strtok(buffer.content, "|"));
                         //free(keyiv);
                         break;
                     } else if (!is_user_in_room (u, buffer.content)) {
@@ -307,6 +307,19 @@ void *handle_connexion(void *param) {
                         strcpy (response.content, "You are not in this room");
                         break;
                     }
+                    printf("---------- FIN QUIT_ROOM_SEC SI ADMIN --------\n");
+                case DELETE_ROOM_SEC:
+                    printf("---------- DEBUT DELETE_ROOM_SEC --------\n");
+                    if (u != get_admin (buffer.content)) {
+                        response.code = DELETE_ROOM_KO;
+                        strcpy (response.content,
+                                "You're not admin, you can't delete this room");
+                    } else {
+                        printf("---------- DEBUT DELETE_ROOM_SEC delete_room --------\n");
+                        delete_room (buffer.content);
+                        response.code = OK;
+                    }
+                    break;
                 case MP_SEC:
 					if (get_user(buffer.receiver,server_user_map)!=NULL) {
 					randomString(key_data,(sizeof key_data)-1);
@@ -335,15 +348,25 @@ void *handle_connexion(void *param) {
 						response.code=MP_SEC_KO;
 					}
 					break;
-
-                case DELETE_ROOM_SEC:
-                    //TODO
-                    break;
                 case DISCONNECT_SEC: 
                     printf("Disconnection from secure server\n");
                     printf("first_connection: <%d>\n", first_connection);
                     if (first_connection == 1) {
                         delete_user(buffer.sender); 
+                    }
+                    if (u != NULL) {
+                        for (room_list l = get_user_rooms (u); l != NULL;
+                             l = l->next) {
+                            if (u == get_admin (l->current->name)) {
+                                remove_room (l->current->name);
+                            } else {
+                                quit_room (u, l->current->name);
+                                //remove_user_from_room (u, l->current->name);
+                            }
+                        }
+                        remove_user (u, server_user_map);
+                        free (u);//DISCONNECT_SEC
+
                     }
                     response.code = DISCONNECT_SEC;
                     SSL_write(client_ssl, &response, sizeof(message));
@@ -411,16 +434,16 @@ void *handle_connexion(void *param) {
                         printf("secure_server.c: handle_connexion: connect_sec: DEBUT CASE 1\n");
 
                         if (check_user(buffer.sender, data) == 1) {
-                            if (check_certificate(data) == -1) {
+                            /*if (check_certificate(data) == -1) {
                                 fprintf(stderr, "This certificate is already in use\n");
                                 strcpy(response.content, "This certificate is already in use");
                                 response.code = CONNECT_SEC_KO;
                                 break;
-                            } else {
+                            } else {*/
                                 add_user_db (buffer.sender, data);
                                 first_connection = 1;
 
-                            }
+                            //}
                         } 
 
                         printf("secure_server.c: handle_connexion: connect_sec: AFTER CHECK_USER\n");
@@ -518,16 +541,28 @@ int join_room (user u, char *room_name) {
 }
 
 int quit_room (user u, char *room_name) {
-    user_list users = get_users(room_name);
-    user_list t;
     message m;
-    m.code = RM_USER;
+    key_iv keyiv;
+    char key_data[KEY_DATA_SIZE];
+    remove_user_from_room(u, room_name);
+    printf("User successfully deleted in room %s\n", room_name);
+    randomString(key_data,(sizeof key_data)-1);
+    keyiv = malloc(sizeof(struct KEY_IV));
+    gen_keyiv(keyiv,(unsigned char *)key_data, sizeof(key_data));
+    m.code = QUIT_ROOM;
     strcpy(m.sender, u->name);
     strcpy(m.content, room_name);
-    for (t = users; t != NULL; t = t->next) {
-        SSL_write(t->current_user->ssl, (char *) &m,
-                  sizeof(message));
+    strcat(room_name, "|");
+    memcpy(room_name + strlen (room_name) + 1, keyiv->key, 32);
+    memcpy(room_name + strlen (room_name) + 33, "|", 32);
+    memcpy(room_name + strlen (room_name) + 34, keyiv->iv, 32); 
+    user_list l = get_users(room_name);
+    user_list t;
+    for (t = l; t != NULL; t = t->next) {
+        SSL_write(t->current_user->ssl,
+                  &m, sizeof(message));
     }
+
     return 0;
 }
 
@@ -540,10 +575,13 @@ int delete_room (char *room_name) {
     m.code = DELETE_ROOM;
     strcpy(m.content, room_name);
     for (t = users; t != NULL; t = t->next) {
+        printf("delete_room - user: <%s>\n", t->current_user->name);
         SSL_write(t->current_user->ssl,
                   (char *) &m, sizeof(message));
     }
-    remove_room (room_name);
+    if (remove_room (room_name) == -1) {
+        printf("erreur remove_room secure_server\n");
+    }
     return 0;
 }
 

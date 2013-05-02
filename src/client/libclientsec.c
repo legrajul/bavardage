@@ -231,9 +231,9 @@ int extract_code_sec (const char *str) {
     } else if (strcmp(command, "CONNECT_OK") == 0) {
         return CONNECT_OK;
     } else if (strcmp(command, "ACCEPT_JOIN_ROOM_SEC") == 0) {
-	return ACCEPT_JOIN_ROOM_SEC;
+	   return ACCEPT_JOIN_ROOM_SEC;
     } else if (strcmp(command, "REFUSE_JOIN_ROOM_SEC") == 0) {
-	return REFUSE_JOIN_ROOM_SEC;
+	   return REFUSE_JOIN_ROOM_SEC;
     } 
     return -1;
 }
@@ -302,7 +302,7 @@ int send_message_sec (const char *mess, char **error_mess) {
     unsigned char *keydata="test";
     key_iv ki;
 
-
+    char text[MAX_MESS_SIZE] = "";
     strcpy(buffer, mess);
     buffer[strlen (buffer)] = '\0';
 
@@ -438,6 +438,13 @@ int send_message_sec (const char *mess, char **error_mess) {
                 *error_mess = strdup ("DELETE_ROOM a besoin d'un paramètre\n");
                 return -3;
             }
+            strcpy(text, "/DELETE_ROOM ");
+            strcat(text, msg->content);
+            printf("message envoyé a liblcient send_message: <%s>\n", text);
+            send_message(text, &error_mess);
+            if (error_mess != NULL)
+                printf("libclientsec - error_mess: <%s>\n", error_mess);
+            msg->code = DELETE_ROOM_SEC;
             return send_command_sec ();
             break;
 
