@@ -70,6 +70,7 @@ void *traitement_recv_sec (void *param) {
 	int lenght;
     char *plainmess;  
     char *room_name;
+    char *ciphermess;
     key_iv keyiv;
     key_iv ki;
 
@@ -199,12 +200,32 @@ void *traitement_recv_sec (void *param) {
           
             break;
             
+        case MP_SEC:
+			leng = strlen(mess.content) + 1;
+			keyiv = get_keyiv_in_room(mess.receiver);
+			ciphermess = aes_encrypt(keyiv->key, keyiv->iv, (char *)mess.content, &leng);
+            strcpy(text, "/MP ");
+            strcat(text, mess.receiver);
+            strcat(text," ");
+            strcat(text,ciphermess);
+            send_message(text, NULL);
+			break;
+        case MP_SEC_OK:
+			keyiv = malloc(sizeof (struct KEY_IV));
+			room_name = strdup(strtok(mess.content, "|"));
+			add_room(room_name,NULL);
+			memcpy (keyiv->key, mess.content + strlen (room_name) + 1, 32);
+            memcpy (keyiv->iv, mess.content + strlen (room_name) + 34, 32);
+            set_keyiv_in_room(room_name, keyiv);       			
+			break;
+
         case CREATE_ROOM_KO:
         case QUIT_ROOM_KO:
         case CONNECT_SEC_KO:
         case DELETE_ROOM_KO:
         case MESSAGE_KO:
-        case MP_KO:
+        case MP_SEC_KO:
+			printf("The user %s doesn't exist or is not connected as a secure user",mess.receiver);
         case CONNECT_KO:
             printf ("Error: %s\n", mess.content);
             break;
@@ -277,7 +298,23 @@ void *traitement_recv (void *param) {
             send_message_sec(text, NULL);
             break;
         case MP:
-            printf ("[%s > %s] %s\n", mess.sender, mess.receiver, mess.content);
+            if ((get_keyiv_in_room(mess.receiver) == NULL) && (get_keyiv_in_room(mess.sender) == NULL)) {
+                printf ("[%s @ %s] %s\n", mess.sender, mess.receiver, mess.content);
+            }
+            else {
+                //keyiv = malloc(sizeof (struct KEY_IV));
+                if (get_keyiv_in_room(mess.receiver)!=NULL){
+                keyiv = get_keyiv_in_room(mess.receiver);
+				}
+				else {
+				keyiv = get_keyiv_in_room(mess.sender);	
+				}
+                lenght = MAX_CIPHERED_SIZE;
+                plainmess = aes_decrypt(keyiv->key, keyiv->iv, (char *)mess.content, &lenght);
+                printf("[%s @ %s] %s\n", mess.sender, mess.receiver, plainmess);
+                //free(keyiv);
+                //free(plainmess);
+            }
             break;
         case NEW_USER:
             printf ("The user %s joined the room %s\n", mess.sender,

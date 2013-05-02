@@ -531,28 +531,24 @@ int send_message_sec (const char *mess, char **error_mess) {
                 strcat(buff, tab_string[i]);
                 strcat(buff, " ");
             }
-            lenght = strlen(buff) + 1;
-            //keyiv = malloc(sizeof (struct KEY_IV));
-            //
-            msg->code=MP;
 
-            EVP_BytesToKey(EVP_aes_256_cbc(), EVP_sha512(), (unsigned char*)&salt, keydata, strlen(keydata), 5, key, iv);
-            EVP_CIPHER_CTX_init(&en);
-            EVP_EncryptInit_ex(&en, EVP_aes_256_cbc(), NULL, key, iv);
-            //
-            //keyiv = get_keyiv_in_room(msg->receiver);
-            //aes_init(keyiv->key, keyiv->iv, &en, &de);
-            ciphermess = aes_encrypt(key, iv, (char *)buff, &lenght);
             if (lenght > MAX_MESS_SIZE) {
                 *error_mess = strdup ("ce message est trop long pour être envoyé chiffré\n");
                 return -3;
             }
-            memset(msg->content, 0, MAX_MESS_SIZE);
-            memcpy(msg->content, ciphermess, lenght);
-            free(tab_string);
-            //free(ciphermess);
-            //free(keyiv);
-            return send_command();
+            if (is_room_used(msg->receiver)==1) {
+				lenght = strlen(buff) + 1;
+				keyiv = get_keyiv_in_room(msg->receiver);
+				ciphermess = aes_encrypt(keyiv->key, keyiv->iv, (char *)buff, &lenght);
+				strcpy(msg->content,ciphermess);
+				msg->code=MP;
+				return send_command();			
+			} else {
+				msg->code=MP_SEC;
+				strcpy(msg->content,buff);
+				return send_command_sec();
+			}
+			free(tab_string);
             break;
         }
     }

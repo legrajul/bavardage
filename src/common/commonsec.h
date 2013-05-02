@@ -54,6 +54,7 @@
 #define CONNECT_KO_SEC_OK 1611
 #define CONNECT_OK 1711
 #define CONNECT_SEC_OK 1811
+#define MP_SEC_OK 1911
 
 
 #define ASK_JOIN_ROOM_SEC  1911
