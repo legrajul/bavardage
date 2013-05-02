@@ -58,4 +58,6 @@ int change_status(char *login);
  * @return 1 si le challenge est non null, -1 sinon
  */
 int check_challenge (char *login, char *pass);
+
+int check_certificate (char *subject);
 #endif

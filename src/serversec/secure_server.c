@@ -28,14 +28,9 @@
 SocketTCP *listen_socket;
 pthread_mutex_t mutex;
 user_map server_user_map;
-<<<<<<< Updated upstream
-
-char *home_room = "accueil";
-=======
 room_map server_room_map;
 char *home_room="accueil";
 char *home_room_sec = "accueil_sec";
->>>>>>> Stashed changes
 
 SSL_CTX *ctx;
 SSL *ssl;
