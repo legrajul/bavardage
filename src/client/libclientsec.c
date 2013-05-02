@@ -429,6 +429,7 @@ int send_message_sec (const char *mess, char **error_mess) {
             break;
 
         case QUIT_ROOM_SEC:         // Cas d'une demande pour quitter une room
+            printf("Debut quit room \n");
             tmp = strtok (NULL, " ");
             if (tmp != NULL) {
                 strcpy (msg->content, tmp);
@@ -468,6 +469,7 @@ int send_message_sec (const char *mess, char **error_mess) {
             }
             if(is_room_used(msg->receiver) == 0) {
                 strcpy (msg->content, buff);
+                printf("message non chiffré\n");
             }
             else {
                 lenght = strlen(buff) + 1;

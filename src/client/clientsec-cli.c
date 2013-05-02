@@ -137,7 +137,8 @@ void *traitement_recv_sec (void *param) {
             keyiv = malloc(sizeof (struct KEY_IV));
             room_name =strdup(strtok(mess.content, "|"));      
             memcpy (keyiv->key, mess.content + strlen (room_name) + 1, 32);
-            memcpy (keyiv->iv, mess.content + strlen (room_name) + 34, 32);;
+            memcpy (keyiv->iv, mess.content + strlen (room_name) + 34, 32);
+            add_room(room_name,NULL);
             set_keyiv_in_room(room_name, keyiv);
             printf("Création room sécurisé réussie : name = %s, key = %s, iv = %s\n", room_name, keyiv->key, keyiv->iv);
             strcpy(text, "/JOIN_ROOM ");

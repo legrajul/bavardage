@@ -213,7 +213,7 @@ void *handle_connexion(void *param) {
 			memcpy(response.content + strlen (buffer.content) + 1, keyiv->key, 32);
 			memcpy(response.content + strlen (buffer.content) + 33, "|", 32);
 			memcpy(response.content + strlen (buffer.content) + 34, keyiv->iv, 32);                     
-                        user_list l = get_users(buffer.receiver);
+                        user_list l = get_users(buffer.content);
                         user_list t;
                         for (t = l; t != NULL; t = t->next) {
                             SSL_write(t->current_user->ssl,
