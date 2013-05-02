@@ -263,11 +263,11 @@ void *handle_connexion(void *param) {
                 case DELETE_ROOM_SEC:
                     //TODO
                     break;
-                case DISCONNECT_SEC:
+                case DISCONNECT_SEC: 
                     printf("Disconnection from secure server\n");
                     printf("first_connection: <%d>\n", first_connection);
                     if (first_connection == 1) {
-                        delete_user(buffer.sender);
+                        delete_user(buffer.sender); 
                     }
                     response.code = DISCONNECT_SEC;
                     SSL_write(client_ssl, &response, sizeof(message));

@@ -111,12 +111,14 @@ void *traitement_recv_sec (void *param) {
 
         case DISCONNECT_SEC:
             //disconnect_sec();
-            printf ("You're now disconnected from the chat secure server\n");
+            printf ("You're now disconnected from the chat secure server\n");  
             pthread_detach (thread_send);
             exit (0);
 
         case DEL_ACCOUNT_SEC:
             printf("your account %s have been deleted\n", mess.content);
+            pthread_detach (thread_send);
+            exit (0);
             break;
 
         case OK:

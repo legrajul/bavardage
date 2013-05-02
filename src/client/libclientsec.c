@@ -331,6 +331,7 @@ int send_message_sec (const char *mess, char **error_mess) {
             disconnect_sec();
             break;
         case CONNECT_SEC:   // Cas d'une demande de connexion
+			is_connected = 1;
             printf("--------------------------DEBUT CONNECT_SEC libclientsec ------------------------\n");
             printf("libclientsec.c: send_mess: msg-code(debut swicth): %d\n", msg->code);
             //strcpy(conn, "/CONNECT ");
@@ -373,17 +374,22 @@ int send_message_sec (const char *mess, char **error_mess) {
                 *error_mess = strdup ("use: /DEL_ACCOUNT_SEC user \n");
                 return -3;
             }
-            return send_command_sec ();
+            send_command_sec ();
+            disconnect_sec ();
             break;
 
         case DISCONNECT_SEC:        // Cas d'une demande de déconnexion
-            strcpy (msg->sender, login);
-            strcpy(conn, "/DISCONNECT ");
-            strcat(conn, login);
-            send_message (conn, &error_mess);
-            msg->code = DISCONNECT_SEC;
-            disconnect_sec ();
-            printf("libclientsec.c: send_mess: FIN CASE disconnect_sec\n");
+            if (is_connected == 0)
+				printf("you're not connected yet\n");
+			else {
+	            strcpy (msg->sender, login);
+	            strcpy(conn, "/DISCONNECT ");
+	            strcat(conn, login);
+	            send_message (conn, &error_mess);
+	            msg->code = DISCONNECT_SEC;
+	            disconnect_sec ();
+	            printf("libclientsec.c: send_mess: FIN CASE disconnect_sec\n");
+			}
             break;
 
         case CREATE_ROOM_SEC:       // Cas d'une demande de création de Salon
