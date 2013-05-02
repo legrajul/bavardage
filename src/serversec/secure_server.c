@@ -204,17 +204,22 @@ void *handle_connexion(void *param) {
 						add_user_in_room (u, buffer.content);
                         randomString(key_data,(sizeof key_data)-1);
                         keyiv = malloc(sizeof(struct KEY_IV));
-                        gen_keyiv(keyiv,(unsigned char *)key_data, sizeof(key_data));                      
-                      //  strcpy(response.content, buffer.content);
-                        sprintf(response.content, "|%s|%s|%s",buffer.content,keyiv->key,keyiv->iv);
-                        response.code = JOIN_ROOM_SEC;
+                        gen_keyiv(keyiv,(unsigned char *)key_data, sizeof(key_data));   
+                        
+                         response.code = JOIN_ROOM_SEC;
+                         strcpy(response.sender, buffer.sender);
+                        strcpy(response.content, buffer.content);
+			strcat(response.content, "|");
+			memcpy(response.content + strlen (buffer.content) + 1, keyiv->key, 32);
+			memcpy(response.content + strlen (buffer.content) + 33, "|", 32);
+			memcpy(response.content + strlen (buffer.content) + 34, keyiv->iv, 32);                     
                         user_list l = get_users(buffer.receiver);
                         user_list t;
                         for (t = l; t != NULL; t = t->next) {
                             SSL_write(t->current_user->ssl,
                                       &response, sizeof(message));
                         }
-                        free(keyiv);
+                      //  free(keyiv);
 					printf("Send to secure client\n");
                     }
                     break;

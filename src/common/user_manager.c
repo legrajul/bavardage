@@ -21,6 +21,10 @@ int hash_user (char *login) {
 
 user_map create_user_map () {
 	user_map map = (user_map) malloc (HASH_USER_MAP_SIZE * sizeof(user_list));
+	int i;
+	for (i = 0; i < HASH_USER_MAP_SIZE; i++) {
+		map[i] = NULL;
+	}
 	if (map == NULL) {
 		return NULL;
 	} else {

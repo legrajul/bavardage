@@ -44,7 +44,7 @@ void *traitement_send (void *param) {
             pthread_exit (NULL);
             exit (EXIT_FAILURE);
         } else if (ret_sec == -2) {
-            fprintf (stderr, "Unkown command for secure server\n");
+            fprintf (stderr, "Unkown command for secure server message = %s\n",mess);
             if (ret = send_message (mess, &error_mess) == -1) {
                 pthread_exit (NULL);
                 exit (EXIT_FAILURE);
@@ -135,14 +135,11 @@ void *traitement_recv_sec (void *param) {
         case JOIN_ROOM_SEC:
             printf("Reception join room sec \n");         
             keyiv = malloc(sizeof (struct KEY_IV));
-            room_name =strdup(strtok(mess.content, "|"));
-		    strcpy(keyiv->key, strtok(NULL, "|"));		    
-		    strcpy(keyiv->iv, strtok(NULL, "|"));
-		    add_room(room_name,NULL);
-		    set_keyiv_in_room(room_name, keyiv);
-		    free(keyiv);
-		    ki = get_keyiv_in_room (room_name);
-            printf("key = %s and iv = %s \n",ki->key,ki->iv);
+            room_name =strdup(strtok(mess.content, "|"));      
+            memcpy (keyiv->key, mess.content + strlen (room_name) + 1, 32);
+            memcpy (keyiv->iv, mess.content + strlen (room_name) + 34, 32);;
+            set_keyiv_in_room(room_name, keyiv);
+            printf("Création room sécurisé réussie : name = %s, key = %s, iv = %s\n", room_name, keyiv->key, keyiv->iv);
             strcpy(text, "/JOIN_ROOM ");
             strcat(text,room_name);
             send_message(text, NULL);

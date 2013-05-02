@@ -41,7 +41,7 @@ int hash_room_name (char *room_name) {
 }
 
 int is_room_used (char *room_name) {
-	//printf ("---- BEGIN is_room_used ----\n");
+	printf ("---- BEGIN is_room_used ----\n");
 	if (room_name == NULL) {
 		return -1;
 	}
@@ -61,7 +61,7 @@ int is_room_used (char *room_name) {
 			return 1;
 		}
 	}		
-	//printf ("---- END is_room_used ----\n");
+	//printf ("---- END is_room_used ret = 0----\n");
 	return 0;
 }
 
@@ -191,7 +191,7 @@ int remove_user_from_room (user u, char *room_name) {
 }
 
 user_list get_users (char *room_name) {
-	/* printf ("---- BEGIN get_users ----\n"); */
+	//printf ("---- BEGIN get_users ----\n"); 
 	// On récupère la liste des salons du haché du nom de salon
 	int index = hash_room_name (room_name);
 	room_list l = rooms[index];
@@ -207,7 +207,6 @@ user_list get_users (char *room_name) {
 	}
 
 	if (map != NULL) {
-
 		user_list last = NULL;
 		user_list tmp = NULL;
 		int i;
@@ -217,6 +216,7 @@ user_list get_users (char *room_name) {
 				user_list l;
 				for (l = list; l != NULL; l = l->next) {
 					tmp = (user_list) malloc (sizeof(struct USER_LIST));
+					
 					tmp->current_user = l->current_user;
 					if (last == NULL) {
 						res = tmp;
@@ -230,12 +230,12 @@ user_list get_users (char *room_name) {
 		}
 	}
 
-	/* printf ("---- END get_users ----\n"); */
+	//printf ("---- END get_users ----\n");
 	return res;
 }
 
 int is_user_in_room (user u, char *room_name) {
-	/* printf ("---- BEGIN is_user_in_room ----\n"); */
+	//printf ("---- BEGIN is_user_in_room room_name = %s----\n", room_name);
 	user_list l = get_users (room_name);
 	for (; l != NULL; l = l->next) {
 		if (strcmp (l->current_user->name, u->name) == 0) {
@@ -243,7 +243,6 @@ int is_user_in_room (user u, char *room_name) {
 		}
 	}
 
-	/* printf ("---- END is_user_in_room ----\n"); */
 	return 0;
 }
 
