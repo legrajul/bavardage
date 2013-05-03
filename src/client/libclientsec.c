@@ -11,12 +11,12 @@
 
 #define CAFILE "root.pem"
 #define CADIR NULL
-#define CERTFILE "toto_certif.pem"
-#define KEYFILE "toto_key.pem"
+//#define CERTFILE "toto_certif.pem"
+//#define KEYFILE "toto_key.pem"
 
-char *private_key_filename = KEYFILE;
+char *private_key_filename;
 char *certif_request_filename;
-char *certif_filename = CERTFILE;
+char *certif_filename;
 
 SocketTCP *secure_socket;
 
@@ -272,7 +272,7 @@ char *create_challenge_sec (const char *data) {
     printf ("libclientsec.c: create_challenge: BEGIN - create_challenge_sec with data = <%s> (%d char)\n", data, strlen (data));
     uint8_t *encryptedBytes = NULL;
     //const char* data = "Data to enrypt";
-    char *private_key_file_name = KEYFILE;
+    char *private_key_file_name;
 
     FILE *fp = fopen (private_key_file_name, "r");
     RSA *rsa = RSA_new ();
