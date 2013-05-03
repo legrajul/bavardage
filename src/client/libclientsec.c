@@ -589,7 +589,7 @@ int send_message_sec (const char *mess, char **error_mess) {
 			printf("%s/MP %suser message                     %s- send a message <message> to user <user>\n\n", KBLU, KCYN, KWHT);
 			
 			printf("--------------------\nSECURED USER can do:\n--------------------\n");
-			printf("%s/CONNECT_SEC %suser_name               %s- connect a secure user named <user_name>\n", KBLU, KCYN, KWHT);
+			printf("%s/CONNECT_SEC %suser_certif user_key    %s- connect a secure user named <user_name>\n", KBLU, KCYN, KWHT);
 			printf("%s/CREATE_ROOM_SEC %sroom_name           %s- create a new secure room with the name <room_name>\n", KBLU, KCYN, KWHT);
 			printf("%s/DELETE_ROOM_SEC %sroom_name           %s- delete a secure romm with the name <room_name>\n", KBLU, KCYN, KWHT);
 			printf("%s/DISCONNECT_SEC                      %s- disconnect a secure user if is connected\n", KBLU, KWHT);
