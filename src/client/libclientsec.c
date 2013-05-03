@@ -589,18 +589,19 @@ int send_message_sec (const char *mess, char **error_mess) {
 			printf("%s/MP %suser message                     %s- send a message <message> to user <user>\n\n", KBLU, KCYN, KWHT);
 			
 			printf("--------------------\nSECURED USER can do:\n--------------------\n");
-			printf("%s/CONNECT_SEC %suser_certif user_key    %s- connect a secure user named <user_name>\n", KBLU, KCYN, KWHT);
-			printf("%s/CREATE_ROOM_SEC %sroom_name           %s- create a new secure room with the name <room_name>\n", KBLU, KCYN, KWHT);
-			printf("%s/DELETE_ROOM_SEC %sroom_name           %s- delete a secure romm with the name <room_name>\n", KBLU, KCYN, KWHT);
-			printf("%s/DISCONNECT_SEC                      %s- disconnect a secure user if is connected\n", KBLU, KWHT);
-			printf("%s/QUIT_ROOM_SEC %sroom_name             %s- disconnect a connected user from the room <room_name>\n", KBLU, KCYN, KWHT);
-			printf("%s/JOIN_ROOM_SEC %sroom_name             %s- to join a secure room with the name <room_name>\n", KBLU, KCYN, KWHT);
-			printf("%s/DEL_ACCOUNT_SEC %sroom_name           %s- to delete an secure account named <room_name>\n", KBLU, KCYN, KWHT);
-			printf("%s/MP_SEC %suser message                 %s- send a private message <message> to the user <user>\n", KBLU, KCYN, KWHT);
-			printf("%s/MESSAGE %suser/room message           %s- send the message <message> to the user <user> or the room <room>\n", KBLU, KCYN, KWHT);
-			printf("%s/ACCEPT_JOIN_ROOM_SEC %sroom user      %s- authorize the user <user> to join the room <room>\n", KBLU, KCYN, KWHT);
-			printf("%s/REFUSE_JOIN_ROOM_SEC %sroom user      %s- refuse the user <user> to join the room <room>\n", KBLU, KCYN, KWHT);
-			printf("%s/EJECT_FROM_ROOM_SEC %sroom user       %s- revoque the user <user> from the room <room>\n\n", KBLU, KCYN, KWHT);
+			printf("%s/CONNECT_SEC %suser user_certif user_key    %s- connect a secure user named <user_name>\n", KBLU, KCYN, KWHT);
+			printf("                                            with the certicate <user_certif> and the key <user_key>\n");
+			printf("%s/CREATE_ROOM_SEC %sroom_name                %s- create a new secure room with the name <room_name>\n", KBLU, KCYN, KWHT);
+			printf("%s/DELETE_ROOM_SEC %sroom_name                %s- delete a secure romm with the name <room_name>\n", KBLU, KCYN, KWHT);
+			printf("%s/DISCONNECT_SEC                           %s- disconnect a secure user if is connected\n", KBLU, KWHT);
+			printf("%s/QUIT_ROOM_SEC %sroom_name                  %s- disconnect a connected user from the room <room_name>\n", KBLU, KCYN, KWHT);
+			printf("%s/JOIN_ROOM_SEC %sroom_name                  %s- to join a secure room with the name <room_name>\n", KBLU, KCYN, KWHT);
+			printf("%s/DEL_ACCOUNT_SEC %sroom_name                %s- to delete an secure account named <room_name>\n", KBLU, KCYN, KWHT);
+			printf("%s/MP_SEC %suser message                      %s- send a private message <message> to the user <user>\n", KBLU, KCYN, KWHT);
+			printf("%s/MESSAGE %suser/room message                %s- send the message <message> to the user <user> or the room <room>\n", KBLU, KCYN, KWHT);
+			printf("%s/ACCEPT_JOIN_ROOM_SEC %sroom user           %s- authorize the user <user> to join the room <room>\n", KBLU, KCYN, KWHT);
+			printf("%s/REFUSE_JOIN_ROOM_SEC %sroom user           %s- refuse the user <user> to join the room <room>\n", KBLU, KCYN, KWHT);
+			printf("%s/EJECT_FROM_ROOM_SEC %sroom user            %s- revoque the user <user> from the room <room>\n\n", KBLU, KCYN, KWHT);
 			
 			printf("----------------------------------------------------------------------------------------------------\n");
 			printf("-------------- %sNB: all commands in classic user can be executed by a secure user %s----------------\n", KRED, KWHT);
