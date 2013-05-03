@@ -523,7 +523,7 @@ int send_message_sec (const char *mess, char **error_mess) {
 			printf("%s/EJECT_FROM_ROOM_SEC %sroom user            %s- revoque the user <user> from the room <room>\n\n", KBLU, KCYN, KWHT);
 			
 			printf("----------------------------------------------------------------------------------------------------\n");
-			printf("-------------- %sNB: all commands in classic user can be executed by a secure user %s----------------\n", KRED, KWHT);
+			printf("--------------- %sNB: all commands in classic user can be executed by a secure user %s------------------\n", KRED, KWHT);
 			printf("----------------------------------------------------------------------------------------------------\n\n");
 			printf("", KRED, KWHT);
 			break;

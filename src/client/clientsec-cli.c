@@ -348,7 +348,6 @@ int main (int argc, char *argv[]) {
 	printf("\n\n----------------------------------------------------------------------------------------------------\n");
 	printf("--------------------- to have some command description, use the command: %s/HELP %s---------------------\n", KRED, KWHT);
 	printf("----------------------------------------------------------------------------------------------------\n\n");
-    
     init_OpenSSL ();
     if (argc == 3) {
         set_certif_filename (argv[1]);
