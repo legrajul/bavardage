@@ -403,13 +403,17 @@ int main (int argc, char *argv[]) {
 	printf("----------------------------------------------------------------------------------------------------\n\n");
     
     init_OpenSSL ();
-    if (argc == 1) {
+    if (argc == 3) {
+        set_certif_filename (argv[1]);
+        set_private_key_filename (argv[2]);
         connect_with_authentication (CHATADDR, CHATPORT, SECADDR, SECPORT);
     } else if (argc < 5 || argc > 5) {
         fprintf (stderr,
-                 "Usage: ./client ip_client port_client ip_server port_server\n");
+                 "Usage: ./clientsec-cli ip_client port_client ip_server port_server certificate private_key\n or   ./clientsec-cli certificate private_key\n");
         exit (EXIT_FAILURE);
     } else {
+        set_certif_filename(argv[5]);
+        set_private_key_filename(argv[6]);
         connect_with_authentication (argv[1], argv[2], argv[3], argv[4]);
     }
 
