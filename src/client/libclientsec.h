@@ -26,13 +26,6 @@ int connect_with_authentication (char *chatservaddr, int chatservport,
 
 int disconnect_servers ();
 
-int generate_private_key ();
-
-int generate_certificate_request (char *common_name, char *locality,
-		char *country, char* organization, char *email_address);
-
-int get_certificate (char *pkiaddr);
-
 int send_message_sec (const char *mess, char **error_mess);
 
 int set_certif_filename (const char *f);

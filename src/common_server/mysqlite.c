@@ -165,7 +165,7 @@ int check_user(char *login, char *data) {
 /* determine si un user est connecte ou non */
 int is_connected (char *login, char *data) {
     check_user(login, data);
-    printf("mysql.c: is_connected: before sql\n");
+    //printf("mysql.c: is_connected: before sql\n");
     char is_connect[QUERY_SIZE] = "";
     sprintf (is_connect, "SELECT * FROM users where login = \'%s\' and is_connected = 1", login);
     int sq = sqlite3_exec(database, is_connect, 0, 0, 0);

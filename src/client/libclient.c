@@ -83,7 +83,7 @@ int connect_socket (const char *addr, const int port) {
 }
 
 int receive_message (message *m) {
-    printf("receive_message libclient\n");
+   // printf("receive_message libclient\n");
 	int ret = readSocketTCP (client_sock, (char *) m, sizeof(message));
 	if (ret == 0) {
 		return -1;
@@ -159,8 +159,6 @@ int send_message (const char *mess, char **error_mess) {
 
 		switch (code) {
 		case CONNECT:   // Cas d'une demande de connexion
-			printf("--------------------------DEBUT CONNECT libclient ------------------------\n");
-            printf("libclient.c: send_message: DEBUT CONNECT\n");
 			tmp = strtok (NULL, " ");
 			if (tmp != NULL) {
 				login = strdup (tmp);
@@ -170,7 +168,6 @@ int send_message (const char *mess, char **error_mess) {
 				return -1;
 			} else {
 				strcpy (msg->sender, login);
-                printf("RETURN send_command\n");
 				return send_command ();
 			}
 			break;
@@ -184,7 +181,6 @@ int send_message (const char *mess, char **error_mess) {
 			tmp = strtok (NULL, " ");
 			if (tmp != NULL) {
 				strcpy (msg->content, tmp);
-				printf("msg content = %s \n", msg->content);
 			} else {
 				*error_mess = strdup ("CREATE_ROOM a besoin d'un paramètre\n");
 				return -3;
@@ -199,7 +195,7 @@ int send_message (const char *mess, char **error_mess) {
 				*error_mess = strdup ("DELETE_ROOM a besoin d'un paramètre\n");
 				return -3;
 			}
-			printf("------- send_command DELETE_ROOM libclient ----------\n");
+			//printf("------- send_command DELETE_ROOM libclient ----------\n");
 			return send_command ();
 			break;
 		case QUIT_ROOM:         // Cas d'une demande pour quitter une room
@@ -246,17 +242,14 @@ int send_message (const char *mess, char **error_mess) {
 			break;
 
 		case MP:  // Cas d'envoi de message prive
-            printf("debut MP libclient\n");
-            printf("BUFFER: <%s>\n", buffer);
 			tab_string = create_table_param (buffer);
-			// code en commentaire au cas ou mais ne doit plus servir
-			// gestion du message vide dans le server
-			/*if (len (tab_string) < 3) {
+
+			if (len (tab_string) < 3) {
 				*error_mess =
 						strdup (
 								"MP doit avoir 2 paramètres : /MP toto mon super message privé\n");
 				return -3;
-			}*/
+			}
 			strcpy (msg->receiver, tab_string[1]);
 			strcpy (buff, "");
 			for (i = 2; i < len (tab_string); i++) {
@@ -264,8 +257,6 @@ int send_message (const char *mess, char **error_mess) {
 				strcat (buff, " ");
 			}
 
-			printf("liblclient - msg->content: <%s>\n", msg->content);
-			printf("liblcient - msg->code: <%d>\n", msg->code);
 			strcpy (msg->content, buff);
 			return send_command ();
 			break;

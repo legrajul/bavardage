@@ -30,8 +30,6 @@ void destroy_ctx (SSL_CTX *ctx) {
     SSL_CTX_free (ctx);
 }
 
-// modif
-
 unsigned long id_function(void) {
     return ((unsigned long)THREAD_ID);
 }
@@ -147,5 +145,4 @@ long post_connection_check (SSL *ssl, char *host) {
     return X509_V_ERR_APPLICATION_VERIFICATION;
 }
 
-// fin modif
 

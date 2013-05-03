@@ -176,7 +176,6 @@ void *traitement_recv (void *param) {
 				strcat (res, ", ");
 				strcat (res, mess.content);
 			}
-			printf ("%s", res);
 		}
 
 		if (mess.code == USER_LIST_END) {

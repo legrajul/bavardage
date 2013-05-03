@@ -34,7 +34,3 @@ file(COPY ../certifs/secserv_certif.pem DESTINATION serversec/)
 # Copie du certificat racine dans les dossiers l'utilisant
 file(COPY ../certifs/root.pem DESTINATION client/)
 file(COPY ../certifs/root.pem DESTINATION serversec/)
-
-# PARTIE DE TESTS : copie du certificat utilisateur
-file(COPY ../certifs/toto_certif.pem DESTINATION client/)
-file(COPY ../certifs/toto_key.pem DESTINATION client/)

@@ -142,10 +142,8 @@ void *handle_connexion (void *param) {
                         response.code = CREATE_ROOM;
                         strcpy (response.sender, buffer.sender);
                         strcpy (response.content, buffer.content);
-                        printf("Avant response au client securisé\n");
                         writeSocketTCP (u->socket, (char *) &response,
                                         sizeof(message));
-                        printf("Après response au client securisé\n");
 
                         response.code = ADMIN;
                         strcpy (response.content, buffer.content);
@@ -226,20 +224,19 @@ void *handle_connexion (void *param) {
                             }
                         }
                         remove_user (u, server_user_map);
-                        free (u);//DISCONNECT_SEC
+                        free (u);
 
                     }
                     response.code = DISCONNECT;
                     writeSocketTCP (s, (char *) &response, sizeof(message));
 
-                    printf("writeSocketTCP server\n");
                     pthread_mutex_unlock (&mutex);
                     closeSocketTCP (s);
                     pthread_exit (0);
                     break;
 
                 case CONNECT:
-                	printf("--------------------------DEBUT CONNECT server ------------------------\n");
+                	//printf("--------------------------DEBUT CONNECT server ------------------------\n");
                     if (u != NULL) {
                         response.code = CONNECT_KO;
                         strcpy (response.content, "You are already connected");
@@ -304,7 +301,6 @@ void *handle_connexion (void *param) {
                     break;
 
                 case MP:
-                    printf("debut MP server\n");
 
 					if (!is_login_used (buffer.receiver, server_user_map)) {
 						response.code = MP_KO;
@@ -319,12 +315,10 @@ void *handle_connexion (void *param) {
 						break;
 					}
 
-                    printf("buffer.receiver: <%s>\n", buffer.receiver);
 					user receiver = get_user (buffer.receiver, server_user_map);
 					writeSocketTCP (receiver->socket, (char *) &buffer,
 							sizeof(message));
 
-					printf("buffer.code: <%d>\n", buffer.code);
 					response = buffer;
 					break;
 
@@ -388,7 +382,6 @@ void new_thread (SocketTCP *socket) {
 }
 
 int create_main_room () {
-    printf ("Server room created\n");
     init_rooms ();
     add_room (home_room, NULL);
     server_user_map = (user_map) malloc (
