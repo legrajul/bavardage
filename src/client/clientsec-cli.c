@@ -20,6 +20,7 @@
 #define SECADDR  "localhost"
 #define SECPORT  11000
 
+
 pthread_t thread_send, thread_recv, thread_recv_sec;
 //key_iv keyiv;
 
@@ -374,6 +375,8 @@ void *traitement_recv (void *param) {
                 send_message_sec(text, NULL);
             }
 
+		case HELP:
+			break;
         default:
             break;
         }
@@ -395,6 +398,10 @@ int start_communication () {
 }
 
 int main (int argc, char *argv[]) {
+	printf("\n\n----------------------------------------------------------------------------------------------------\n");
+	printf("--------------------- to have some command description, use the command: %s/HELP %s---------------------\n", KRED, KWHT);
+	printf("----------------------------------------------------------------------------------------------------\n\n");
+    
     init_OpenSSL ();
     if (argc == 1) {
         connect_with_authentication (CHATADDR, CHATPORT, SECADDR, SECPORT);

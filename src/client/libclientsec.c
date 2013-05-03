@@ -236,7 +236,9 @@ int extract_code_sec (const char *str) {
 	   return REFUSE_JOIN_ROOM_SEC;
     } else if (strcmp(command, "EJECT_FROM_ROOM_SEC") == 0) {
         return EJECT_FROM_ROOM_SEC;
-    }
+    } else if (strcmp(command, "HELP") == 0) {
+        return HELP;
+    } 
     return -1;
 }
 
@@ -269,6 +271,7 @@ int send_command_sec () {
 }
 
 char *create_challenge_sec (const char *data) {
+	printf("to know how to user an secure client, use the command: /HELP\n");
     printf ("libclientsec.c: create_challenge: BEGIN - create_challenge_sec with data = <%s> (%d char)\n", data, strlen (data));
     uint8_t *encryptedBytes = NULL;
     //const char* data = "Data to enrypt";
@@ -570,6 +573,40 @@ int send_message_sec (const char *mess, char **error_mess) {
 			}
 			free(tab_string);
             break;
+            
+       case HELP:
+			printf("\n\n----------------------------------------------------------------------------------------------------\n");
+			printf("------------------------------ %sthe manual utilisation for secure user %s------------------------------\n", KRED, KWHT);
+			printf("----------------------------------------------------------------------------------------------------\n\n");
+			
+			printf("--------------------\nCLASSIC USER can do:\n--------------------\n");			
+			printf("%s/CREATE_ROOM %sroom_name               %s- create a room named <room_name>\n", KBLU, KCYN, KWHT);
+			printf("%s/DELETE_ROOM %sroom_name               %s- delete a room named <room_name>\n", KBLU, KCYN, KWHT);
+			printf("%s/QUIT_ROOM %sroom_name                 %s- quit a room named <room_name>\n", KBLU, KCYN, KWHT);
+			printf("%s/JOIN_ROOM %sroom_name                 %s- join a room named <room_name>\n", KBLU, KCYN, KWHT);
+			printf("%s/DISCONNECT                          %s- end the connection\n", KBLU, KWHT);
+			printf("%s/CONNECT %suser                        %s- connect the user <user>\n", KBLU, KCYN, KWHT);
+			printf("%s/MP %suser message                     %s- send a message <message> to user <user>\n\n", KBLU, KCYN, KWHT);
+			
+			printf("--------------------\nSECURED USER can do:\n--------------------\n");
+			printf("%s/CONNECT_SEC %suser_name               %s- connect a secure user named <user_name>\n", KBLU, KCYN, KWHT);
+			printf("%s/CREATE_ROOM_SEC %sroom_name           %s- create a new secure room with the name <room_name>\n", KBLU, KCYN, KWHT);
+			printf("%s/DELETE_ROOM_SEC %sroom_name           %s- delete a secure romm with the name <room_name>\n", KBLU, KCYN, KWHT);
+			printf("%s/DISCONNECT_SEC                      %s- disconnect a secure user if is connected\n", KBLU, KWHT);
+			printf("%s/QUIT_ROOM_SEC %sroom_name             %s- disconnect a connected user from the room <room_name>\n", KBLU, KCYN, KWHT);
+			printf("%s/JOIN_ROOM_SEC %sroom_name             %s- to join a secure room with the name <room_name>\n", KBLU, KCYN, KWHT);
+			printf("%s/DEL_ACCOUNT_SEC %sroom_name           %s- to delete an secure account named <room_name>\n", KBLU, KCYN, KWHT);
+			printf("%s/MP_SEC %suser message                 %s- send a private message <message> to the user <user>\n", KBLU, KCYN, KWHT);
+			printf("%s/MESSAGE %suser/room message           %s- send the message <message> to the user <user> or the room <room>\n", KBLU, KCYN, KWHT);
+			printf("%s/ACCEPT_JOIN_ROOM_SEC %sroom user      %s- authorize the user <user> to join the room <room>\n", KBLU, KCYN, KWHT);
+			printf("%s/REFUSE_JOIN_ROOM_SEC %sroom user      %s- refuse the user <user> to join the room <room>\n", KBLU, KCYN, KWHT);
+			printf("%s/EJECT_FROM_ROOM_SEC %sroom user       %s- revoque the user <user> from the room <room>\n\n", KBLU, KCYN, KWHT);
+			
+			printf("----------------------------------------------------------------------------------------------------\n");
+			printf("-------------- %sNB: all commands in classic user can be executed by a secure user %s----------------\n", KRED, KWHT);
+			printf("----------------------------------------------------------------------------------------------------\n\n");
+			printf("", KRED, KWHT);
+			break;
         }
     }
     return 0;

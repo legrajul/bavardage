@@ -63,6 +63,8 @@
 #define EJECT_FROM_ROOM_SEC 2311
 #define REFRESH_KEYIV 2411
 
+#define HELP 0000
+
 #define BUFSIZZ 1024
 #define AES_BLOCK_SIZE 256
 
