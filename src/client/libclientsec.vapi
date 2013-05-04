@@ -7,6 +7,13 @@ namespace Bavardage {
         public const int JOIN_ROOM_SEC;
         public const int DISCONNECT_SEC;
         public const int CONNECT_SEC;
+        public const int DEL_ACCOUNT_SEC;
+        public const int ASK_JOIN_ROOM_SEC;
+        public const int ACCEPT_JOIN_ROOM_SEC;
+        public const int REFUSE_JOIN_ROOM_SEC;
+        public const int MP_SEC;
+        public const int MP_SEC_OK;
+
         public const int CREATE_ROOM_SEC_KO;
         public const int JOIN_ROOM_SEC_KO;
         public const int DELETE_ROOM_SEC_KO;
@@ -17,7 +24,7 @@ namespace Bavardage {
 
         public void init_OpenSSL ();
     }
-
+    
     
     [CCode (cprefix = "", lower_case_cprefix = "", cheader_filename = "libclientsec.h")]
     namespace ClientSecCore {
@@ -35,8 +42,6 @@ namespace Bavardage {
         
         public int receive_message_sec (out Message m);
 
-        public int8[] aes_encrypt (uint8[] key, uint8[] iv, string plaintext, out int len);
-        
-        public string aes_decrypt (uint8[] key, uint8[] iv, int8[] ciphertext, out int len);
+        public string decrypt (string room_name, uint8[] ciphered);
     }
 }

@@ -9,6 +9,7 @@ namespace Bavardage.Threads {
     public class ReceiveThread {
         private string name;
         private Bavardage.Client client;
+        private Gdk.Pixbuf img;
 
         public ReceiveThread (string name, Bavardage.Client client) {
             this.name = name;
@@ -16,20 +17,19 @@ namespace Bavardage.Threads {
         }
 
         public void  *thread_func () {
-            stdout.printf ("Receive Thread starting...\n");
+            img = Gtk.IconTheme.get_default ().load_icon ("channel-secure-symbolic", 16, 0);
             Bavardage.Message m = { -1, "".data, "".data, "".data };
             TreeIter tree_iter;
             while (true) {
                 Thread.usleep (10000);
                 m = { -1, "".data, "".data, "".data };
                 if (receive_message (out m) == 0) {
-                    stdout.printf ("MESSAGE RECU AVEC CODE = %d\n", m.code);
                     var sender = new StringBuilder ("");
                     for (int i = 0; i < m.sender.length; i++) {
                         sender.append_c((char) m.sender[i]);
                     }
                     var content = new StringBuilder ("");
-                    for (int i = 0; i < m.content.length; i++) {
+                    for (int i = 0; i < m.content.length && m.content[i] != '\0'; i++) {
                         content.append_c ((char) m.content[i]);
                     }
                     var receiver = new StringBuilder ("");
@@ -44,7 +44,6 @@ namespace Bavardage.Threads {
                     case MP_KO:
                     case QUIT_ROOM_KO:
                     case KO:
-                        stdout.printf ("Error : %s\n", content.str);
                         string s = "Erreur : " + content.str + "\n";
                         TextIter iter;
                         client.chat.get_buffer ().get_end_iter (out iter);
@@ -55,20 +54,18 @@ namespace Bavardage.Threads {
 
                         break;
                     case CREATE_ROOM:
-                        if (client.is_secure_room (content.str)) {
-                            string error;
-                            send_message_sec ("/CREATE_ROOM_SEC " + content.str, out error);
-                        }
                         var rooms = client.open_rooms.get_model () as ListStore;
                         rooms.append (out tree_iter);
-                        rooms.set (tree_iter, 0, content.str, -1);
-
+                        if (client.is_secure_room (content.str)) {
+                            rooms.set (tree_iter, 0, content.str, 1, img, -1);
+                        } else {
+                            rooms.set (tree_iter, 0, content.str, 1, null, -1);
+                        }
                         client.rooms_map_users.set (content.str, new ListStore (2, typeof (string), typeof (string)));
                         var buffer = new TextBuffer (new TextTagTable ());
                         buffer.create_tag ("blue", "foreground", "#0000FF", "underline", Pango.Underline.SINGLE);
                         client.rooms_map_chats.set (content.str, buffer);
                         client.rooms_map_entries.set (content.str, new EntryBuffer ("".data));
-
                         client.open_rooms.get_selection ().select_iter (tree_iter);
                         client.open_rooms.cursor_changed ();
                         break;
@@ -91,10 +88,25 @@ namespace Bavardage.Threads {
                         client.open_rooms.cursor_changed ();
                         break;
                     case MESSAGE:
-                        string s = "<" + sender.str + "> " + content.str + "\n";
+                        string s = "<" + sender.str + "> ";
+                        if (client.is_secure_room (receiver.str)) {
+                            var tmptext = decrypt (receiver.str, m.content);
+                            if (tmptext.validate ()) {
+                                s += tmptext;
+                            } else if (content.str.validate ()) {
+                                s += content.str;
+                            } else {
+                                s += "*** MESSAGE ILLISIBLE ***";
+                            }
+                        } else {
+                            if (content.str.validate ()) {
+                                s += content.str;
+                            } else {
+                                s += "*** MESSAGE ILLISIBLE ***";
+                            }
+                        }
+                        s += "\n";
                         TextIter iter;
-                        stdout.printf ("receiver.str = %s\n", receiver.str);
-                        stdout.printf ("client.rooms_map_chats.get (receiver.str) = NULL ? %s\n", (client.rooms_map_chats.get (receiver.str) == null).to_string ());
                         client.rooms_map_chats.get (receiver.str).get_end_iter (out iter);
                         client.rooms_map_chats.get (receiver.str).insert_text (ref iter, s, s.length);
 
@@ -137,7 +149,7 @@ namespace Bavardage.Threads {
                         break;
 
                     case MP:
-                        string s = "[" + sender.str + "] " + content.str + "\n";
+                        string s = "[" + sender.str + "] ";
                         TextIter iter;
                         string room_name = "[" + sender.str + "]";
                         if (sender.str == ClientCore.get_login ()) {
@@ -157,6 +169,22 @@ namespace Bavardage.Threads {
                             client.open_rooms.cursor_changed ();
                         }
                         client.rooms_map_chats.get (room_name).get_end_iter (out iter);
+
+                        if (client.is_secure_room (room_name)) {
+                            string text = decrypt (sender.str, m.content);
+                            if (text.validate ()) {
+                                s += text + "\n";
+                            } else {
+                                s += "*** MESSAGE ILLISIBLE ***\n";
+                            }
+                        } else {
+                            if (content.str.validate ()) {
+                                s += content.str + "\n";
+                            } else {
+                                s += "*** MESSAGE ILLISIBLE ***\n";
+                            }
+                        }
+                        
                         client.rooms_map_chats.get (room_name).insert_text (ref iter, s, s.length);
 
                         TextIter start, end;
@@ -243,7 +271,7 @@ namespace Bavardage.Threads {
                         client.rooms_map_chats.clear ();
                         client.rooms_map_entries.clear ();
                         client.rooms_map_users.clear ();
-                        client.open_rooms.set_model (new ListStore (1, typeof (string)));
+                        client.open_rooms.set_model (new ListStore (2, typeof (string), typeof (Gdk.Pixbuf)));
                         client.chat.set_buffer (new TextBuffer (new TextTagTable ()));
                         client.message.set_buffer (new EntryBuffer ("".data));
                         client.connected_users.set_model (new ListStore (2, typeof (string), typeof (string)));
@@ -263,15 +291,6 @@ namespace Bavardage.Threads {
                     break;
                 }
             }
-            client.rooms_map_chats.clear ();
-            client.rooms_map_entries.clear ();
-            client.rooms_map_users.clear ();
-            client.open_rooms.set_model (new ListStore (1, typeof (string)));
-            client.chat.set_buffer (new TextBuffer (new TextTagTable ()));
-            client.message.set_buffer (new EntryBuffer ("".data));
-            client.connected_users.set_model (new ListStore (2, typeof (string), typeof (string)));
-            client.update_connected (false, "");
-            Thread.exit (null);
             return null;
         }
     }

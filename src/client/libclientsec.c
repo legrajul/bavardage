@@ -129,7 +129,6 @@ int aes_init (unsigned char *key, unsigned char *iv, EVP_CIPHER_CTX *e_ctx, EVP_
 }
 
 char *aes_encrypt (unsigned char *key, unsigned char *iv, char *plaintext, int *len) {
-
     EVP_CIPHER_CTX e_ctx, d_ctx;
     aes_init (key, iv, &e_ctx, &d_ctx);
     int c_len = *len + AES_BLOCK_SIZE, f_len = 0;
@@ -140,13 +139,10 @@ char *aes_encrypt (unsigned char *key, unsigned char *iv, char *plaintext, int *
     EVP_EncryptFinal_ex (&e_ctx, ciphertext + c_len, &f_len);
 
     *len = c_len + f_len;
-
     return ciphertext;
 }
 
-char *aes_decrypt (unsigned char *key, unsigned char *iv, char *ciphertext,
-                   int *len) {
-  
+char *aes_decrypt (unsigned char *key, unsigned char *iv, char *ciphertext, int *len) {
     EVP_CIPHER_CTX e_ctx, d_ctx;
     aes_init (key, iv, &e_ctx, &d_ctx);
     int p_len = *len, f_len = 0;
@@ -161,11 +157,57 @@ char *aes_decrypt (unsigned char *key, unsigned char *iv, char *ciphertext,
     return plaintext;
 }
 
+char *decrypt (char *room_name, char *ciphered, int ciphered_size) {
+    key_iv keyiv = get_keyiv_in_room(room_name);
+    int lenght = MAX_CIPHERED_SIZE;
+    char *res = aes_decrypt(keyiv->key, keyiv->iv, ciphered, &lenght);
+    return res;
+}
+
 int receive_message_sec(message *m) {
     int ret = SSL_read (ssl, (char *) m, sizeof(message));
+    
     if (ret == 0) {
         return -1;
     } else {
+        key_iv keyiv = NULL;
+        int leng = 0;
+        char *ciphermess = NULL;
+        char text[MAX_MESS_SIZE] = "";
+        switch (m->code) {
+        case CREATE_ROOM_SEC:
+        case JOIN_ROOM_SEC:
+        case REFRESH_KEYIV:
+        case MP_SEC_OK:
+            keyiv = malloc(sizeof (struct KEY_IV));
+            memset (keyiv, 0, sizeof (struct KEY_IV));
+            char *room_name = strtok(strdup(m->content), "|");
+            add_room (room_name, NULL);
+            
+            memcpy (keyiv->key, m->content + strlen (room_name) + 1, 32);
+            memcpy (keyiv->iv, m->content + strlen (room_name) + 34, 32);
+            set_keyiv_in_room(room_name, keyiv);
+            break;
+        case DELETE_ROOM_SEC:
+            remove_room (m->content);
+            break;
+        case DEL_ACCOUNT_SEC:
+            send_message_sec ("/DISCONNECT_SEC", NULL);
+            break;
+        case MP_SEC:
+            leng = strlen(m->content) + 1;
+            keyiv = get_keyiv_in_room(m->receiver);
+            ciphermess = aes_encrypt(keyiv->key, keyiv->iv, (char *)m->content, &leng);
+            strcpy(text, "/MP ");
+            strcat(text, m->receiver);
+            strcat(text," ");
+            memcpy (text + 5 + strlen (m->receiver), ciphermess, MAX_CIPHERED_SIZE);
+            send_message(text, NULL);
+            break;
+        default:
+            break;
+        }
+        
         return 0;
     }
 }
@@ -230,9 +272,6 @@ int send_command_sec () {
 }
 
 char *create_challenge_sec (const char *data) {
-	printf("to know how to user an secure client, use the command: /HELP\n");
-    printf ("libclientsec.c: create_challenge: BEGIN - create_challenge_sec with data = <%s> (%d char)\n", data, strlen (data));
-
     uint8_t *encryptedBytes = NULL;
     //const char* data = "Data to enrypt";
     char *private_key_file_name;
@@ -289,11 +328,6 @@ int send_message_sec (const char *mess, char **error_mess) {
             send_command_sec();
             break;
         case CONNECT_KO_SEC_OK:
-          
-            /*msg->code = DEL_ACCOUNT_SEC;
-              strcpy(msg->sender, login);
-              strcpy(msg->content, login);
-              send_command_sec();*/
             disconnect_sec();
             break;
         case CONNECT_SEC:   // Cas d'une demande de connexion
@@ -314,14 +348,6 @@ int send_message_sec (const char *mess, char **error_mess) {
             break;
 
         case DEL_ACCOUNT_SEC:        
-            tmp = strtok (NULL, " ");
-
-            if (tmp != NULL) {
-                strcpy (msg->content, tmp);
-            } else {
-                *error_mess = strdup ("use: /DEL_ACCOUNT_SEC user \n");
-                return -3;
-            }
             send_command_sec ();
             disconnect_sec ();
             break;
@@ -361,6 +387,7 @@ int send_message_sec (const char *mess, char **error_mess) {
             strcpy (msg->content, tmp);
             int ret = send_command_sec ();
             return ret;
+
             break;
 
         case DELETE_ROOM_SEC:
@@ -450,8 +477,7 @@ int send_message_sec (const char *mess, char **error_mess) {
             }
             if(is_room_used(msg->receiver) == 0) {
                 strcpy (msg->content, buff);
-            }
-            else {
+            } else {
                 lenght = strlen(buff) + 1;
                 keyiv = get_keyiv_in_room(msg->receiver);
                 ciphermess = aes_encrypt(keyiv->key, keyiv->iv, (char *)buff, &lenght);
@@ -515,7 +541,7 @@ int send_message_sec (const char *mess, char **error_mess) {
 			printf("%s/DISCONNECT_SEC                           %s- disconnect a secure user if is connected\n", KBLU, KWHT);
 			printf("%s/QUIT_ROOM_SEC %sroom_name                  %s- disconnect a connected user from the room <room_name>\n", KBLU, KCYN, KWHT);
 			printf("%s/JOIN_ROOM_SEC %sroom_name                  %s- to join a secure room with the name <room_name>\n", KBLU, KCYN, KWHT);
-			printf("%s/DEL_ACCOUNT_SEC %sroom_name                %s- to delete an secure account named <room_name>\n", KBLU, KCYN, KWHT);
+			printf("%s/DEL_ACCOUNT_SEC                            %s- to delete your secure account\n", KBLU, KWHT);
 			printf("%s/MP_SEC %suser message                      %s- send a private message <message> to the user <user>\n", KBLU, KCYN, KWHT);
 			printf("%s/MESSAGE %suser/room message                %s- send the message <message> to the user <user> or the room <room>\n", KBLU, KCYN, KWHT);
 			printf("%s/ACCEPT_JOIN_ROOM_SEC %sroom user           %s- authorize the user <user> to join the room <room>\n", KBLU, KCYN, KWHT);

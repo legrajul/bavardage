@@ -23,8 +23,8 @@ int set_keyiv_in_room (char *room_name, key_iv keyiv) {
 	for (t = l; t != NULL; t = t->next) {
 		if (strcmp (t->current->name, room_name) == 0) {
 			if(t->current->keyiv == NULL)
-			t->current->keyiv = malloc(sizeof(struct KEY_IV));
-			 
+			    t->current->keyiv = malloc(sizeof(struct KEY_IV));
+			
 			memcpy(t->current->keyiv, keyiv, sizeof(struct KEY_IV));
 			return 1;
 		}

@@ -231,12 +231,7 @@ int send_message (const char *mess, char **error_mess) {
 				return -3;
 			}
 			strcpy (msg->receiver, tab_string[1]);
-			for (i = 2; i < len (tab_string); i++) {
-				strcat (buff, tab_string[i]);
-				strcat (buff, " ");
-			}
-
-			strcpy (msg->content, buff);
+			memcpy (msg->content, buffer + 5 + strlen (msg->receiver), MAX_MESS_SIZE);
 			free (tab_string);
 			return send_command ();
 			break;
@@ -251,13 +246,7 @@ int send_message (const char *mess, char **error_mess) {
 				return -3;
 			}
 			strcpy (msg->receiver, tab_string[1]);
-			strcpy (buff, "");
-			for (i = 2; i < len (tab_string); i++) {
-				strcat (buff, tab_string[i]);
-				strcat (buff, " ");
-			}
-
-			strcpy (msg->content, buff);
+            memcpy (msg->content, buffer + 5 + strlen (msg->receiver), MAX_MESS_SIZE);
 			return send_command ();
 			break;
 		}

@@ -19,9 +19,9 @@ namespace Bavardage {
         uint8 receiver[64];
     }
 
-    public struct KeyIv {
-        uint8 key[32];
-        uint8 iv[32];
+    public class KeyIv {
+        public uint8 key[32];
+        public uint8 iv[32];
     }
 
     public class Client: Gtk.Application {
@@ -29,8 +29,8 @@ namespace Bavardage {
         public HashMap<string, ListStore> rooms_map_users = new HashMap<string, ListStore> ();
         public HashMap<string, TextBuffer> rooms_map_chats = new HashMap<string, TextBuffer> ();
         public HashMap<string, EntryBuffer> rooms_map_entries = new HashMap<string, EntryBuffer> ();
-
-        private HashSet<string> secure_rooms = new HashSet<string> ();
+        public HashMap<string, KeyIv> secure_rooms_map_keyiv = new HashMap<string, KeyIv> ();
+        public HashSet<string> secure_rooms = new HashSet<string> ();
 
         public Gtk.Window window;
         public TreeView open_rooms;
@@ -42,8 +42,10 @@ namespace Bavardage {
         public Button join_room_button;
         public Button send_mp_button;
         public Button invite_button;
+        public Button kick_button;
         public Gtk.MenuItem connect_item;
         public Gtk.MenuItem disconnect_item;
+        public Gtk.MenuItem delete_sec_account_item;
         public Gtk.MenuItem quit_item;
         public Gtk.MenuItem about_item;
         public Statusbar statusbar;
@@ -91,8 +93,9 @@ namespace Bavardage {
                 connected_users.insert_column_with_attributes (-1, "Contacts connectés", new CellRendererText (), "text", 0, null);
                 connected_users.insert_column_with_attributes (-1, null, new CellRendererText (), "text", 1, null);
                 open_rooms = builder.get_object ("open_rooms") as TreeView;
-                open_rooms.set_model (new ListStore (1, typeof (string)));
-                open_rooms.insert_column_with_attributes (-1, "Salons ouverts", new CellRendererText (), "text", 0);
+                open_rooms.set_model (new ListStore (2, typeof (string), typeof (Gdk.Pixbuf)));
+                open_rooms.insert_column_with_attributes (-1, "Salons ouverts", new CellRendererText (), "text", 0, null);
+                open_rooms.insert_column_with_attributes (-1, null, new CellRendererPixbuf (), "pixbuf", 1, null);
 
                 chat = builder.get_object ("chat_view") as TextView;
                 message = builder.get_object ("message_entry") as Entry;
@@ -102,8 +105,10 @@ namespace Bavardage {
                 join_room_button = builder.get_object ("button_join_room") as Button;
                 send_mp_button = builder.get_object ("button_send_mp") as Button;
                 invite_button = builder.get_object ("invite_button") as Button;
+                kick_button = builder.get_object ("kick_button") as Button;
                 connect_item = builder.get_object ("imagemenuitem2") as Gtk.MenuItem;
                 disconnect_item = builder.get_object ("imagemenuitem1") as Gtk.MenuItem;
+                delete_sec_account_item = builder.get_object ("imagemenuitem3") as Gtk.MenuItem;
                 quit_item = builder.get_object ("imagemenuitem5") as Gtk.MenuItem;
                 about_item = builder.get_object ("imagemenuitem10") as Gtk.MenuItem;
 
@@ -178,6 +183,8 @@ namespace Bavardage {
                                 connected_users.get_parent ().show_all ();
                                 send_mp_button.show ();
                             }
+                            kick_button.set_sensitive (is_secure_room ((string) v));
+                            invite_button.set_sensitive (is_secure_room ((string) v));
                         }
                     }
                 });
@@ -187,15 +194,20 @@ namespace Bavardage {
                     var dialog = new Bavardage.Widgets.NewRoomDialog (window, this);
                     dialog.create_new_room.connect ((room_name, is_sec) => {
                             string error_msg;
+                            TextIter iter;
+                            chat.get_buffer ().get_end_iter (out iter);
                             if (is_sec) {
                                 secure_rooms.add (room_name);
+                                if (send_message_sec ("/CREATE_ROOM_SEC " + room_name, out error_msg) == -3) {
+                                    chat.get_buffer ().insert_text (ref iter, error_msg, error_msg.length);
+                                }
+                            } else {
+                                if (send_message ("/CREATE_ROOM " + room_name, out error_msg) == -3) {
+                                    chat.get_buffer ().insert_text (ref iter, error_msg, error_msg.length);
+                                }
                             }
 
-                            if (send_message ("/CREATE_ROOM " + room_name, out error_msg) == -3) {
-                                TextIter iter;
-                                chat.get_buffer ().get_end_iter (out iter);
-                                chat.get_buffer ().insert_text (ref iter, error_msg, error_msg.length);
-                            }
+
                         });
 
 
@@ -213,10 +225,18 @@ namespace Bavardage {
                         string s = (string) v;
                         if (s[0] != '[') {
                             string error_msg;
-                            if (send_message ("/QUIT_ROOM " + s, out error_msg) == -3) {
-                                TextIter titer;
-                                chat.get_buffer ().get_end_iter (out titer);
-                                chat.get_buffer ().insert_text (ref titer, error_msg, error_msg.length);
+                            if (is_secured) {
+                                if (send_message ("/QUIT_ROOM " + s, out error_msg) == -3) {
+                                    TextIter titer;
+                                    chat.get_buffer ().get_end_iter (out titer);
+                                    chat.get_buffer ().insert_text (ref titer, error_msg, error_msg.length);
+                                }
+                            } else {
+                                if (send_message ("/QUIT_ROOM_SEC " + s, out error_msg) == -3) {
+                                    TextIter titer;
+                                    chat.get_buffer ().get_end_iter (out titer);
+                                    chat.get_buffer ().insert_text (ref titer, error_msg, error_msg.length);
+                                }
                             }
                         } else {
                             Value v2;
@@ -242,17 +262,24 @@ namespace Bavardage {
 
             join_room_button.clicked.connect ( () => {
                     var dialog = new Bavardage.Widgets.JoinRoomDialog (window, this);
-                    dialog.response.connect ((response_id) => {
-                            if (response_id == Gtk.ResponseType.ACCEPT) {
-                                // demander à rejoindre le salon
-                                string error_msg;
-                                if (send_message ("/JOIN_ROOM " + dialog.room_name_entry.get_text (), out error_msg) == -3) {
+                    dialog.join_room.connect ((room_name, is_secure) => {
+                            // demander à rejoindre le salon
+                            string error_msg;
+
+                            if (is_secure) {
+                                secure_rooms.add (room_name);
+                                if (send_message_sec ("/JOIN_ROOM_SEC " + room_name, out error_msg) == -3) {
+                                    TextIter iter;
+                                    chat.get_buffer ().get_end_iter (out iter);
+                                    chat.get_buffer ().insert_text (ref iter, error_msg, error_msg.length);
+                                }
+                            } else {
+                                if (send_message ("/JOIN_ROOM " + room_name, out error_msg) == -3) {
                                     TextIter iter;
                                     chat.get_buffer ().get_end_iter (out iter);
                                     chat.get_buffer ().insert_text (ref iter, error_msg, error_msg.length);
                                 }
                             }
-                            dialog.hide_on_delete ();
                         });
                     dialog.show_all ();
                 });
@@ -260,193 +287,280 @@ namespace Bavardage {
             send_mp_button.clicked.connect ( () => {
                     TreeModel m;
                     TreeIter iter;
-                    var select = connected_users.get_selection ();
+                    bool need_security = false;
+                    var select = open_rooms.get_selection ();
                     if (select.get_selected (out m, out iter)) {
                         Value v;
                         m.get_value (iter, 0, out v);
-                        string s = (string) v;
-                        string room_name = "[" + s + "]";
-                        if (rooms_map_chats.get (room_name) == null ) {
-                            var rooms = open_rooms.get_model () as ListStore;
-                            rooms.append (out iter);
-                            rooms.set (iter, 0, room_name, -1);
+                        if (is_secured) {
+                            Gtk.MessageDialog msg = new Gtk.MessageDialog (window, Gtk.DialogFlags.MODAL, Gtk.MessageType.QUESTION, Gtk.ButtonsType.YES_NO, "Voulez-vous une communication chiffrée avec cet utilisateur ?");
+                            msg.response.connect ( (response_id) => {
+                                switch (response_id) {
+                                case ResponseType.YES:
+                                    need_security = true;
+                                    break;
+                                default:
+                                    break;
+                                }
+                                msg.hide_on_delete ();
+                                select = connected_users.get_selection ();
+                                if (select.get_selected (out m, out iter)) {
+                                    m.get_value (iter, 0, out v);
+                                    string s = (string) v;
+                                    string room_name = "[" + s + "]";
+                                    if (rooms_map_chats.get (room_name) == null ) {
+                                        var rooms = open_rooms.get_model () as ListStore;
+                                     
+                                        rooms.append (out iter);
+                                        if (need_security) {
+                                            secure_rooms.add (room_name);
+                                            var img = Gtk.IconTheme.get_default ().load_icon ("channel-secure-symbolic", 16, 0);
+                                            rooms.set (iter, 0, room_name, 1, img, -1);
+                                        } else {
+                                            rooms.set (iter, 0, room_name, 1, null, -1);
+                                        }
 
-                            rooms_map_users.set (room_name, new ListStore (2, typeof (string), typeof (string)));
-                            var buffer = new TextBuffer (new TextTagTable ());
-                            buffer.create_tag ("blue", "foreground", "#0000FF", "underline", Pango.Underline.SINGLE);
-                            rooms_map_chats.set (room_name, buffer);
-                            rooms_map_entries.set (room_name, new EntryBuffer ("".data));
-                            open_rooms.get_selection ().select_iter (iter);
-                            open_rooms.cursor_changed ();
+                                        rooms_map_users.set (room_name, new ListStore (2, typeof (string), typeof (string)));
+                                        var buffer = new TextBuffer (new TextTagTable ());
+                                        buffer.create_tag ("blue", "foreground", "#0000FF", "underline", Pango.Underline.SINGLE);
+                                        rooms_map_chats.set (room_name, buffer);
+                                        rooms_map_entries.set (room_name, new EntryBuffer ("".data));
+                                        open_rooms.get_selection ().select_iter (iter);
+                                        open_rooms.cursor_changed ();
+                                    }
+                                }
+                            });
+                            msg.present ();
+                        } else {
+                            select = connected_users.get_selection ();
+                            if (select.get_selected (out m, out iter)) {
+                                m.get_value (iter, 0, out v);
+                                string s = (string) v;
+                                string room_name = "[" + s + "]";
+                                if (rooms_map_chats.get (room_name) == null ) {
+                                    var rooms = open_rooms.get_model () as ListStore;
+                                 
+                                    rooms.append (out iter);
+                                    rooms.set (iter, 0, room_name, 1, null, -1);
+
+                                    rooms_map_users.set (room_name, new ListStore (2, typeof (string), typeof (string)));
+                                    var buffer = new TextBuffer (new TextTagTable ());
+                                    buffer.create_tag ("blue", "foreground", "#0000FF", "underline", Pango.Underline.SINGLE);
+                                    rooms_map_chats.set (room_name, buffer);
+                                    rooms_map_entries.set (room_name, new EntryBuffer ("".data));
+                                    open_rooms.get_selection ().select_iter (iter);
+                                    open_rooms.cursor_changed ();
+                                }
+                            }
                         }
                     }
+                    
                 });
 
             invite_button.clicked.connect ( () => {
                     var dialog = new Bavardage.Widgets.SendInvitationDialog (window, this);
                     dialog.response.connect ( (responseid) => {
-
-                        });
-                    dialog.show ();
-                });
-
-            message.activate.connect ( () => {
-                    send_message_entry.begin ();
-                });
-
-            // On clique sur le bouton "Envoyer"
-            message.icon_press.connect ( (p0, p1) => {
-                    send_message_entry.begin ();
-                });
-
-
-            // On clique sur Fichier > Connexion
-            connect_item.activate.connect ( () => {
-                    conn_dial.present ();
-                });
-
-            // On clique sur Fichier > Déconnexion
-            disconnect_item.activate.connect ( () => {
-                    // démander déconnexion
-                    ClientCore.disconnect ();
-                    update_connected (false, "");
-                });
-
-            // On clique sur Fichier > À propos
-            about_item.activate.connect ( () => {
-                    Gtk.AboutDialog dialog = new Bavardage.Widgets.AboutDialog (window);
-
-                    dialog.response.connect ((response_id) => {
-                            if (response_id == Gtk.ResponseType.CANCEL || response_id == Gtk.ResponseType.DELETE_EVENT) {
-                                dialog.hide_on_delete ();
+                            if (responseid == Gtk.ResponseType.ACCEPT) {
+                                TreeModel m;
+                                TreeIter iter;
+                                var select = open_rooms.get_selection ();
+                                if (select.get_selected (out m, out iter)) {
+                                    Value v;
+                                    m.get_value (iter, 0, out v);
+                                    send_message_sec ("/ACCEPT_JOIN_ROOM_SEC " + (string) v +  " " + dialog.entry_login.get_text (), null);
+                                }
                             }
+                            dialog.hide_on_delete ();
+                            });
+                        dialog.show ();
                         });
-                    dialog.present ();
-                });
 
-            // Écoute les changements d'état connecté/déconnecté
-            conn_dial.update_connected.connect ( (is_connected, login, is_secure) => {
-                    if (is_secure) {
-                        secure_statusbar.push (statusbar.get_context_id ("securestatus"), "(Connexion sécurisée)");
-                    }
-                    update_statusbar (is_connected, login);
-                });
-            this.update_connected.connect ( (is_connected, login) => {
-                    update_statusbar (is_connected, login);
-                });
-
-            chat.button_release_event.connect ( (e) => {
-                    TextIter iter;
-                    chat.get_iter_at_location (out iter, (int) e.x, (int) e.y);
-                    TextIter start;
-                    chat.get_buffer ().get_start_iter (out start);
-
-                    string s = chat.get_buffer ().get_text (start, iter, true);
-
-                    TextIter end;
-                    chat.get_buffer ().get_end_iter (out end);
-                    string buffer_text = chat.get_buffer ().get_text (start, end, true);
-
-                    int idx = s.last_index_of ("://");
-                    if (idx == -1) {
-                        iter.forward_chars (6);
-                        s = chat.get_buffer ().get_text (start, iter, true);
-                        idx = s.last_index_of ("://");
-                    }
-                    if (idx != -1 && !s.substring (idx, -1).contains (" ")) {
-                        while (buffer_text[idx] != ' ' && idx > 0) {
-                            idx--;
+                kick_button.clicked.connect ( () => {
+                    TreeModel m;
+                    TreeIter iter;
+                    var select = connected_users.get_selection ();
+                    if (select.get_selected (out m, out iter)) {
+                        Value v;
+                        m.get_value (iter, 0, out v);
+                        string user_to_kick = (string) v;
+                        select = open_rooms.get_selection ();
+                        if (select.get_selected (out m, out iter)) {
+                             m.get_value (iter, 0, out v);
+                             string room = (string) v;
+                            send_message_sec ("/EJECT_FROM_ROOM_SEC " + room + " " + user_to_kick, null);
                         }
-                        idx++;
-                        StringBuilder url = new StringBuilder ("");
-                        for (int i = idx; i < buffer_text.length; i++) {
-                            if (buffer_text[i] == ' ' || buffer_text[i] == '\n') {
-                                break;
+                    }
+                });
+
+                message.activate.connect ( () => {
+                        send_message_entry.begin ();
+                    });
+
+                // On clique sur le bouton "Envoyer"
+                message.icon_press.connect ( (p0, p1) => {
+                        send_message_entry.begin ();
+                    });
+
+
+                // On clique sur Fichier > Connexion
+                connect_item.activate.connect ( () => {
+                        conn_dial.present ();
+                    });
+
+                // On clique sur Fichier > Déconnexion
+                disconnect_item.activate.connect ( () => {
+                        // démander déconnexion
+                        ClientCore.disconnect ();
+                        update_connected (false, "");
+                    });
+
+                delete_sec_account_item.activate.connect ( () => {
+                    send_message_sec ("/DEL_ACCOUNT_SEC", null);
+                });
+                
+                // On clique sur Fichier > À propos
+                about_item.activate.connect ( () => {
+                        Gtk.AboutDialog dialog = new Bavardage.Widgets.AboutDialog (window);
+
+                        dialog.response.connect ((response_id) => {
+                                if (response_id == Gtk.ResponseType.CANCEL || response_id == Gtk.ResponseType.DELETE_EVENT) {
+                                    dialog.hide_on_delete ();
+                                }
+                            });
+                        dialog.present ();
+                    });
+
+                // Écoute les changements d'état connecté/déconnecté
+                conn_dial.update_connected.connect ( (is_connected, login, is_secure) => {
+                        update_statusbar (is_connected, login);
+                        if (is_secure) {
+                            secure_statusbar.push (statusbar.get_context_id ("securestatus"), "(Connexion sécurisée)");
+                            delete_sec_account_item.set_sensitive (true);
+                        }
+                        
+                    });
+                this.update_connected.connect ( (is_connected, login) => {
+                        update_statusbar (is_connected, login);
+                    });
+
+                chat.button_release_event.connect ( (e) => {
+                        TextIter iter;
+                        chat.get_iter_at_location (out iter, (int) e.x, (int) e.y);
+                        TextIter start;
+                        chat.get_buffer ().get_start_iter (out start);
+
+                        string s = chat.get_buffer ().get_text (start, iter, true);
+
+                        TextIter end;
+                        chat.get_buffer ().get_end_iter (out end);
+                        string buffer_text = chat.get_buffer ().get_text (start, end, true);
+
+                        int idx = s.last_index_of ("://");
+                        if (idx == -1) {
+                            iter.forward_chars (6);
+                            s = chat.get_buffer ().get_text (start, iter, true);
+                            idx = s.last_index_of ("://");
+                        }
+                        if (idx != -1 && !s.substring (idx, -1).contains (" ")) {
+                            while (buffer_text[idx] != ' ' && idx > 0) {
+                                idx--;
+                            }
+                            idx++;
+                            StringBuilder url = new StringBuilder ("");
+                            for (int i = idx; i < buffer_text.length; i++) {
+                                if (buffer_text[i] == ' ' || buffer_text[i] == '\n') {
+                                    break;
+                                } else {
+                                    url.append_c ((char) buffer_text[i]);
+                                }
+                            }
+                            try {
+                                Gtk.show_uri (null, url.str, Gdk.CURRENT_TIME);
+                            } catch (GLib.Error e) {
+                                stderr.printf (e.message);
+                            }
+                        }
+                        return false;
+                    });
+
+                }
+
+                private void update_statusbar (bool is_connected, string login) {
+                if (!is_connected) {
+                    statusbar.pop (statusbar.get_context_id ("status"));
+                    statusbar.push (statusbar.get_context_id ("status"), "Déconnecté");
+                } else {
+                    statusbar.pop (statusbar.get_context_id ("status"));
+                    statusbar.push (statusbar.get_context_id ("status"), "Connecté avec le login : " + login);
+
+                }
+                connect_item.set_sensitive (!is_connected);
+                disconnect_item.set_sensitive (is_connected);
+                create_room_button.set_sensitive (is_connected);
+                quit_room_button.set_sensitive (is_connected);
+                join_room_button.set_sensitive (is_connected);
+                message.set_sensitive (is_connected);
+                send_mp_button.set_sensitive (is_connected);
+                invite_button.set_sensitive (is_connected);
+                delete_sec_account_item.set_sensitive (false);
+                kick_button.set_sensitive (false);
+            }
+
+            private async void send_message_entry () {
+                var msg = message.get_text ();
+                string error_msg;
+                if (msg[0] != '/') {
+                    TreeModel m;
+                    TreeIter iter;
+                    var select = open_rooms.get_selection ();
+                    if (select.get_selected (out m, out iter)) {
+                        Value v;
+                        m.get_value (iter, 0, out v);
+                        if (((string) v)[0] == '[') {
+                            StringBuilder recv_name = new StringBuilder ("");
+                            for (int i = 1; i < ((string) v).length - 1; i++) {
+                                recv_name.append_c ((char) ((string) v).data[i]);
+                            }
+                            if (is_secure_room ((string) v)) {
+                                send_message_sec ("/MP_SEC " + recv_name.str + " " + msg, out error_msg);
                             } else {
-                                url.append_c ((char) buffer_text[i]);
+                                send_message ("/MP " + recv_name.str + " " + msg, out error_msg);
+                            }
+                        } else {
+                            if (is_secure_room ((string) v)) {
+                                send_message_sec ("/MESSAGE " + (string) v + " " + msg, out error_msg);
+                            } else {
+                                send_message ("/MESSAGE " + (string) v + " " + msg, out error_msg);
                             }
                         }
-                        try {
-                            Gtk.show_uri (null, url.str, Gdk.CURRENT_TIME);
-                        } catch (GLib.Error e) {
-                            stderr.printf (e.message);
-                        }
+
                     }
-                    return false;
-                });
-
-        }
-
-        private void update_statusbar (bool is_connected, string login) {
-            if (!is_connected) {
-                statusbar.pop (statusbar.get_context_id ("status"));
-                statusbar.push (statusbar.get_context_id ("status"), "Déconnecté");
-            } else {
-                statusbar.pop (statusbar.get_context_id ("status"));
-                statusbar.push (statusbar.get_context_id ("status"), "Connecté avec le login : " + login);
-
-            }
-            connect_item.set_sensitive (!is_connected);
-            disconnect_item.set_sensitive (is_connected);
-            create_room_button.set_sensitive (is_connected);
-            quit_room_button.set_sensitive (is_connected);
-            join_room_button.set_sensitive (is_connected);
-            message.set_sensitive (is_connected);
-            send_mp_button.set_sensitive (is_connected);
-            invite_button.set_sensitive (is_connected);
-        }
-
-        private async void send_message_entry () {
-            var msg = message.get_text ();
-            string error_msg;
-            if (msg[0] != '/') {
-                TreeModel m;
-                TreeIter iter;
-                var select = open_rooms.get_selection ();
-                if (select.get_selected (out m, out iter)) {
-                    Value v;
-                    m.get_value (iter, 0, out v);
-                    if (((string) v)[0] == '[') {
-                        StringBuilder recv_name = new StringBuilder ("");
-                        for (int i = 1; i < ((string) v).length - 1; i++) {
-                            recv_name.append_c ((char) ((string) v).data[i]);
-                        }
-                        send_message ("/MP " + recv_name.str + " " + msg, out error_msg);
-                    } else {
-                        if (is_secured) {
-                            send_message_sec ("/MESSAGE_SEC " + (string) v + " " + msg, out error_msg);
-                        } else {
-                            send_message ("/MESSAGE " + (string) v + " " + msg, out error_msg);
-                        }
+                } else {
+                    if (send_message (msg,out error_msg) == -3) {
+                        TextIter titer;
+                        chat.get_buffer ().get_end_iter (out titer);
+                        chat.get_buffer ().insert_text (ref titer, error_msg, error_msg.length);
                     }
-
                 }
-            } else {
-                if (send_message (msg,out error_msg) == -3) {
-                    TextIter titer;
-                    chat.get_buffer ().get_end_iter (out titer);
-                    chat.get_buffer ().insert_text (ref titer, error_msg, error_msg.length);
-                }
+                message.set_text("");
             }
-            message.set_text("");
+
+            public bool is_secure_room (string room_name) {
+                return secure_rooms.contains (room_name);
+            }
         }
 
-        public bool is_secure_room (string room_name) {
-            stdout.printf ("is_secure_room ? %s\n", secure_rooms.contains (room_name).to_string ());
-            return secure_rooms.contains (room_name);
+        /*
+         * Point d'entrée du programme
+         */
+        int main (string[] args) {
+            Gdk.init (ref args);
+            Gtk.init (ref args);
+            Bavardage.Common.init_rooms ();
+            new Bavardage.Client (args[0]);
+            Gtk.main ();
+            return 0;
         }
-    }
 
-    /*
-     * Point d'entrée du programme
-     */
-    int main (string[] args) {
-        Gdk.init (ref args);
-        Gtk.init (ref args);
-        new Bavardage.Client (args[0]);
-        Gtk.main ();
-        return 0;
     }
-
-}
 

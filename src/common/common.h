@@ -2,7 +2,7 @@
 #define COMMON
 
 #define MAX_NAME_SIZE 64
-#define MAX_MESS_SIZE 2024
+#define MAX_MESS_SIZE 2048
 #define MAX_ROOM_NAME_SIZE 64
 #define KEY_DATA_SIZE 10
 

@@ -43,7 +43,8 @@ int close_server_database () {
 
 /** ajoute un user dans la base **/
 int add_user_db(char *login, char *data) {
-    printf("mysqlite.c: add_user: BEGIN ADD_USER with login %s\n", login);
+
+
     // creation de la requete insertion
     char insert[QUERY_SIZE] = "";
     sprintf (insert, "INSERT INTO users values (\'%s\', \'%s\', 0)", login, data); 
@@ -72,13 +73,11 @@ int delete_user (char *login) {
 	} else {
 		printf ("User delete succesfully\n");
 	}
-	printf ("mysql.c: END DELETE_USER with login %s\n", login);
 	return 1;
 }
 
 int check_challenge (char *login, char *pass) {
     char select[QUERY_SIZE] = "";
-    printf("mysql.c: check_challenge: BEFORE REQUEST\n");
     sprintf (select, "SELECT challenge FROM users WHERE login = \'%s\' and challenge = \'%s\'", login, pass);
     
 	int sql = sqlite3_exec (database, select, 0, 0, 0);
@@ -93,7 +92,6 @@ int check_challenge (char *login, char *pass) {
 
 int check_certificate (char *data) {
     char select[QUERY_SIZE] = "";
-    printf("mysql.c: check_certificate: BEFORE REQUEST\n");
     sprintf (select, "SELECT cert FROM users WHERE cert = \'%s\'", data);
     
     //int sql = sqlite3_exec (database, select, 0, 0, 0);
@@ -171,7 +169,7 @@ int is_connected (char *login, char *data) {
     int sq = sqlite3_exec(database, is_connect, 0, 0, 0);
     printf("%d\n", sq);
     if (sq != SQLITE_OK) {
-        perror("Can't verifie the connection status\n");
+        perror("Can't verify the connection status\n");
         return -1;
     }
     return 1;

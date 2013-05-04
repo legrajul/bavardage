@@ -44,8 +44,9 @@ int aes_init (unsigned char *key, unsigned char *iv, EVP_CIPHER_CTX *e_ctx, EVP_
 
 char *aes_encrypt (unsigned char *key, unsigned char *iv, char *plaintext, int *len);
 
-char *aes_decrypt (unsigned char *key, unsigned char *iv, char *ciphertext,
-                   int *len);
+char *aes_decrypt (unsigned char *key, unsigned char *iv, char *ciphertext, int *len);
+
+char *decrypt (char *room_name, char *ciphered, int ciphered_size);
 
 int receive_message_sec(message *m);
 

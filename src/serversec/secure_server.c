@@ -105,7 +105,6 @@ void gen_keyiv(key_iv keyiv, unsigned char *key_data, int key_data_len) {
 }
 
 void *handle_connexion(void *param) {
-    printf ("BEGIN handle_connexion\n");
     SocketTCP *s = (SocketTCP *) param;
     SSL *client_ssl;
     client_ssl = SSL_new(ctx);              /* get new SSL state with context */
@@ -195,16 +194,15 @@ void *handle_connexion(void *param) {
                         
                         strcpy(response.sender, buffer.sender);
                         strcpy(response.content, buffer.content);
+                        
+                        SSL_write (claimer->ssl, &response, sizeof(message));
+
+                        response.code = REFRESH_KEYIV;
                         strcat(response.content, "|");
                         memcpy(response.content + strlen (buffer.content) + 1, keyiv->key, 32);
                         memcpy(response.content + strlen (buffer.content) + 33, "|", 32);
                         memcpy(response.content + strlen (buffer.content) + 34, keyiv->iv, 32);
-
-                        SSL_write (claimer->ssl, &response, sizeof(message));
-
-
-                        response.code = REFRESH_KEYIV;
-
+                        
                         user_list l = get_users(buffer.content);
                         user_list t;
                         for (t = l; t != NULL; t = t->next) {
@@ -360,7 +358,8 @@ void *handle_connexion(void *param) {
                         delete_user(buffer.sender); 
                     }
                     if (u != NULL) {
-                        for (room_list l = get_user_rooms (u); l != NULL;
+                        room_list l;
+                        for (l = get_user_rooms (u); l != NULL;
                              l = l->next) {
                             if (u == get_admin (l->current->name)) {
                                 remove_room (l->current->name);
@@ -387,20 +386,13 @@ void *handle_connexion(void *param) {
 					if (is_connected(buffer.sender, data) == -1) {
 						response.code = KO;
 						strcpy (response.content, "bad user / password\n");
-					} else if (is_connected(buffer.sender, data) == 1) {
-						u = (user) malloc(sizeof(struct USER));
-						strcpy(u->name, buffer.sender);
-
-                        if (strcmp(buffer.sender, buffer.content) != 0)
-                            printf("bad login, please retry...\n");
-                        else {
-                            if (delete_user(buffer.content) == -1) {
-                                printf ("you haven't been deleted!!\n");
-                                break;
-                            } else {
-                                response.code = DEL_ACCOUNT_SEC;
-                                strcpy (response.content, "you have been deleted\n");
-                            }
+					} else if (is_connected(u->name, data) == 1) {
+                        if (delete_user(u->name) == -1) {
+                            printf ("you haven't been deleted!!\n");
+                            break;
+                        } else {
+                            response.code = DEL_ACCOUNT_SEC;
+                            strcpy (response.content, "you have been deleted\n");
                         }
                     }
                     break;
@@ -636,7 +628,7 @@ int main (int argc, char *argv[]) {
     connect_server_database ("secureserver.db");
 
     if (argc < 3) {
-        fprintf (stderr, "Usage: ./server ip port\n");
+        fprintf (stderr, "Usage: ./secure_server ip port\n");
         exit (EXIT_FAILURE);
     } else {
         printf ("Now listening to the clients connections...\n");

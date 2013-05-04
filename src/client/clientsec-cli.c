@@ -184,23 +184,11 @@ void *traitement_recv_sec (void *param) {
             break;
 
         case MP_SEC:
-            leng = strlen(mess.content) + 1;
-            keyiv = get_keyiv_in_room(mess.receiver);
-            ciphermess = aes_encrypt(keyiv->key, keyiv->iv, (char *)mess.content, &leng);
-            strcpy(text, "/MP ");
-            strcat(text, mess.receiver);
-            strcat(text," ");
-            strcat(text,ciphermess);
-            send_message(text, NULL);
+
             break;
 
         case MP_SEC_OK:
-            keyiv = malloc(sizeof (struct KEY_IV));
-            room_name = strdup(strtok(mess.content, "|"));
-            add_room(room_name,NULL);
-            memcpy (keyiv->key, mess.content + strlen (room_name) + 1, 32);
-            memcpy (keyiv->iv, mess.content + strlen (room_name) + 34, 32);
-            set_keyiv_in_room(room_name, keyiv);
+
             break;
 
         case CREATE_ROOM_KO:
@@ -353,14 +341,14 @@ int main (int argc, char *argv[]) {
         set_certif_filename (argv[1]);
         set_private_key_filename (argv[2]);
         connect_with_authentication (CHATADDR, CHATPORT, SECADDR, SECPORT);
-    } else if (argc < 5 || argc > 5) {
+    } else if (argc != 7 && argc != 3) {
         fprintf (stderr,
-                 "Usage: ./clientsec-cli ip_client port_client ip_server port_server certificate private_key\n or   ./clientsec-cli certificate private_key\n");
+                 "Usage: ./clientsec-cli ip_server port_server ip_server_sec port_server_sec certificate private_key\n or   ./clientsec-cli certificate private_key\n");
         exit (EXIT_FAILURE);
     } else {
         set_certif_filename(argv[5]);
         set_private_key_filename(argv[6]);
-        connect_with_authentication (argv[1], argv[2], argv[3], argv[4]);
+        connect_with_authentication (argv[1], atoi (argv[2]), argv[3], atoi (argv[4]));
     }
 
     start_communication ();

@@ -16,20 +16,17 @@ namespace Bavardage.Threads {
         }
 
         public void *thread_func () {
-            stdout.printf ("Receive Sec Thread starting...\n");
             Message m = { -1, "".data, "".data, "".data };
-            TreeIter tree_iter;
             while (true) {
                 Thread.usleep (10000);
                 m = { -1, "".data, "".data, "".data };
                 if (receive_message_sec (out m) == 0) {
-                    stdout.printf ("MESSAGE SEC RECU, code = %d\n", m.code);
                     var sender = new StringBuilder ("");
                     for (int i = 0; i < m.sender.length; i++) {
                         sender.append_c((char) m.sender[i]);
                     }
                     var content = new StringBuilder ("");
-                    for (int i = 0; i < m.content.length; i++) {
+                    for (int i = 0; i < m.content.length && m.content[i] != '\0'; i++) {
                         content.append_c ((char) m.content[i]);
                     }
                     var receiver = new StringBuilder ("");
@@ -42,17 +39,38 @@ namespace Bavardage.Threads {
                         client.secure_statusbar.push (client.statusbar.get_context_id ("securestatus"), "(Connexion sécurisée)");
                         break;
                     case CREATE_ROOM_SEC:
-                        stdout.printf ("CREATE_ROOM_SEC received, content = <%s>\n", content.str);
-                        
+                        var room_name = new StringBuilder ("");
+                        for (int i = 0; i < m.content.length && m.content[i] != '|'; i++) {
+                            room_name.append_c ((char) m.content[i]);
+                        }
+                        if (!client.rooms_map_chats.has_key (room_name.str)) {
+                            client.secure_rooms.add (room_name.str);
+                            send_message ("/JOIN_ROOM " + room_name.str, null);
+                        }
+                        break;
+                    case ASK_JOIN_ROOM_SEC:
+                        string s = sender.str + " souhaite pouvoir échanger des messages chiffrés sur ce salon\n";
+                        TextIter iter;
+                        string room_name = content.str;
+                        client.rooms_map_chats.get (room_name).get_end_iter (out iter);
+                        client.rooms_map_chats.get (room_name).insert_text (ref iter, s, s.length);
+                        if (client.chat.get_buffer () == client.rooms_map_chats.get (receiver.str)) {
+                            client.chat.get_buffer ().get_iter_at_line (out iter, client.chat.get_buffer ().get_line_count ());
+                            client.chat.scroll_to_iter (iter, 0.0, false, 0.0, 1.0);
+                            client.chat.get_buffer ().set_modified (true);
+                        }
+                        break;
+                    case QUIT_ROOM_SEC:
+                        client.secure_rooms.remove (content.str);
+                        break;
+                    case DISCONNECT_SEC:
+                        Thread.exit (null);
                         break;
                     default:
                         break;
                     }
-                    stdout.printf ("Message reçu !\n");
                 }
             }
-            Thread.exit (null);
-            return null;
         }
     }
 }

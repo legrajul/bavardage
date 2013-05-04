@@ -78,6 +78,7 @@ int add_room (char *room_name, user admin) {
 
     r->admin = admin;
     r->users = create_user_map ();
+    r->keyiv = NULL;
 
     if (admin != NULL)
         add_user (admin, r->users);

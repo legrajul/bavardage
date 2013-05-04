@@ -27,6 +27,13 @@ namespace Bavardage {
         public const int MESSAGE_KO;
         public const int MP_KO;
         public const int QUIT_ROOM_KO;
+
+        
+    }
+
+    [CCode (cprefix = "", lower_case_cprefix = "", cheader_filename = "../common/room_manager.h")]
+    namespace Common {
+        public void init_rooms ();
     }
 
     
