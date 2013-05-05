@@ -34,7 +34,6 @@ include(ValaVersion)
 ensure_vala_version("0.18.0" MINIMUM)
 include(ValaPrecompile)
 vala_precompile(VALA_C 
-  Widgets/RoomsTreeView.vala
   Threads/ReceiveThread.vala
   Threads/ReceiveSecThread.vala
   Widgets/ConnectionDialog.vala

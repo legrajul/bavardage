@@ -197,7 +197,7 @@ void *traitement_recv_sec (void *param) {
         case DELETE_ROOM_KO:
         case MESSAGE_KO:
         case MP_SEC_KO:
-            printf("The user %s doesn't exist or is not connected as a secure user",mess.receiver);
+            printf("The user %s doesn't exist or is not connected as a secure user\n",mess.receiver);
             break;
         case CONNECT_KO:
             printf ("Error: %s\n", mess.content);
@@ -284,9 +284,9 @@ void *traitement_recv (void *param) {
             printf ("USER %s in %s \n", mess.sender, mess.content);
             break;
 
-        case DELETE_ROOM:
+       /* case DELETE_ROOM:
             printf ("The room %s has been deleted\n", mess.content);
-            break;
+            break; */
 
         case CREATE_ROOM:
             printf ("The room %s has been created\n", mess.content);
