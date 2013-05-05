@@ -337,15 +337,22 @@ int main (int argc, char *argv[]) {
 	printf("--------------------- to have some command description, use the command: %s/HELP %s---------------------\n", KRED, KWHT);
 	printf("----------------------------------------------------------------------------------------------------\n\n");
     init_OpenSSL ();
-    if (argc == 3) {
+    
+    if (argc == 3 || argc == 4) {
         set_certif_filename (argv[1]);
         set_private_key_filename (argv[2]);
+        if (argc == 4) {
+            set_private_key_password (argv[3]);
+        }
         connect_with_authentication (CHATADDR, CHATPORT, SECADDR, SECPORT);
-    } else if (argc != 7 && argc != 3) {
+    } else if (argc != 7 && argc != 3 && argc != 8 && argc != 4) {
         fprintf (stderr,
-                 "Usage: ./clientsec-cli ip_server port_server ip_server_sec port_server_sec certificate private_key\n or   ./clientsec-cli certificate private_key\n");
+                 "Usage: ./clientsec-cli ip_server port_server ip_server_sec port_server_sec certificate private_key [private_key_password]\n or   ./clientsec-cli certificate private_key [private_key_password]\n");
         exit (EXIT_FAILURE);
     } else {
+        if (argc == 8) {
+            set_private_key_password (argv[7]);
+        }
         set_certif_filename(argv[5]);
         set_private_key_filename(argv[6]);
         connect_with_authentication (argv[1], atoi (argv[2]), argv[3], atoi (argv[4]));
