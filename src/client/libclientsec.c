@@ -368,16 +368,17 @@ int send_message_sec (const char *mess, char **error_mess) {
         case CREATE_ROOM_SEC:       // Cas d'une demande de création de Salon
 			
             tmp = strtok (NULL, " ");
-			if (is_room_used (tmp)) {
-				*error_mess = strdup ("This room already exists\n");
-				return -3;
-			}
-            if (tmp != NULL) {
+             if (tmp != NULL) {
                 strcpy (msg->content, tmp);
             } else {
                 *error_mess = strdup ("CREATE_ROOM a besoin d'un paramètre\n");
                 return -3;
             }
+			if (is_room_used (msg->content)) {
+				*error_mess = strdup ("This room already exists\n");
+				return -3;
+			}
+           
             add_room (msg->content, NULL);
             strcpy(conn, "/CREATE_ROOM ");
             strcat(conn, msg->content);
