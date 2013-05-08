@@ -66,6 +66,10 @@ namespace Bavardage.Widgets {
 
                 key_file_chooser_button = new FileChooserButton ("Clef privée", FileChooserAction.OPEN);
                 key_file_chooser_button.add_filter (filter);
+
+                Bavardage.Client cl = this.get_application () as Bavardage.Client;
+                cert_file_chooser_button.set_current_folder (cl.exec_directory);
+                key_file_chooser_button.set_current_folder (cl.exec_directory);
             }
 
             /* TEST SECTION */

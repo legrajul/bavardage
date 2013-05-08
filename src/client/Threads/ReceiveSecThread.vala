@@ -48,6 +48,13 @@ namespace Bavardage.Threads {
                             send_message ("/JOIN_ROOM " + room_name.str, null);
                         }
                         break;
+                    case MP_SEC_OK:
+                        var room_name = new StringBuilder ("");
+                        for (int i = 0; i < m.content.length && m.content[i] != '|'; i++) {
+                            room_name.append_c ((char) m.content[i]);
+                        }
+                        client.secure_rooms.add ("[" + room_name.str + "]");
+                        break;
                     case ASK_JOIN_ROOM_SEC:
                         string s = sender.str + " souhaite pouvoir échanger des messages chiffrés sur ce salon\n";
                         TextIter iter;

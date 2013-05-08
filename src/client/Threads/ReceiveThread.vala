@@ -171,7 +171,12 @@ namespace Bavardage.Threads {
                         client.rooms_map_chats.get (room_name).get_end_iter (out iter);
 
                         if (client.is_secure_room (room_name)) {
-                            string text = decrypt (sender.str, m.content);
+                            string text = "";
+                            if (sender.str == ClientCore.get_login ()) {
+                                text += decrypt (receiver.str, m.content);
+                            } else {
+                                text += decrypt (sender.str, m.content);
+                            }
                             if (text.validate ()) {
                                 s += text + "\n";
                             } else {

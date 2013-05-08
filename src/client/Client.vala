@@ -32,6 +32,8 @@ namespace Bavardage {
         public HashMap<string, KeyIv> secure_rooms_map_keyiv = new HashMap<string, KeyIv> ();
         public HashSet<string> secure_rooms = new HashSet<string> ();
 
+        public string exec_directory { get; private set; }
+
         public Gtk.Window window;
         public TreeView open_rooms;
         public TreeView connected_users;
@@ -85,6 +87,7 @@ namespace Bavardage {
             try {
                 builder = new Builder ();
                 cl.data[cl.length - 6] = '\0';
+                exec_directory = cl;
                 builder.add_from_file (cl + "interface.ui");
                 builder.connect_signals (this);
                 window = builder.get_object ("mainWindow") as Window;
