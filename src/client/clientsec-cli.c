@@ -26,7 +26,32 @@ pthread_t thread_send, thread_recv, thread_recv_sec;
 
 int leng;
 
+void handler(int signum) {
+    switch (signum) {
+        case SIGINT:
+            disconnect_sec ();
+            exit (1);
+            break;
+        default:
+            break;
+    }
+    
+}
+
+int connectSignals() {
+    struct sigaction sa;
+    sa.sa_handler = handler;
+    sa.sa_flags = 0;
+    if (sigaction(SIGINT, &sa, NULL) == -1) {
+        perror("sigaction");
+        return -1;
+    }
+    return 0;
+}
+
+
 void *traitement_send (void *param) {
+    connectSignals();
     char mess[MAX_MESS_SIZE] = "";
     while (fgets (mess, MAX_MESS_SIZE, stdin) != NULL) {
         mess[strlen (mess) - 1] = '\0';
@@ -54,6 +79,7 @@ void *traitement_send (void *param) {
 
 
 void *traitement_recv_sec (void *param) {
+    connectSignals();
     char text[MAX_MESS_SIZE] = " ";
     message mess;
     int lenght;
@@ -214,6 +240,7 @@ void *traitement_recv_sec (void *param) {
 }
 
 void *traitement_recv (void *param) {
+    connectSignals();
     message mess;
     int lenght;
     char *plainmess;
@@ -337,7 +364,7 @@ int main (int argc, char *argv[]) {
 	printf("--------------------- to have some command description, use the command: %s/HELP %s---------------------\n", KRED, KWHT);
 	printf("----------------------------------------------------------------------------------------------------\n\n");
     init_OpenSSL ();
-    
+    connectSignals ();
     if (argc == 3 || argc == 4) {
         set_certif_filename (argv[1]);
         set_private_key_filename (argv[2]);

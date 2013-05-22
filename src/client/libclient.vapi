@@ -21,12 +21,14 @@ namespace Bavardage {
         public const int RM_USER;
         public const int NEW_USER;
         public const int ADMIN;
+        
         public const int CREATE_ROOM_KO;
         public const int JOIN_ROOM_KO;
         public const int DELETE_ROOM_KO;
         public const int MESSAGE_KO;
         public const int MP_KO;
         public const int QUIT_ROOM_KO;
+        public const int CONNECT_KO;
 
         
     }

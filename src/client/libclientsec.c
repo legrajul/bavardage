@@ -12,6 +12,8 @@
 #define CAFILE "root.pem"
 #define CADIR NULL
 
+
+
 char *private_key_filename;
 char *certif_request_filename;
 char *certif_filename;
@@ -73,6 +75,8 @@ SSL_CTX *setup_client_ctx (void) {
         fprintf (stderr, "Error loading private key from file\n");
     SSL_CTX_set_verify (ctx, SSL_VERIFY_PEER, verify_callback);
     SSL_CTX_set_verify_depth (ctx, 4);
+
+    
     return ctx;
 }
 
@@ -108,9 +112,10 @@ int connect_secure_socket (const char *addr, const int port) {
 
 int connect_with_authentication (char *chatservaddr, int chatservport,
                                  char *secservaddr, int secservport) {
+    
     connect_socket (chatservaddr, chatservport);
     connect_secure_socket (secservaddr, secservport);
-
+    
 }
 
 int disconnect_servers () {

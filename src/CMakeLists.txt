@@ -24,7 +24,6 @@ ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 add_subdirectory (server)
 add_subdirectory (serversec)
-
 add_subdirectory (client)
 
 # Copie du certificat du serveur sécurisé
@@ -34,3 +33,6 @@ file(COPY ../certifs/secserv_certif.pem DESTINATION serversec/)
 # Copie du certificat racine dans les dossiers l'utilisant
 file(COPY ../certifs/root.pem DESTINATION client/)
 file(COPY ../certifs/root.pem DESTINATION serversec/)
+
+# Copie de l'icône du cadenas
+file(COPY client/channel-secure-symbolic.svg DESTINATION client/)

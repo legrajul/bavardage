@@ -57,6 +57,7 @@ namespace Bavardage.Widgets {
 
             secure_connection_grid = new Grid (); {
                 entry_password = new Entry ();
+                entry_password.set_visibility (false);
                 entry_serversec_ip = new Entry ();
                 entry_serversec_port = new Entry ();
                 cert_file_chooser_button = new FileChooserButton ("Certificat", FileChooserAction.OPEN);
@@ -125,6 +126,8 @@ namespace Bavardage.Widgets {
                         } else {
                             this.connect_regular (entry_server_ip.get_text (), int.parse (entry_server_port.get_text ()), entry_login.get_text ());
                         }
+                    } else {
+                        this.hide_on_delete ();
                     }
                 });
 
@@ -147,7 +150,7 @@ namespace Bavardage.Widgets {
                         } else {
                             Message m;
                             receive_message (out m);
-                            if (m.code == KO) {
+                            if (m.code == KO || m.code == CONNECT_KO) {
                                 var content_str = new StringBuilder ("");
                                 for (int i = 0; i < m.content.length; i++) {
                                     content_str.append_c ((char) m.content[i]);
@@ -185,7 +188,7 @@ namespace Bavardage.Widgets {
                     int ret = send_message_sec ("/CONNECT_SEC " + login, out error);
                     
                     ret = receive_message_sec (out m);
-                    if (m.code == KO) {
+                    if (m.code == KO || m.code == CONNECT_KO || m.code == CONNECT_SEC_KO) {
                         var content_str = new StringBuilder ("");
                         for (int i = 0; i < m.content.length; i++) {
                             content_str.append_c ((char) m.content[i]);

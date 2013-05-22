@@ -418,7 +418,14 @@ namespace Bavardage {
                     });
 
                 delete_sec_account_item.activate.connect ( () => {
-                    send_message_sec ("/DEL_ACCOUNT_SEC", null);
+                    var dialog = new Gtk.MessageDialog (window, Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT, Gtk.MessageType.WARNING, Gtk.ButtonsType.YES_NO, "Êtes-sûr de vouloir supprimer votre compte ?");
+                    dialog.response.connect ( (response_id) => {
+                        if (response_id == Gtk.ResponseType.YES) {
+                            send_message_sec ("/DEL_ACCOUNT_SEC", null);
+                        }
+                        dialog.hide_on_delete ();
+                    });
+                    dialog.present ();
                 });
                 
                 // On clique sur Fichier > À propos

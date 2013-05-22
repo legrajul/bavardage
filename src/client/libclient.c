@@ -13,15 +13,6 @@ SocketTCP *client_sock;
 message *msg;
 char *login, **tab_string;
 
-void my_sigaction (int s) {
-	switch (s) {
-	case SIGINT:
-		disconnect ();
-		break;
-	default:
-		break;
-	}
-}
 
 char *str_sub (const char *s, unsigned int start, unsigned int end) {
 	char *new_s = NULL;
@@ -77,7 +68,6 @@ int connect_socket (const char *addr, const int port) {
 	}
 
 	printf ("You can now send commands and messages\n");
-	(void) signal (SIGINT, my_sigaction);
 
 	return 0;
 }
