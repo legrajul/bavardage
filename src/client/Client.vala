@@ -229,14 +229,14 @@ namespace Bavardage {
                         string s = (string) v;
                         if (s[0] != '[') {
                             string error_msg;
-                            if (is_secured) {
+                            if (!is_secured) {
                                 if (send_message ("/QUIT_ROOM " + s, out error_msg) == -3) {
                                     TextIter titer;
                                     chat.get_buffer ().get_end_iter (out titer);
                                     chat.get_buffer ().insert_text (ref titer, error_msg, error_msg.length);
                                 }
                             } else {
-                                if (send_message ("/QUIT_ROOM_SEC " + s, out error_msg) == -3) {
+                                if (send_message_sec ("/QUIT_ROOM_SEC " + s, out error_msg) == -3) {
                                     TextIter titer;
                                     chat.get_buffer ().get_end_iter (out titer);
                                     chat.get_buffer ().insert_text (ref titer, error_msg, error_msg.length);
