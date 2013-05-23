@@ -39,6 +39,8 @@ namespace Bavardage {
 
         public void set_private_key_filename (string filename);
 
+        public void set_root_certif_filename (string filename);
+
         public int send_message_sec (string message, out string error);
         
         public int receive_message_sec (out Message m);

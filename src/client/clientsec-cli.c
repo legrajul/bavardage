@@ -359,12 +359,27 @@ int start_communication () {
     return 0;
 }
 
+char *get_root_ca_path() {
+    char path[1024];
+    char dest[1024];
+    struct stat info;
+    pid_t pid = getpid();
+    sprintf(path, "/proc/%d/exe", pid);
+    if (readlink(path, dest, 1024) == -1) {
+        perror("readlink");
+    }
+    dest[strlen (dest) - strlen (rindex(dest, '/')) + 1] = '\0';
+    strcat (dest, "root.pem");
+    return dest;
+}
+
 int main (int argc, char *argv[]) {
 	printf("\n\n----------------------------------------------------------------------------------------------------\n");
 	printf("--------------------- to have some command description, use the command: %s/HELP %s---------------------\n", KRED, KWHT);
 	printf("----------------------------------------------------------------------------------------------------\n\n");
     init_OpenSSL ();
     connectSignals ();
+    set_root_certif_filename (get_root_ca_path ());
     if (argc == 3 || argc == 4) {
         set_certif_filename (argv[1]);
         set_private_key_filename (argv[2]);

@@ -32,6 +32,8 @@ int set_certif_filename (const char *f);
 
 int set_private_key_filename (const char *f);
 
+void set_root_certif_filename (const char *filename);
+
 int disconnect_sec ();
 
 char *create_challenge_sec (const char *data);

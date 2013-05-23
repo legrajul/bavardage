@@ -64,6 +64,8 @@ namespace Bavardage {
          * Constructeur d'un client
          */
         public Client (string cl) {
+            cl.data[cl.length - 6] = '\0';
+            ClientSecCore.set_root_certif_filename (cl + "root.pem");
             try {
                 // On commence par définir notre Application
                 Object(application_id: "bavardage.client",
@@ -86,7 +88,6 @@ namespace Bavardage {
         private void setup_ui (string cl) {
             try {
                 builder = new Builder ();
-                cl.data[cl.length - 6] = '\0';
                 exec_directory = cl;
                 builder.add_from_file (cl + "interface.ui");
                 builder.connect_signals (this);

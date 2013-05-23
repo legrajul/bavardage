@@ -17,7 +17,7 @@
 char *private_key_filename;
 char *certif_request_filename;
 char *certif_filename;
-
+char *root_certif_filename;
 SocketTCP *secure_socket;
 
 int is_connected = 0;
@@ -61,11 +61,15 @@ void set_private_key_password (char *password) {
     pass = strdup (password);
 }
 
+void set_root_certif_filename (const char *filename) {
+    root_certif_filename = strdup (filename);
+}
+
 SSL_CTX *setup_client_ctx (void) {
     //SSL_CTX *ctx;
     ctx = SSL_CTX_new (SSLv23_method ());
     SSL_CTX_set_default_passwd_cb (ctx, password_cb);
-    if (SSL_CTX_load_verify_locations (ctx, CAFILE, CADIR) != 1)
+    if (SSL_CTX_load_verify_locations (ctx, root_certif_filename, CADIR) != 1)
         fprintf (stderr, "Error loading CA file and/or directory\n");
     if (SSL_CTX_set_default_verify_paths (ctx) != 1)
         fprintf (stderr, "Error loading default CA file and/or directory\n");
