@@ -34,7 +34,7 @@ char *str_sub (const char *s, unsigned int start, unsigned int end) {
 
 int extract_code (const char *str) {
 	char *command = NULL;
-	command = str_sub (str, 1, strlen (str));
+	command = str + 1;
 
 	if (strcmp (command, "CREATE_ROOM") == 0) {
 		return CREATE_ROOM;
