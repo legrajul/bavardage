@@ -347,7 +347,10 @@ int send_message_sec (const char *mess, char **error_mess) {
             tmp = strtok (NULL, " ");
             if (tmp != NULL) {
                 login = strdup (tmp);
-            }         
+            } else {
+                *error_mess = strdup ("Vous devez spécifier un pseudo");
+                return -3;
+            }
 
             msg->code = CONNECT_SEC;        
             if (login == NULL) {
@@ -478,16 +481,12 @@ int send_message_sec (const char *mess, char **error_mess) {
             break;
 
         case MESSAGE:  // Cas d'envoi de message
-            tab_string = create_table_param(buffer);
             if (len (tab_string) < 3) {
                 *error_mess = strdup ("MESSAGE doit avoir 2 paramètres : /MESSAGE salon mon super message\n");
                 return -3;
             }
             strcpy(msg->receiver, tab_string[1]);
-            for (i = 2; i < len(tab_string); i++) {
-                strcat(buff, tab_string[i]);
-                strcat(buff, " ");
-            }
+            memcpy (buff, buffer + 10 + strlen (msg->receiver), MAX_MESS_SIZE);
             if(is_room_used(msg->receiver) == 0) {
                 strcpy (msg->content, buff);
             } else {

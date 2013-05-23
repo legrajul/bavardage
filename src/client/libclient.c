@@ -221,7 +221,7 @@ int send_message (const char *mess, char **error_mess) {
 				return -3;
 			}
 			strcpy (msg->receiver, tab_string[1]);
-			memcpy (msg->content, buffer + 5 + strlen (msg->receiver), MAX_MESS_SIZE);
+			memcpy (msg->content, buffer + 10 + strlen (msg->receiver), MAX_MESS_SIZE);
 			free (tab_string);
 			return send_command ();
 			break;

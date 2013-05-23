@@ -112,7 +112,6 @@ void *traitement_recv_sec (void *param) {
             strcat(conn, mess.sender);
             send_message (conn, NULL);
             //printf("init_rooms: <%d>\n", init_rooms());
-            init_rooms ();
             break;
         case CONNECT_SEC_OK:
             printf("--------------------------You are now connected ------------------------\n");
@@ -379,6 +378,7 @@ int main (int argc, char *argv[]) {
 	printf("----------------------------------------------------------------------------------------------------\n\n");
     init_OpenSSL ();
     connectSignals ();
+    init_rooms ();
     set_root_certif_filename (get_root_ca_path ());
     if (argc == 3 || argc == 4) {
         set_certif_filename (argv[1]);
