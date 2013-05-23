@@ -35,4 +35,4 @@ file(COPY ../certifs/root.pem DESTINATION client/)
 file(COPY ../certifs/root.pem DESTINATION serversec/)
 
 # Copie de l'icône du cadenas
-file(COPY client/channel-secure-symbolic.svg DESTINATION client/)
+file(COPY client/channel-secure-symbolic.svg DESTINATION client/) 

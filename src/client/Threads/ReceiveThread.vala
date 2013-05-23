@@ -17,7 +17,7 @@ namespace Bavardage.Threads {
         }
 
         public void  *thread_func () {
-            img = Gtk.IconTheme.get_default ().load_icon ("channel-secure-symbolic", 16, 0);
+            img = new Gtk.Image.from_file ("channel-secure-symbolic.svg").get_pixbuf ();
             Bavardage.Message m = { -1, "".data, "".data, "".data };
             TreeIter tree_iter;
             while (true) {

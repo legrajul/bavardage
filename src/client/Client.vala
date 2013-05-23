@@ -317,7 +317,7 @@ namespace Bavardage {
                                         rooms.append (out iter);
                                         if (need_security) {
                                             secure_rooms.add (room_name);
-                                            var img = Gtk.IconTheme.get_default ().load_icon ("channel-secure-symbolic", 16, 0);
+                                            var img = new Gtk.Image.from_file ("channel-secure-symbolic.svg").get_pixbuf ();
                                             rooms.set (iter, 0, room_name, 1, img, -1);
                                         } else {
                                             rooms.set (iter, 0, room_name, 1, null, -1);
