@@ -481,6 +481,7 @@ int send_message_sec (const char *mess, char **error_mess) {
             break;
 
         case MESSAGE:  // Cas d'envoi de message
+            tab_string = create_table_param(buffer);
             if (len (tab_string) < 3) {
                 *error_mess = strdup ("MESSAGE doit avoir 2 paramètres : /MESSAGE salon mon super message\n");
                 return -3;
