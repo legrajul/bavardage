@@ -229,7 +229,7 @@ namespace Bavardage {
                         string s = (string) v;
                         if (s[0] != '[') {
                             string error_msg;
-                            if (!is_secured) {
+                            if (!is_secure_room (s)) {
                                 if (send_message ("/QUIT_ROOM " + s, out error_msg) == -3) {
                                     TextIter titer;
                                     chat.get_buffer ().get_end_iter (out titer);

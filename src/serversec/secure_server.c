@@ -296,7 +296,6 @@ void *handle_connexion(void *param) {
                     break;
 
                 case QUIT_ROOM_SEC:
-                   
                     if (!is_room_used (buffer.content)) {
                         response.code = QUIT_ROOM_SEC_KO;
                         strcpy (response.content, "This room does not exist");
@@ -318,13 +317,11 @@ void *handle_connexion(void *param) {
                     }
                    
                 case DELETE_ROOM_SEC:
-                  
                     if (u != get_admin (buffer.content)) {
                         response.code = DELETE_ROOM_KO;
                         strcpy (response.content,
                                 "You're not admin, you can't delete this room");
                     } else {
-                        
                         delete_room (buffer.content);
                         response.code = OK;
                     }
@@ -551,9 +548,9 @@ int delete_room (char *room_name) {
     user_list t;
     // On demande à tous les clients connectés au salon de le supprimer
     message m;
-    m.code = DELETE_ROOM;
+    m.code = QUIT_ROOM_SEC;
     strcpy(m.content, room_name);
-    for (t = users; t != NULL; t = t->next) {   
+    for (t = users; t != NULL; t = t->next) {
         SSL_write(t->current_user->ssl,
                   (char *) &m, sizeof(message));
     }

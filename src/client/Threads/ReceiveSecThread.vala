@@ -70,6 +70,9 @@ namespace Bavardage.Threads {
                     case QUIT_ROOM_SEC:
                         client.secure_rooms.remove (content.str);
                         break;
+                    case DELETE_ROOM_SEC:
+                        client.secure_rooms.remove (content.str);
+                        break;
                     case DISCONNECT_SEC:
                         Thread.exit (null);
                         break;

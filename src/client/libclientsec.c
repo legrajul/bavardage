@@ -200,6 +200,9 @@ int receive_message_sec(message *m) {
         case DELETE_ROOM_SEC:
             remove_room (m->content);
             break;
+        case QUIT_ROOM_SEC:
+            remove_room (m->content);
+            break;
         case DEL_ACCOUNT_SEC:
             send_message_sec ("/DISCONNECT_SEC", NULL);
             break;
@@ -429,9 +432,15 @@ int send_message_sec (const char *mess, char **error_mess) {
                 *error_mess = strdup ("QUIT_ROOM a besoin d'un paramètre\n");
                 return -3;
             }
-            strcpy (msg->sender, login);
-            return send_command_sec ();
+
+            strcpy (text, "/QUIT_ROOM ");
+            strcat (text, msg->content);
+            send_message (text, error_mess);
             
+            strcpy (msg->sender, login);
+            msg->code = QUIT_ROOM_SEC;
+            return send_command_sec ();
+
             break;
 
 	case ACCEPT_JOIN_ROOM_SEC:
