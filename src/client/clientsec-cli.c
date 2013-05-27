@@ -14,6 +14,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <termios.h>
+
 #define CHATADDR "localhost"
 #define CHATPORT 10000
 
@@ -372,6 +374,7 @@ char *get_root_ca_path() {
     return dest;
 }
 
+
 int main (int argc, char *argv[]) {
 	printf("\n\n----------------------------------------------------------------------------------------------------\n");
 	printf("--------------------- to have some command description, use the command: %s/HELP %s---------------------\n", KRED, KWHT);
@@ -380,20 +383,33 @@ int main (int argc, char *argv[]) {
     connectSignals ();
     init_rooms ();
     set_root_certif_filename (get_root_ca_path ());
+    struct termios term, term_orig;
+    tcgetattr(STDIN_FILENO, &term);
+    term_orig = term;
+    term.c_lflag &= ~ECHO;
+    tcsetattr(STDIN_FILENO, TCSANOW, &term);
     if (argc == 3 || argc == 4) {
         set_certif_filename (argv[1]);
         set_private_key_filename (argv[2]);
-        if (argc == 4) {
-            set_private_key_password (argv[3]);
+        if (argc == 4 && strcmp (argv[3], "--use_private_key_password") == 0) {
+            printf ("Please, enter your key password:\n");
+            char password[100];
+            scanf ("%s", password);
+            set_private_key_password (password);
+            tcsetattr(STDIN_FILENO, TCSANOW, &term_orig);
         }
         connect_with_authentication (CHATADDR, CHATPORT, SECADDR, SECPORT);
     } else if (argc != 7 && argc != 3 && argc != 8 && argc != 4) {
         fprintf (stderr,
-                 "Usage: ./clientsec-cli ip_server port_server ip_server_sec port_server_sec certificate private_key [private_key_password]\n or   ./clientsec-cli certificate private_key [private_key_password]\n");
+                 "Usage: ./clientsec-cli ip_server port_server ip_server_sec port_server_sec certificate private_key [--use_private_key_password]\n or   ./clientsec-cli certificate private_key [--use_private_key_password]\n");
         exit (EXIT_FAILURE);
     } else {
-        if (argc == 8) {
-            set_private_key_password (argv[7]);
+        if (argc == 8 && strcmp (argv[7], "--use_private_key_password") == 0) {
+            printf ("Please, enter your key password:\n");
+            char password[100];
+            scanf ("%s", password);
+            set_private_key_password (password);
+            tcsetattr(STDIN_FILENO, TCSANOW, &term_orig);
         }
         set_certif_filename(argv[5]);
         set_private_key_filename(argv[6]);
