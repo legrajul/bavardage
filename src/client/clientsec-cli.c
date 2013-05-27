@@ -387,11 +387,12 @@ int main (int argc, char *argv[]) {
     tcgetattr(STDIN_FILENO, &term);
     term_orig = term;
     term.c_lflag &= ~ECHO;
-    tcsetattr(STDIN_FILENO, TCSANOW, &term);
+    
     if (argc == 3 || argc == 4) {
         set_certif_filename (argv[1]);
         set_private_key_filename (argv[2]);
         if (argc == 4 && strcmp (argv[3], "--use_private_key_password") == 0) {
+            tcsetattr(STDIN_FILENO, TCSANOW, &term);
             printf ("Please, enter your key password:\n");
             char password[100];
             scanf ("%s", password);
@@ -405,6 +406,7 @@ int main (int argc, char *argv[]) {
         exit (EXIT_FAILURE);
     } else {
         if (argc == 8 && strcmp (argv[7], "--use_private_key_password") == 0) {
+            tcsetattr(STDIN_FILENO, TCSANOW, &term);
             printf ("Please, enter your key password:\n");
             char password[100];
             scanf ("%s", password);
