@@ -65,6 +65,25 @@ void set_root_certif_filename (const char *filename) {
     root_certif_filename = strdup (filename);
 }
 
+unsigned char *gen_salt () {
+    unsigned char *buf;
+    buf = (unsigned char *) malloc (16);
+    RAND_add ("/dev/urandom", 10, 1.0);
+    if (!RAND_bytes (buf, 16)) {
+        fprintf (stderr, "The PRNG is not seeded!\n");
+        abort ();
+    }
+    return buf;
+}
+
+key_iv gen_keyiv (unsigned char *master_key, unsigned char *salt) {
+    int nrounds = 5;
+    key_iv keyiv = malloc (sizeof (struct KEY_IV));
+    EVP_BytesToKey (EVP_aes_256_cbc (), EVP_sha1 (), salt, master_key, 32, nrounds, keyiv->key, keyiv->iv);
+    return keyiv;
+}
+
+
 SSL_CTX *setup_client_ctx (void) {
     //SSL_CTX *ctx;
     ctx = SSL_CTX_new (SSLv23_method ());
@@ -77,8 +96,8 @@ SSL_CTX *setup_client_ctx (void) {
         fprintf (stderr, "Error loading certificate from file\n");
     if (SSL_CTX_use_PrivateKey_file (ctx, private_key_filename, SSL_FILETYPE_PEM) != 1)
         fprintf (stderr, "Error loading private key from file\n");
-    SSL_CTX_set_verify (ctx, SSL_VERIFY_PEER, verify_callback);
-    SSL_CTX_set_verify_depth (ctx, 4);
+    SSL_CTX_set_verify (ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, verify_callback);
+    SSL_CTX_set_verify_depth (ctx, 1);
 
     
     return ctx;
@@ -137,9 +156,11 @@ int aes_init (unsigned char *key, unsigned char *iv, EVP_CIPHER_CTX *e_ctx, EVP_
     return 0;
 }
 
-char *aes_encrypt (unsigned char *key, unsigned char *iv, char *plaintext, int *len) {
+char *aes_encrypt (unsigned char *master_key, char *plaintext, int *len) {
     EVP_CIPHER_CTX e_ctx, d_ctx;
-    aes_init (key, iv, &e_ctx, &d_ctx);
+    unsigned char *salt = gen_salt ();
+    key_iv keyiv = gen_keyiv (master_key, salt);
+    aes_init (keyiv->key, keyiv->iv, &e_ctx, &d_ctx);
     int c_len = *len + AES_BLOCK_SIZE, f_len = 0;
     char *ciphertext = malloc (c_len);
 
@@ -148,12 +169,20 @@ char *aes_encrypt (unsigned char *key, unsigned char *iv, char *plaintext, int *
     EVP_EncryptFinal_ex (&e_ctx, ciphertext + c_len, &f_len);
 
     *len = c_len + f_len;
-    return ciphertext;
+    char finaltext[MAX_MESS_SIZE];
+    memset (finaltext, 0, MAX_MESS_SIZE);
+    memcpy (finaltext, salt, 16);
+    memcpy (finaltext + 16, ciphertext, f_len);
+    return finaltext;
 }
 
-char *aes_decrypt (unsigned char *key, unsigned char *iv, char *ciphertext, int *len) {
+char *aes_decrypt (unsigned char *master_key, char *ciphertext, int *len) {
     EVP_CIPHER_CTX e_ctx, d_ctx;
-    aes_init (key, iv, &e_ctx, &d_ctx);
+    unsigned char salt[16];
+    memcpy (salt, ciphertext, 16);
+    ciphertext += 16;
+    key_iv keyiv = gen_keyiv (master_key, salt);
+    aes_init (keyiv->key, keyiv->iv, &e_ctx, &d_ctx);
     int p_len = *len, f_len = 0;
     char *plaintext = malloc (p_len + AES_BLOCK_SIZE);
 
@@ -167,9 +196,9 @@ char *aes_decrypt (unsigned char *key, unsigned char *iv, char *ciphertext, int 
 }
 
 char *decrypt (char *room_name, char *ciphered, int ciphered_size) {
-    key_iv keyiv = get_keyiv_in_room(room_name);
+    keys k = get_keys_from_room(room_name);
     int lenght = MAX_CIPHERED_SIZE;
-    char *res = aes_decrypt(keyiv->key, keyiv->iv, ciphered, &lenght);
+    char *res = aes_decrypt(k->master_key, ciphered, &lenght);
     return res;
 }
 
@@ -179,7 +208,7 @@ int receive_message_sec(message *m) {
     if (ret == 0) {
         return -1;
     } else {
-        key_iv keyiv = NULL;
+        keys k = NULL;
         int leng = 0;
         char *ciphermess = NULL;
         char text[MAX_MESS_SIZE] = "";
@@ -188,14 +217,14 @@ int receive_message_sec(message *m) {
         case JOIN_ROOM_SEC:
         case REFRESH_KEYIV:
         case MP_SEC_OK:
-            keyiv = malloc(sizeof (struct KEY_IV));
-            memset (keyiv, 0, sizeof (struct KEY_IV));
+            k = malloc(sizeof (struct KEYS));
+            memset (k, 0, sizeof (struct KEYS));
             char *room_name = strtok(strdup(m->content), "|");
             add_room (room_name, NULL);
             
-            memcpy (keyiv->key, m->content + strlen (room_name) + 1, 32);
-            memcpy (keyiv->iv, m->content + strlen (room_name) + 34, 32);
-            set_keyiv_in_room(room_name, keyiv);
+            memcpy (k->master_key, m->content + strlen (room_name) + 1, 32);
+            memcpy (k->hash_key, m->content + strlen (room_name) + 34, 16);
+            set_keys_in_room(room_name, k);
             break;
         case DELETE_ROOM_SEC:
             remove_room (m->content);
@@ -208,8 +237,9 @@ int receive_message_sec(message *m) {
             break;
         case MP_SEC:
             leng = strlen(m->content) + 1;
-            keyiv = get_keyiv_in_room(m->receiver);
-            ciphermess = aes_encrypt(keyiv->key, keyiv->iv, (char *)m->content, &leng);
+            
+            k = get_keys_from_room (m->receiver);
+            ciphermess = aes_encrypt(k->master_key, (char *)m->content, &leng);
             strcpy(text, "/MP ");
             strcat(text, m->receiver);
             strcat(text," ");
@@ -314,10 +344,10 @@ int send_message_sec (const char *mess, char **error_mess) {
     EVP_CIPHER_CTX en;
     EVP_CIPHER_CTX de;
     int lenght;
-    key_iv keyiv;
+    keys k = NULL;
     unsigned char key[32], iv[32];
     unsigned char *keydata="test";
-    key_iv ki;
+    keys kk = NULL;
 
     char text[MAX_MESS_SIZE] = "";
     strcpy(buffer, mess);
@@ -501,8 +531,8 @@ int send_message_sec (const char *mess, char **error_mess) {
                 strcpy (msg->content, buff);
             } else {
                 lenght = strlen(buff) + 1;
-                keyiv = get_keyiv_in_room(msg->receiver);
-                ciphermess = aes_encrypt(keyiv->key, keyiv->iv, (char *)buff, &lenght);
+                k = get_keys_from_room(msg->receiver);
+                ciphermess = aes_encrypt(k->master_key, (char *)buff, &lenght);
                 strcpy(msg->content, ciphermess);
             }
             free(tab_string);
@@ -528,8 +558,8 @@ int send_message_sec (const char *mess, char **error_mess) {
             }
             if (is_room_used(msg->receiver)==1) {
 				lenght = strlen(buff) + 1;
-				keyiv = get_keyiv_in_room(msg->receiver);
-				ciphermess = aes_encrypt(keyiv->key, keyiv->iv, (char *)buff, &lenght);
+                k = get_keys_from_room (msg->receiver);
+				ciphermess = aes_encrypt(k->master_key, (char *)buff, &lenght);
 				strcpy(msg->content,ciphermess);
 				msg->code=MP;
 				return send_command();			

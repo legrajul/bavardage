@@ -88,8 +88,7 @@ void *traitement_recv_sec (void *param) {
     char *plainmess;
     char *room_name;
     char *ciphermess;
-    key_iv keyiv;
-    key_iv ki;
+    keys k, kk;
 
     while (1) {
         
@@ -139,11 +138,11 @@ void *traitement_recv_sec (void *param) {
         case OK:
             break;
         case REFRESH_KEYIV:
-            keyiv = malloc(sizeof (struct KEY_IV));
+            k = malloc(sizeof (struct KEYS));
             room_name =strdup(strtok(mess.content, "|"));
-            memcpy (keyiv->key, mess.content + strlen (room_name) + 1, 32);
-            memcpy (keyiv->iv, mess.content + strlen (room_name) + 34, 32);
-            set_keyiv_in_room(room_name, keyiv);
+            memcpy (k->master_key, mess.content + strlen (room_name) + 1, 32);
+            memcpy (k->hash_key, mess.content + strlen (room_name) + 34, 16);
+            set_keys_in_room(room_name, k);
             break;
         case ASK_JOIN_ROOM_SEC:
             printf ("Request from %s to join room %s\n", mess.sender, mess.content);
@@ -155,12 +154,12 @@ void *traitement_recv_sec (void *param) {
             send_message(text, NULL);
             break;
         case JOIN_ROOM_SEC:
-            keyiv = malloc(sizeof (struct KEY_IV));
+            k = malloc(sizeof (struct KEYS));
             room_name =strdup(strtok(mess.content, "|"));
-            memcpy (keyiv->key, mess.content + strlen (room_name) + 1, 32);
-            memcpy (keyiv->iv, mess.content + strlen (room_name) + 34, 32);
+            memcpy (k->master_key, mess.content + strlen (room_name) + 1, 32);
+            memcpy (k->hash_key, mess.content + strlen (room_name) + 34, 16);
             add_room(room_name,NULL);
-            set_keyiv_in_room(room_name, keyiv);
+            set_keys_in_room(room_name, k);
             strcpy(text, "/JOIN_ROOM ");
             strcat(text,room_name);
             send_message(text, NULL);
@@ -168,11 +167,11 @@ void *traitement_recv_sec (void *param) {
             break;
 
         case CREATE_ROOM_SEC:
-            keyiv = malloc(sizeof (struct KEY_IV));
+            k = malloc(sizeof (struct KEYS));
             room_name = strdup(strtok(mess.content, "|"));
-            memcpy (keyiv->key, mess.content + strlen (room_name) + 1, 32);
-            memcpy (keyiv->iv, mess.content + strlen (room_name) + 34, 32);;
-            set_keyiv_in_room(room_name, keyiv);
+            memcpy (k->master_key, mess.content + strlen (room_name) + 1, 32);
+            memcpy (k->hash_key, mess.content + strlen (room_name) + 34, 16);
+            set_keys_in_room(room_name, k);
             break;
         case CREATE_ROOM_SEC_KO:
 	    printf ("Error: Failed to created secured room %s\n", mess.content);
@@ -182,12 +181,12 @@ void *traitement_recv_sec (void *param) {
 	    break;
 
         case NEW_USER:
-            set_keyiv_in_room(mess.content, keyiv);
+            set_keys_in_room(mess.content, k);
             printf("The user %s joined the room %s\n", mess.sender, mess.content);
             break;
 
         case ADD_USER:
-            set_keyiv_in_room(mess.content, keyiv);
+            set_keys_in_room(mess.content, k);
             printf("USER %s in %s \n", mess.sender, mess.content);
             break;
 
@@ -202,11 +201,11 @@ void *traitement_recv_sec (void *param) {
             break;
 
         case QUIT_ROOM:
-            keyiv = malloc(sizeof (struct KEY_IV));
+            k = malloc(sizeof (struct KEYS));
             room_name =strdup(strtok(mess.content, "|"));
-            memcpy (keyiv->key, mess.content + strlen (room_name) + 1, 32);
-            memcpy (keyiv->iv, mess.content + strlen (room_name) + 34, 32);
-            set_keyiv_in_room(room_name, keyiv);
+            memcpy (k->master_key, mess.content + strlen (room_name) + 1, 32);
+            memcpy (k->hash_key, mess.content + strlen (room_name) + 34, 16);
+            set_keys_in_room(room_name, k);
             printf("The user %s has been deleted from %s \n",mess.sender, room_name);
             break;
 
@@ -245,7 +244,7 @@ void *traitement_recv (void *param) {
     message mess;
     int lenght;
     char *plainmess;
-    key_iv keyiv;
+    keys k;
     char text[MAX_MESS_SIZE] = " ";
 
     while (1) {
@@ -274,13 +273,13 @@ void *traitement_recv (void *param) {
             break;
 
         case MESSAGE:
-            if (get_keyiv_in_room(mess.receiver) == NULL) {
+            if (get_keys_from_room(mess.receiver) == NULL) {
                 printf ("[%s @ %s] %s\n", mess.sender, mess.receiver, mess.content);
             }
             else {
-                keyiv = get_keyiv_in_room(mess.receiver);
+                k = get_keys_from_room(mess.receiver);
                 lenght = MAX_CIPHERED_SIZE;
-                plainmess = aes_decrypt(keyiv->key, keyiv->iv, (char *)mess.content, &lenght);
+                plainmess = aes_decrypt(k->master_key, (char *)mess.content, &lenght);
                 printf("[%s @ %s] %s\n", mess.sender, mess.receiver, plainmess);
             }
             break;
@@ -289,18 +288,18 @@ void *traitement_recv (void *param) {
             send_message_sec(text, NULL);
             break;
         case MP:
-            if ((get_keyiv_in_room(mess.receiver) == NULL) && (get_keyiv_in_room(mess.sender) == NULL)) {
+            if ((get_keys_from_room(mess.receiver) == NULL) && (get_keys_from_room(mess.sender) == NULL)) {
                 printf ("[%s @ %s] %s\n", mess.sender, mess.receiver, mess.content);
             }
             else {
-                if (get_keyiv_in_room(mess.receiver)!=NULL){
-                    keyiv = get_keyiv_in_room(mess.receiver);
+                if (get_keys_from_room(mess.receiver)!=NULL){
+                    k = get_keys_from_room(mess.receiver);
                 }
                 else {
-                    keyiv = get_keyiv_in_room(mess.sender);
+                    k = get_keys_from_room(mess.sender);
                 }
                 lenght = MAX_CIPHERED_SIZE;
-                plainmess = aes_decrypt(keyiv->key, keyiv->iv, (char *)mess.content, &lenght);
+                plainmess = aes_decrypt(k->master_key, (char *)mess.content, &lenght);
                 printf("[%s @ %s] %s\n", mess.sender, mess.receiver, plainmess);
             }
             break;

@@ -16,6 +16,7 @@
 #include <signal.h>
 #include "openssl/ssl.h"
 #include <openssl/ssl2.h>
+#include <openssl/rand.h>
 #include <stdint.h>
 
 // modif
@@ -50,7 +51,7 @@ SSL_CTX *setup_server_ctx (void) {
     SSL_CTX_set_verify (ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
                         verify_callback);
 
-    SSL_CTX_set_verify_depth (ctx, 4);
+    SSL_CTX_set_verify_depth (ctx, 1);
     return ctx;
 }
 
@@ -66,7 +67,19 @@ void my_sigaction (int s) {
     }
 }
 
+unsigned char *spc_rand(size_t l) {
+    unsigned char *buf;
+    buf = (unsigned char *) malloc (l);
+    RAND_add ("/dev/urandom", 10, 1.0);
+    if (!RAND_bytes (buf, l)) {
+        fprintf (stderr, "The PRNG is not seeded!\n");
+        abort ();
+    }
+    return buf;
+}
+
 void randomString (char *str, size_t n) {
+    RAND_add("/dev/urandom", 10, 1.0);
     srand (time (NULL));
     char c;
     int i;
@@ -81,6 +94,7 @@ void randomString (char *str, size_t n) {
 
 
 unsigned int *randomInt() {
+    RAND_add("/dev/urandom", 10, 1.0);
     unsigned int *c;
     c = (unsigned int *) malloc (2 * sizeof (unsigned int));
     int i, v;
@@ -96,12 +110,19 @@ unsigned int *randomInt() {
 
 }
 
-void gen_keyiv(key_iv keyiv, unsigned char *key_data, int key_data_len) {
-    int nrounds = 5;
-    unsigned int *salt = malloc (sizeof (randomInt ()));
-    salt = randomInt();
-    EVP_BytesToKey(EVP_aes_256_cbc(), EVP_sha1(),(unsigned char *)salt,(unsigned char *)key_data, strlen((char *)key_data), nrounds, keyiv->key, keyiv->iv);
+unsigned char *gen_master_key () {
+    return spc_rand (32);
+}
 
+unsigned char *gen_hash_key () {
+    return spc_rand (16);
+}
+
+keys gen_keys () {
+    keys k = malloc (sizeof (struct KEYS));
+    memcpy (k->master_key, gen_master_key (), 32);
+    memcpy (k->hash_key, gen_hash_key (), 16);
+    return k;
 }
 
 void *handle_connexion(void *param) {
@@ -116,8 +137,6 @@ void *handle_connexion(void *param) {
     message buffer, response;
     int bytes = 0;
     user u,use;
-    key_iv keyiv;
-    char key_data[KEY_DATA_SIZE];
     int first_connection = 0;
 
     if (SSL_accept(client_ssl) <= 0) {     /* do SSL-protocol accept */
@@ -161,9 +180,11 @@ void *handle_connexion(void *param) {
                         printf ("The room %s already exists\n", buffer.content);
                     } else {
                     
-                        randomString(key_data,(sizeof key_data)-1);
-                        keyiv = malloc(sizeof(struct KEY_IV));
-                        gen_keyiv(keyiv, (unsigned char *)key_data, sizeof(key_data));
+                        //~ randomString(key_data,(sizeof key_data)-1);
+                        //~ keyiv = malloc(sizeof(struct KEY_IV));
+                        //~ gen_keyiv(keyiv, (unsigned char *)key_data, sizeof(key_data));
+
+                        keys k = gen_keys ();
                         add_room(buffer.content, u);
                         add_user_in_room(u, buffer.content);
 
@@ -172,9 +193,9 @@ void *handle_connexion(void *param) {
                         strcpy(response.content, buffer.content);
 
                         strcat(response.content, "|");
-                        memcpy(response.content + strlen (buffer.content) + 1, keyiv->key, 32);
+                        memcpy(response.content + strlen (buffer.content) + 1, k->master_key, 32);
                         memcpy(response.content + strlen (buffer.content) + 33, "|", 32);
-                        memcpy(response.content + strlen (buffer.content) + 34, keyiv->iv, 32);
+                        memcpy(response.content + strlen (buffer.content) + 34, k->hash_key, 16);
                         
                         printf("The secure room %s has been created\n", buffer.content);
                       
@@ -186,10 +207,11 @@ void *handle_connexion(void *param) {
                         printf("EJECT_FROM_ROOM_SEC -  buffer.receiver: <%s>\n", buffer.receiver);
                         user claimer = get_user (buffer.receiver, server_user_map);
                         remove_user_from_room (claimer, buffer.content);
-                        randomString(key_data,(sizeof key_data)-1);
-                        keyiv = malloc (sizeof(struct KEY_IV));
-                        gen_keyiv(keyiv,(unsigned char *)key_data, sizeof(key_data));
+                        //~ randomString(key_data,(sizeof key_data)-1);
+                        //~ keyiv = malloc (sizeof(struct KEY_IV));
+                        //~ gen_keyiv(keyiv,(unsigned char *)key_data, sizeof(key_data));
 
+                        keys k = gen_keys ();
                         response.code = QUIT_ROOM_SEC;
                         
                         strcpy(response.sender, buffer.sender);
@@ -199,9 +221,9 @@ void *handle_connexion(void *param) {
 
                         response.code = REFRESH_KEYIV;
                         strcat(response.content, "|");
-                        memcpy(response.content + strlen (buffer.content) + 1, keyiv->key, 32);
+                        memcpy(response.content + strlen (buffer.content) + 1, k->master_key, 32);
                         memcpy(response.content + strlen (buffer.content) + 33, "|", 32);
-                        memcpy(response.content + strlen (buffer.content) + 34, keyiv->iv, 32);
+                        memcpy(response.content + strlen (buffer.content) + 34, k->hash_key, 16);
                         
                         user_list l = get_users(buffer.content);
                         user_list t;
@@ -209,7 +231,7 @@ void *handle_connexion(void *param) {
                             SSL_write(t->current_user->ssl,
                                       &response, sizeof(message));
                         }
-                        free(keyiv);
+                        free(k);
                         response.code = OK;
                     } else {
                         response.code = KO;
@@ -226,18 +248,16 @@ void *handle_connexion(void *param) {
                             strcat (response.content, buffer.receiver);
                         } else {
                             add_user_in_room (claimer, buffer.content);
-                            randomString(key_data,(sizeof key_data)-1);
-                            keyiv = malloc (sizeof(struct KEY_IV));
-                            gen_keyiv(keyiv,(unsigned char *)key_data, sizeof(key_data));
-
+                            
+                            keys k = gen_keys ();
                             response.code = CREATE_ROOM_SEC;
                             
                             strcpy(response.sender, buffer.sender);
                             strcpy(response.content, buffer.content);
                             strcat(response.content, "|");
-                            memcpy(response.content + strlen (buffer.content) + 1, keyiv->key, 32);
+                            memcpy(response.content + strlen (buffer.content) + 1, k->master_key, 32);
                             memcpy(response.content + strlen (buffer.content) + 33, "|", 32);
-                            memcpy(response.content + strlen (buffer.content) + 34, keyiv->iv, 32);
+                            memcpy(response.content + strlen (buffer.content) + 34, k->hash_key, 16);
 
                             SSL_write (claimer->ssl, &response, sizeof(message));
 
@@ -250,7 +270,7 @@ void *handle_connexion(void *param) {
                                 SSL_write(t->current_user->ssl,
                                           &response, sizeof(message));
                             }
-                            free(keyiv);
+                            free(k);
                             response.code = OK;
                         }
                     } else {
@@ -328,22 +348,21 @@ void *handle_connexion(void *param) {
                     break;
                 case MP_SEC:
 					if (get_user(buffer.receiver,server_user_map)!=NULL) {
-					randomString(key_data,(sizeof key_data)-1);
-					keyiv = malloc (sizeof(struct KEY_IV));
-					gen_keyiv(keyiv,(unsigned char *) key_data, sizeof(key_data));
+					
+                    keys k = gen_keys ();
 					strcpy(response.content, buffer.receiver);
 					strcat(response.content, "|");
-					memcpy(response.content + strlen (buffer.receiver) + 1, keyiv->key, 32);
+					memcpy(response.content + strlen (buffer.receiver) + 1, k->master_key, 32);
 					memcpy(response.content + strlen (buffer.receiver) + 33, "|", 32);
-					memcpy(response.content + strlen (buffer.receiver) + 34, keyiv->iv, 32);					
+					memcpy(response.content + strlen (buffer.receiver) + 34, k->hash_key, 16);					
 					response.code=MP_SEC_OK;
 					use=get_user(buffer.receiver,server_user_map);
 					SSL_write(u->ssl,&response, sizeof (message));
 					strcpy(response.content, buffer.sender);
 					strcat(response.content, "|");
-					memcpy(response.content + strlen (buffer.sender) + 1, keyiv->key, 32);
+					memcpy(response.content + strlen (buffer.sender) + 1, k->master_key, 32);
 					memcpy(response.content + strlen (buffer.sender) + 33, "|", 32);
-					memcpy(response.content + strlen (buffer.sender) + 34, keyiv->iv, 32);					
+					memcpy(response.content + strlen (buffer.sender) + 34, k->hash_key, 16);					
 					SSL_write(use->ssl,&response, sizeof (message));
 					strcpy(response.content,buffer.content);
 					strcpy(response.receiver,buffer.receiver);
@@ -519,19 +538,16 @@ int join_room (user u, char *room_name) {
 
 int quit_room (user u, char *room_name) {
     message m;
-    key_iv keyiv;
-    char key_data[KEY_DATA_SIZE];
     remove_user_from_room(u, room_name);
-    randomString(key_data,(sizeof key_data)-1);
-    keyiv = malloc(sizeof(struct KEY_IV));
-    gen_keyiv(keyiv,(unsigned char *)key_data, sizeof(key_data));
+    
+    keys k = gen_keys ();
     m.code = QUIT_ROOM;
     strcpy(m.sender, u->name);
     strcpy(m.content, room_name);
     strcat(room_name, "|");
-    memcpy(room_name + strlen (room_name) + 1, keyiv->key, 32);
+    memcpy(room_name + strlen (room_name) + 1, k->master_key, 32);
     memcpy(room_name + strlen (room_name) + 33, "|", 32);
-    memcpy(room_name + strlen (room_name) + 34, keyiv->iv, 32); 
+    memcpy(room_name + strlen (room_name) + 34, k->hash_key, 16); 
     user_list l = get_users(room_name);
     user_list t;
     for (t = l; t != NULL; t = t->next) {

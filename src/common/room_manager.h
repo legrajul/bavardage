@@ -12,17 +12,17 @@
  * users : liste des utilisateurs du salon
  * 
  */
-typedef struct KEY_IV {
-	unsigned char key[32];
-	unsigned char iv[32];
-}*key_iv;
+typedef struct KEYS {
+	unsigned char master_key[32];
+	unsigned char hash_key[16];
+} *keys;
 
 typedef struct ROOM {
 	char name[MAX_ROOM_NAME_SIZE];
 	user admin;
 	user_map users;
-	key_iv keyiv;
-}*room;
+	keys k;
+} *room;
 
 /**
  * Structure représentant une liste chaînée de salons

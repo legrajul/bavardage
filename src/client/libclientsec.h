@@ -17,6 +17,12 @@
 #include <openssl/evp.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
+#include <openssl/rand.h>
+
+typedef struct KEY_IV {
+	unsigned char key[32];
+	unsigned char iv[32];
+}*key_iv;
 
 void set_private_key_password (char *password);
 
@@ -44,9 +50,9 @@ int extract_code_sec (const char *str);
 
 int aes_init (unsigned char *key, unsigned char *iv, EVP_CIPHER_CTX *e_ctx, EVP_CIPHER_CTX *d_ctx);
 
-char *aes_encrypt (unsigned char *key, unsigned char *iv, char *plaintext, int *len);
+char *aes_encrypt (unsigned char *master_key, char *plaintext, int *len);
 
-char *aes_decrypt (unsigned char *key, unsigned char *iv, char *ciphertext, int *len);
+char *aes_decrypt (unsigned char *master_key, char *ciphertext, int *len);
 
 char *decrypt (char *room_name, char *ciphered, int ciphered_size);
 

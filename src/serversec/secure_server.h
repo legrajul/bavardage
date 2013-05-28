@@ -82,6 +82,6 @@ void randomString(char *str, size_t n);
 
 unsigned int * randomInt();
 
-void gen_keyiv(key_iv keyiv, unsigned char *key_data, int key_data_len);
+keys gen_keys ();
 
 #endif

@@ -3,8 +3,6 @@
 #include "room_manager.h"
 
 
-int set_keyiv_in_room (char *room_name, key_iv keyiv);
+int set_keys_in_room (char *room_name, keys k);
 
-key_iv get_keyiv_in_room (char *room_name);
-
-int add_room_client (char *room_name);
+keys get_keys_from_room (char *room_name);
