@@ -12,7 +12,7 @@
 #define CAFILE "root.pem"
 #define CADIR NULL
 
-
+#define SALT_SIZE 16
 
 char *private_key_filename;
 char *certif_request_filename;
@@ -67,9 +67,9 @@ void set_root_certif_filename (const char *filename) {
 
 unsigned char *gen_salt () {
     unsigned char *buf;
-    buf = (unsigned char *) malloc (16);
+    buf = (unsigned char *) malloc (SALT_SIZE);
     RAND_add ("/dev/urandom", 10, 1.0);
-    if (!RAND_bytes (buf, 16)) {
+    if (!RAND_bytes (buf, SALT_SIZE)) {
         fprintf (stderr, "The PRNG is not seeded!\n");
         abort ();
     }
@@ -161,7 +161,7 @@ char *aes_encrypt (unsigned char *master_key, char *plaintext, int *len) {
     unsigned char *salt = gen_salt ();
     key_iv keyiv = gen_keyiv (master_key, salt);
     aes_init (keyiv->key, keyiv->iv, &e_ctx, &d_ctx);
-    int c_len = *len + AES_BLOCK_SIZE, f_len = 0;
+    int c_len = *len + EVP_CIPHER_CTX_block_size(&e_ctx), f_len = 0;
     char *ciphertext = malloc (c_len);
 
     EVP_EncryptInit_ex (&e_ctx, NULL, NULL, NULL, NULL);
@@ -171,27 +171,27 @@ char *aes_encrypt (unsigned char *master_key, char *plaintext, int *len) {
     *len = c_len + f_len;
     char finaltext[MAX_MESS_SIZE];
     memset (finaltext, 0, MAX_MESS_SIZE);
-    memcpy (finaltext, salt, 16);
-    memcpy (finaltext + 16, ciphertext, f_len);
+    memcpy (finaltext, salt, SALT_SIZE);
+    memcpy (finaltext + SALT_SIZE, ciphertext, *len);
     return finaltext;
 }
 
 char *aes_decrypt (unsigned char *master_key, char *ciphertext, int *len) {
     EVP_CIPHER_CTX e_ctx, d_ctx;
-    unsigned char salt[16];
-    memcpy (salt, ciphertext, 16);
-    ciphertext += 16;
+    unsigned char salt[SALT_SIZE];
+    memcpy (salt, ciphertext, SALT_SIZE);
+    ciphertext += SALT_SIZE;
     key_iv keyiv = gen_keyiv (master_key, salt);
     aes_init (keyiv->key, keyiv->iv, &e_ctx, &d_ctx);
     int p_len = *len, f_len = 0;
-    char *plaintext = malloc (p_len + AES_BLOCK_SIZE);
+    char *plaintext = malloc (*len + EVP_CIPHER_CTX_block_size(&d_ctx) + 1);
 
     EVP_DecryptInit_ex (&d_ctx, NULL, NULL, NULL, NULL);
     EVP_DecryptUpdate (&d_ctx, plaintext, &p_len, ciphertext, *len);
     EVP_DecryptFinal_ex (&d_ctx, plaintext + p_len, &f_len);
 
     *len = p_len + f_len;
-
+    
     return plaintext;
 }
 
@@ -530,7 +530,7 @@ int send_message_sec (const char *mess, char **error_mess) {
             if(is_room_used(msg->receiver) == 0) {
                 strcpy (msg->content, buff);
             } else {
-                lenght = strlen(buff) + 1;
+                lenght = MAX_CIPHERED_SIZE;
                 k = get_keys_from_room(msg->receiver);
                 ciphermess = aes_encrypt(k->master_key, (char *)buff, &lenght);
                 strcpy(msg->content, ciphermess);
