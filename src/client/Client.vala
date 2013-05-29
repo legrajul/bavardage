@@ -15,7 +15,7 @@ namespace Bavardage {
     public struct Message {
         int code;
         uint8 sender[64];
-        uint8 content[2048];
+        uint8 content[4096];
         uint8 receiver[64];
     }
 
