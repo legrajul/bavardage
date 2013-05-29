@@ -41,8 +41,6 @@ SSL_CTX *setup_server_ctx (void) {
     ctx = SSL_CTX_new (SSLv23_method ());
     if (SSL_CTX_load_verify_locations (ctx, CAFILE, CADIR) != 1)
         fprintf (stderr, "Error loading CA file or directory\n");
-    if (SSL_CTX_set_default_verify_paths (ctx) != 1)
-        fprintf (stderr, "Error loading CA file or directory\n");
     if (SSL_CTX_use_certificate_chain_file (ctx, CERTFILE) != 1)
         fprintf (stderr, "Error loading certificate from file\n");
     if (SSL_CTX_use_PrivateKey_file (ctx, KEYFILE, SSL_FILETYPE_PEM) != 1)
@@ -51,7 +49,7 @@ SSL_CTX *setup_server_ctx (void) {
     SSL_CTX_set_verify (ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
                         verify_callback);
 
-    SSL_CTX_set_verify_depth (ctx, 1);
+    SSL_CTX_set_verify_depth (ctx, 4);
     return ctx;
 }
 
