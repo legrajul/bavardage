@@ -275,12 +275,11 @@ void *traitement_recv (void *param) {
         case MESSAGE:
             if (get_keys_from_room(mess.receiver) == NULL) {
                 printf ("[%s @ %s] %s\n", mess.sender, mess.receiver, mess.content);
-            }
-            else {
+            } else {
                 k = get_keys_from_room(mess.receiver);
                 lenght = MAX_CIPHERED_SIZE;
                 plainmess = aes_decrypt(k, (char *)mess.content, &lenght);
-                printf("[%s @ %s] %s\n", mess.sender, mess.receiver, plainmess);
+                printf("[%s $ %s] %s\n", mess.sender, mess.receiver, plainmess);
             }
             break;
         case CONNECT:
@@ -290,17 +289,15 @@ void *traitement_recv (void *param) {
         case MP:
             if ((get_keys_from_room(mess.receiver) == NULL) && (get_keys_from_room(mess.sender) == NULL)) {
                 printf ("[%s @ %s] %s\n", mess.sender, mess.receiver, mess.content);
-            }
-            else {
+            } else {
                 if (get_keys_from_room(mess.receiver)!=NULL){
                     k = get_keys_from_room(mess.receiver);
-                }
-                else {
+                } else {
                     k = get_keys_from_room(mess.sender);
                 }
                 lenght = MAX_CIPHERED_SIZE;
                 plainmess = aes_decrypt(k, (char *)mess.content, &lenght);
-                printf("[%s @ %s] %s\n", mess.sender, mess.receiver, plainmess);
+                printf("[%s $ %s] %s\n", mess.sender, mess.receiver, plainmess);
             }
             break;
         case NEW_USER:
@@ -310,10 +307,6 @@ void *traitement_recv (void *param) {
         case ADD_USER:
             printf ("USER %s in %s \n", mess.sender, mess.content);
             break;
-
-       /* case DELETE_ROOM:
-            printf ("The room %s has been deleted\n", mess.content);
-            break; */
 
         case CREATE_ROOM:
             printf ("The room %s has been created\n", mess.content);
