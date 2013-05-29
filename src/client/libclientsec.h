@@ -10,6 +10,10 @@
 #include "libclient.h"
 
 #include "../common/SocketTCP.h"
+#include "../common/common.h"
+#include "../common/commonsec.h"
+#include "../common/room_manager.h"
+#include "../common/room_manager_sec.h"
 
 #include <openssl/ssl.h>
 #include <openssl/rsa.h>
@@ -18,6 +22,7 @@
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
+#include <openssl/hmac.h>
 
 typedef struct KEY_IV {
 	unsigned char key[32];
@@ -50,9 +55,9 @@ int extract_code_sec (const char *str);
 
 int aes_init (unsigned char *key, unsigned char *iv, EVP_CIPHER_CTX *e_ctx, EVP_CIPHER_CTX *d_ctx);
 
-char *aes_encrypt (unsigned char *master_key, char *plaintext, int *len);
+char *aes_encrypt (keys k, char *plaintext, int *len);
 
-char *aes_decrypt (unsigned char *master_key, char *ciphertext, int *len);
+char *aes_decrypt (keys k, char *ciphertext, int *len);
 
 char *decrypt (char *room_name, char *ciphered, int ciphered_size);
 

@@ -4,15 +4,13 @@
 #include "libclientsec.h"
 #include "libclient.h"
 
-#include "../common/common.h"
-#include "../common/commonsec.h"
-#include "../common/room_manager.h"
-#include "../common/room_manager_sec.h"
+
 
 #define CAFILE "root.pem"
 #define CADIR NULL
 
 #define SALT_SIZE 16
+#define HMAC_SIZE 20
 
 char *private_key_filename;
 char *certif_request_filename;
@@ -146,6 +144,43 @@ int disconnect_servers () {
     disconnect_sec ();
 }
 
+int hmac_init (unsigned char *key, HMAC_CTX *hm_ctx, size_t keylen) {
+    HMAC_Init (hm_ctx, key, keylen, EVP_sha1 ());
+}
+
+unsigned char *compute_hmac (HMAC_CTX *hm_ctx, char *text, unsigned int *len) {
+    // Compute the text hmac
+    unsigned char out[HMAC_SIZE];
+    
+    HMAC_Update (hm_ctx, text, strlen (text));
+    HMAC_Final (hm_ctx, out, len);
+
+    return out;
+}
+
+int check_hmac (unsigned char *hash_key, char *text, unsigned char *hmac) {
+
+    // Init the hmac context
+    HMAC_CTX hm_ctx;
+    hmac_init (hash_key, &hm_ctx, 16);
+
+    // Compute the text hmac
+    unsigned int len;
+    unsigned char *out = compute_hmac (&hm_ctx, text, &len);
+    // Check the 2 hmacs
+    int same_hmac = 1;
+    int i;
+    for (i = 0; i < (int) len; i++) {
+        same_hmac = same_hmac && (out[i] == hmac[i]);
+    }
+
+    // Clean up the context
+    HMAC_cleanup (&hm_ctx);
+
+    return same_hmac;
+}
+
+
 int aes_init (unsigned char *key, unsigned char *iv, EVP_CIPHER_CTX *e_ctx, EVP_CIPHER_CTX *d_ctx) {
 
     EVP_CIPHER_CTX_init (e_ctx);
@@ -156,10 +191,25 @@ int aes_init (unsigned char *key, unsigned char *iv, EVP_CIPHER_CTX *e_ctx, EVP_
     return 0;
 }
 
-char *aes_encrypt (unsigned char *master_key, char *plaintext, int *len) {
+char *aes_encrypt (keys k, char *plaintext, int *len) {
+    char finaltext[MAX_MESS_SIZE];
+    memset (finaltext, 0, MAX_MESS_SIZE);
+
+    // Init the hmac context
+    HMAC_CTX hm_ctx;
+    hmac_init (k->hash_key, &hm_ctx, 16);
+    unsigned int len_hm = HMAC_SIZE;
+    memcpy (finaltext, compute_hmac (&hm_ctx, plaintext, &len_hm), HMAC_SIZE);
+
     EVP_CIPHER_CTX e_ctx, d_ctx;
+
+    // Generate a salt
     unsigned char *salt = gen_salt ();
-    key_iv keyiv = gen_keyiv (master_key, salt);
+
+    // Generate the AES key and IV regarding the master key and the salt
+    key_iv keyiv = gen_keyiv (k->master_key, salt);
+
+    // Init the context and encrypt
     aes_init (keyiv->key, keyiv->iv, &e_ctx, &d_ctx);
     int c_len = *len + EVP_CIPHER_CTX_block_size(&e_ctx), f_len = 0;
     char *ciphertext = malloc (c_len);
@@ -167,30 +217,47 @@ char *aes_encrypt (unsigned char *master_key, char *plaintext, int *len) {
     EVP_EncryptInit_ex (&e_ctx, NULL, NULL, NULL, NULL);
     EVP_EncryptUpdate (&e_ctx, ciphertext, &c_len, plaintext, *len);
     EVP_EncryptFinal_ex (&e_ctx, ciphertext + c_len, &f_len);
-
+    
     *len = c_len + f_len;
-    char finaltext[MAX_MESS_SIZE];
-    memset (finaltext, 0, MAX_MESS_SIZE);
-    memcpy (finaltext, salt, SALT_SIZE);
-    memcpy (finaltext + SALT_SIZE, ciphertext, *len);
+    
+    // Achieve the final packet
+    memcpy (finaltext + HMAC_SIZE, salt, SALT_SIZE);
+    memcpy (finaltext + HMAC_SIZE + SALT_SIZE, ciphertext, *len);
+
     return finaltext;
 }
 
-char *aes_decrypt (unsigned char *master_key, char *ciphertext, int *len) {
+char *aes_decrypt (keys k, char *ciphertext, int *len) {
     EVP_CIPHER_CTX e_ctx, d_ctx;
+
+    // Retrieve HMAC from packet
+    unsigned char hmac[HMAC_SIZE];
+    memset (hmac, 0, HMAC_SIZE);
+    memcpy (hmac, ciphertext, HMAC_SIZE);
+
+    // Retrieve salt from packet
     unsigned char salt[SALT_SIZE];
-    memcpy (salt, ciphertext, SALT_SIZE);
-    ciphertext += SALT_SIZE;
-    key_iv keyiv = gen_keyiv (master_key, salt);
+    memcpy (salt, ciphertext + HMAC_SIZE, SALT_SIZE);
+
+    // Generete key and iv regarding the master key and the salt
+    key_iv keyiv = gen_keyiv (k->master_key, salt);
+
+    // Init the context and decrypt
     aes_init (keyiv->key, keyiv->iv, &e_ctx, &d_ctx);
     int p_len = *len, f_len = 0;
     char *plaintext = malloc (*len + EVP_CIPHER_CTX_block_size(&d_ctx) + 1);
 
     EVP_DecryptInit_ex (&d_ctx, NULL, NULL, NULL, NULL);
-    EVP_DecryptUpdate (&d_ctx, plaintext, &p_len, ciphertext, *len);
+    EVP_DecryptUpdate (&d_ctx, plaintext, &p_len, ciphertext + HMAC_SIZE + SALT_SIZE, *len);
     EVP_DecryptFinal_ex (&d_ctx, plaintext + p_len, &f_len);
 
     *len = p_len + f_len;
+
+    // Check the message integrity
+    int check = check_hmac (k->hash_key, plaintext, hmac);
+    if (!check) {
+        return "*** MESSAGE CORROMPU ***";
+    }
     
     return plaintext;
 }
@@ -198,7 +265,7 @@ char *aes_decrypt (unsigned char *master_key, char *ciphertext, int *len) {
 char *decrypt (char *room_name, char *ciphered, int ciphered_size) {
     keys k = get_keys_from_room(room_name);
     int lenght = MAX_CIPHERED_SIZE;
-    char *res = aes_decrypt(k->master_key, ciphered, &lenght);
+    char *res = aes_decrypt(k, ciphered, &lenght);
     return res;
 }
 
@@ -239,7 +306,7 @@ int receive_message_sec(message *m) {
             leng = strlen(m->content) + 1;
             
             k = get_keys_from_room (m->receiver);
-            ciphermess = aes_encrypt(k->master_key, (char *)m->content, &leng);
+            ciphermess = aes_encrypt(k, (char *)m->content, &leng);
             strcpy(text, "/MP ");
             strcat(text, m->receiver);
             strcat(text," ");
@@ -314,27 +381,6 @@ int send_command_sec () {
     } 
 
     return 0;
-}
-
-char *create_challenge_sec (const char *data) {
-    uint8_t *encryptedBytes = NULL;
-    //const char* data = "Data to enrypt";
-    char *private_key_file_name;
-
-    FILE *fp = fopen (private_key_file_name, "r");
-    RSA *rsa = RSA_new ();
-
-    PEM_read_RSAPrivateKey (fp, &rsa, 0, NULL);
-
-    size_t encryptedBytesSize = RSA_size (rsa);
-
-    encryptedBytes = malloc (encryptedBytesSize * sizeof(uint8_t));
-    memset ((void *) encryptedBytes, 0x0, encryptedBytesSize);
-    fclose (fp);
-
-    int result = RSA_private_encrypt (strlen (data), data, encryptedBytes, rsa,
-                                      RSA_PKCS1_PADDING);
-    return encryptedBytes;
 }
 
 int send_message_sec (const char *mess, char **error_mess) {
@@ -532,8 +578,8 @@ int send_message_sec (const char *mess, char **error_mess) {
             } else {
                 lenght = MAX_CIPHERED_SIZE;
                 k = get_keys_from_room(msg->receiver);
-                ciphermess = aes_encrypt(k->master_key, (char *)buff, &lenght);
-                strcpy(msg->content, ciphermess);
+                ciphermess = aes_encrypt(k, (char *)buff, &lenght);
+                memcpy (msg->content, ciphermess, lenght);
             }
             free(tab_string);
             return send_command();
@@ -559,7 +605,7 @@ int send_message_sec (const char *mess, char **error_mess) {
             if (is_room_used(msg->receiver)==1) {
 				lenght = strlen(buff) + 1;
                 k = get_keys_from_room (msg->receiver);
-				ciphermess = aes_encrypt(k->master_key, (char *)buff, &lenght);
+				ciphermess = aes_encrypt(k, (char *)buff, &lenght);
 				strcpy(msg->content,ciphermess);
 				msg->code=MP;
 				return send_command();			

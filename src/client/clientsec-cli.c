@@ -279,7 +279,7 @@ void *traitement_recv (void *param) {
             else {
                 k = get_keys_from_room(mess.receiver);
                 lenght = MAX_CIPHERED_SIZE;
-                plainmess = aes_decrypt(k->master_key, (char *)mess.content, &lenght);
+                plainmess = aes_decrypt(k, (char *)mess.content, &lenght);
                 printf("[%s @ %s] %s\n", mess.sender, mess.receiver, plainmess);
             }
             break;
@@ -299,7 +299,7 @@ void *traitement_recv (void *param) {
                     k = get_keys_from_room(mess.sender);
                 }
                 lenght = MAX_CIPHERED_SIZE;
-                plainmess = aes_decrypt(k->master_key, (char *)mess.content, &lenght);
+                plainmess = aes_decrypt(k, (char *)mess.content, &lenght);
                 printf("[%s @ %s] %s\n", mess.sender, mess.receiver, plainmess);
             }
             break;
