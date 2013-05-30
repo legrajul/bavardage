@@ -74,12 +74,12 @@ namespace Bavardage.Widgets {
             }
 
             /* TEST SECTION */
-            entry_server_ip.set_text ("localhost");
+            entry_server_ip.set_text ("servers");
             entry_server_port.set_text ("10000");
-            entry_login.set_text ("toto");
-            entry_serversec_ip.set_text ("localhost");
+            entry_login.set_text ("");
+            entry_serversec_ip.set_text ("servers");
             entry_serversec_port.set_text ("11000");
-            entry_password.set_text ("tata");
+            entry_password.set_text ("");
             /* END TEST SECTION */
 
             connection_grid.attach (new Label ("Adresse du serveur :"), 0, 0, 1, 1);
