@@ -246,7 +246,11 @@ namespace Bavardage.Threads {
                         client.rooms_map_chats.get (room_name).insert_text (ref iter, s, s.length);
                         var users = client.rooms_map_users.get (content.str) as ListStore;
                         users.append (out tree_iter);
-                        users.set (tree_iter, 0, sender.str, 1, "", -1);
+                        if (client.is_secure_user (sender.str)) {
+                            users.set (tree_iter, 0, sender.str, 1, "", 2, img, -1);
+                        } else {
+                            users.set (tree_iter, 0, sender.str, 1, "", 2, null, -1);
+                        }
                         if (client.chat.get_buffer () == client.rooms_map_chats.get (receiver.str)) {
                             client.chat.get_buffer ().get_iter_at_line (out iter, client.chat.get_buffer ().get_line_count ());
                             client.chat.scroll_to_iter (iter, 0.0, false, 0.0, 1.0);
@@ -256,7 +260,11 @@ namespace Bavardage.Threads {
                     case ADD_USER:
                         var users = client.rooms_map_users.get (content.str) as ListStore;
                         users.append (out tree_iter);
-                        users.set (tree_iter, 0, sender.str, 1, "", -1);
+                        if (client.is_secure_user (sender.str)) {
+                            users.set (tree_iter, 0, sender.str, 1, "", 2, img, -1);
+                        } else {
+                            users.set (tree_iter, 0, sender.str, 1, "", 2, null, -1);
+                        }
                         break;
                     case RM_USER:
                         string s = sender.str + " vient de quitter le salon\n";
@@ -294,7 +302,12 @@ namespace Bavardage.Threads {
                     case ADMIN:
                         var users = client.rooms_map_users.get (content.str) as ListStore;
                         users.append (out tree_iter);
-                        users.set (tree_iter, 0, sender.str, 1, "(admin)", -1);
+                        if (client.is_secure_user (sender.str)) {
+                            users.set (tree_iter, 0, sender.str, 1, "(admin)", 2, img, -1);
+                        } else {
+                            users.set (tree_iter, 0, sender.str, 1, "(admin)", 2, null, -1);
+                        }
+                        
                         break;
                     default:
                         break;

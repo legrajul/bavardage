@@ -16,6 +16,7 @@ namespace Bavardage.Threads {
         }
 
         public void *thread_func () {
+            var img = new Gtk.Image.from_file ("channel-secure-symbolic.svg").get_pixbuf ();
             Message m = { -1, "".data, "".data, "".data };
             while (true) {
                 Thread.usleep (10000);
@@ -83,6 +84,44 @@ namespace Bavardage.Threads {
                         break;
                     case DISCONNECT_SEC:
                         Thread.exit (null);
+                        break;
+                    case NEW_USER:
+                        stdout.printf ("NEW_USER\n");
+                        client.secure_users.add (sender.str);
+                        TreeIter tree_iter;
+                        Value v1, v2;
+                        v1 = v2 = "";
+                        var users = client.rooms_map_users.get (content.str) as ListStore;
+                        users.get_iter_first (out tree_iter);
+                        do {
+                            users.get_value (tree_iter, 0, out v1);
+                            users.get_value (tree_iter, 1, out v2);
+                            if (sender.str == (string) v1) {
+                                users.remove (tree_iter);
+                                
+                                break;
+                            }
+                        } while (users.iter_next (ref tree_iter));
+                        users.set (tree_iter, 0, v1, 1, v2, 2, img, null);
+                        break;
+                    case ADD_USER:
+                        stdout.printf ("ADD_USER\n");
+                        client.secure_users.add (sender.str);
+                        TreeIter tree_iter;
+                        Value v1, v2;
+                        v1 = v2 = "";
+                        var users = client.rooms_map_users.get (content.str) as ListStore;
+                        users.get_iter_first (out tree_iter);
+                        do {
+                            users.get_value (tree_iter, 0, out v1);
+                            users.get_value (tree_iter, 1, out v2);
+                            if (sender.str == (string) v1) {
+                                users.remove (tree_iter);
+                                
+                                break;
+                            }
+                        } while (users.iter_next (ref tree_iter));
+                        users.set (tree_iter, 0, v1, 1, v2, 2, img, null);
                         break;
                     default:
                         break;
