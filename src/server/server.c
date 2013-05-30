@@ -41,9 +41,9 @@ void my_sigaction (int s) {
 }
 
 int clear_message (message *m) {
-    strcpy (m->sender, "");
-    strcpy (m->content, "");
-    strcpy (m->receiver, "");
+    memset (m->sender, 0, MAX_NAME_SIZE);
+    memset (m->content, 0, MAX_MESS_SIZE);
+    memset (m->receiver, 0, MAX_NAME_SIZE);
     m->code = -1;
     return 0;
 }

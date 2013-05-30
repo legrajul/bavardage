@@ -63,7 +63,7 @@ namespace Bavardage.Threads {
                         } else {
                             rooms.set (tree_iter, 0, content.str, 1, null, -1);
                         }
-                        client.rooms_map_users.set (content.str, new ListStore (2, typeof (string), typeof (string)));
+                        client.rooms_map_users.set (content.str, new ListStore (3, typeof (string), typeof (string), typeof (Gdk.Pixbuf)));
                         var buffer = new TextBuffer (new TextTagTable ());
                         buffer.create_tag ("blue", "foreground", "#0000FF", "underline", Pango.Underline.SINGLE);
                         client.rooms_map_chats.set (content.str, buffer);
@@ -91,20 +91,20 @@ namespace Bavardage.Threads {
                         break;
                     case MESSAGE:
                         string s = "<" + sender.str + "> ";
-                        if (client.is_secure_room (receiver.str)) {
+                        if (client.is_secure_room (receiver.str) && !content.str.validate ()) {
                             var tmptext = decrypt (receiver.str, m.content);
-                            if (tmptext.validate ()) {
+                            if (tmptext.validate () && !content.str.validate ()) {
                                 s += tmptext;
                             } else if (content.str.validate ()) {
                                 s += content.str;
                             } else {
-                                s += "*** MESSAGE ILLISIBLE ***";
+                                s += "*** MESSAGE ILLISIBLE ***\n";
                             }
                         } else {
                             if (content.str.validate ()) {
                                 s += content.str;
                             } else {
-                                s += "*** MESSAGE ILLISIBLE ***";
+                                s += "*** MESSAGE ILLISIBLE ***\n";
                             }
                         }
                         s += "\n";
@@ -157,7 +157,7 @@ namespace Bavardage.Threads {
                         if (sender.str == ClientCore.get_login ()) {
                             room_name = "[" + receiver.str + "]";
                         }
-                        if (client.rooms_map_chats.get (room_name) == null) {
+                        if (!client.rooms_map_chats.has_key (room_name)) {
                             var rooms = client.open_rooms.get_model () as ListStore;
                             rooms.append (out tree_iter);
                             if (client.is_secure_room (room_name)) {
@@ -166,7 +166,7 @@ namespace Bavardage.Threads {
                                 rooms.set (tree_iter, 0, room_name, 1, null, -1);
                             }
 
-                            client.rooms_map_users.set (room_name, new ListStore (2, typeof (string), typeof (string)));
+                            client.rooms_map_users.set (room_name, new ListStore (3, typeof (string), typeof (string), typeof (Gdk.Pixbuf)));
                             var buffer = new TextBuffer (new TextTagTable ());
                             buffer.create_tag ("blue", "foreground", "#0000FF", "underline", Pango.Underline.SINGLE);
                             client.rooms_map_chats.set (room_name, buffer);
@@ -285,7 +285,7 @@ namespace Bavardage.Threads {
                         client.open_rooms.set_model (new ListStore (2, typeof (string), typeof (Gdk.Pixbuf)));
                         client.chat.set_buffer (new TextBuffer (new TextTagTable ()));
                         client.message.set_buffer (new EntryBuffer ("".data));
-                        client.connected_users.set_model (new ListStore (2, typeof (string), typeof (string)));
+                        client.connected_users.set_model (new ListStore (3, typeof (string), typeof (string), typeof (string)));
                         client.update_connected (false, "");
                         Thread.exit (null);
                         break;

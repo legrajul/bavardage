@@ -31,6 +31,8 @@ namespace Bavardage {
         public HashMap<string, EntryBuffer> rooms_map_entries = new HashMap<string, EntryBuffer> ();
         public HashMap<string, KeyIv> secure_rooms_map_keyiv = new HashMap<string, KeyIv> ();
         public HashSet<string> secure_rooms = new HashSet<string> ();
+        public HashSet<string> secure_users = new HashSet<string> ();
+
 
         public string exec_directory { get; private set; }
 
@@ -93,9 +95,11 @@ namespace Bavardage {
                 builder.connect_signals (this);
                 window = builder.get_object ("mainWindow") as Window;
                 connected_users = builder.get_object ("connected_users") as TreeView;
-                connected_users.set_model (new ListStore (2, typeof (string), typeof (string)));
+                connected_users.set_model (new ListStore (3, typeof (string), typeof (string), typeof (Gdk.Pixbuf)));
                 connected_users.insert_column_with_attributes (-1, "Contacts connectés", new CellRendererText (), "text", 0, null);
                 connected_users.insert_column_with_attributes (-1, null, new CellRendererText (), "text", 1, null);
+                connected_users.insert_column_with_attributes (-1, null, new CellRendererPixbuf (), "pixbuf", 2, null);
+                
                 open_rooms = builder.get_object ("open_rooms") as TreeView;
                 open_rooms.set_model (new ListStore (2, typeof (string), typeof (Gdk.Pixbuf)));
                 open_rooms.insert_column_with_attributes (-1, "Salons ouverts", new CellRendererText (), "text", 0, null);
@@ -265,6 +269,7 @@ namespace Bavardage {
                             model2.get_iter_first (out iter);
                             open_rooms.get_selection ().select_iter (iter);
                             open_rooms.cursor_changed ();
+                            
                         }
                     }
                 });
@@ -329,7 +334,7 @@ namespace Bavardage {
                                             rooms.set (iter, 0, room_name, 1, null, -1);
                                         }
 
-                                        rooms_map_users.set (room_name, new ListStore (2, typeof (string), typeof (string)));
+                                        rooms_map_users.set (room_name, new ListStore (3, typeof (string), typeof (string), typeof (Gdk.Pixbuf)));
                                         var buffer = new TextBuffer (new TextTagTable ());
                                         buffer.create_tag ("blue", "foreground", "#0000FF", "underline", Pango.Underline.SINGLE);
                                         rooms_map_chats.set (room_name, buffer);
@@ -352,7 +357,7 @@ namespace Bavardage {
                                     rooms.append (out iter);
                                     rooms.set (iter, 0, room_name, 1, null, -1);
 
-                                    rooms_map_users.set (room_name, new ListStore (2, typeof (string), typeof (string)));
+                                    rooms_map_users.set (room_name, new ListStore (3, typeof (string), typeof (string), typeof (Gdk.Pixbuf)));
                                     var buffer = new TextBuffer (new TextTagTable ());
                                     buffer.create_tag ("blue", "foreground", "#0000FF", "underline", Pango.Underline.SINGLE);
                                     rooms_map_chats.set (room_name, buffer);
@@ -563,6 +568,10 @@ namespace Bavardage {
 
             public bool is_secure_room (string room_name) {
                 return secure_rooms.contains (room_name);
+            }
+
+            public bool is_secure_user (string user_name) {
+                return secure_users.contains (user_name);
             }
         }
 
