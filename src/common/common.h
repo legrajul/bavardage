@@ -43,8 +43,8 @@
 typedef struct {
 	int code;
 	char sender[MAX_NAME_SIZE];
+    char receiver[MAX_ROOM_NAME_SIZE];
 	char content[MAX_MESS_SIZE];
-	char receiver[MAX_ROOM_NAME_SIZE];
 } message;
 
 #endif

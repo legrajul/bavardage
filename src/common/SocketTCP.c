@@ -107,11 +107,11 @@ SocketTCP *acceptSocketTCP (SocketTCP *socket) {
 }
 
 int writeSocketTCP (SocketTCP *socket, const char *buffer, int length) {
-	return write (socket->socket, buffer, length);
+	return send (socket->socket, buffer, length, 0);
 }
 
 int readSocketTCP (SocketTCP *socket, char *buffer, int length) {
-	return read (socket->socket, buffer, length);
+	return recv (socket->socket, buffer, length, MSG_WAITALL);
 }
 
 int closeSocketTCP (SocketTCP *socket) {

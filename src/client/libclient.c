@@ -105,6 +105,8 @@ int send_command () {
 		strcpy (msg->sender, login);
 	else
 		return -1;
+
+    printf ("msg->code = %d, msg->sender = %s, msg->content = %s, msg->receiver = %s\n", msg->code, msg->sender, msg->content, msg->receiver);
 	if (writeSocketTCP (client_sock, (char *) msg, sizeof(message)) < 0) {
 		return (1);
 	}

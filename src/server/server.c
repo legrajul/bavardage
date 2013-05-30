@@ -49,6 +49,7 @@ int clear_message (message *m) {
 }
 
 int join_room (user u, char *room_name) {
+    
     user_list users = get_users (room_name);
     user_list t, l;
     message m;

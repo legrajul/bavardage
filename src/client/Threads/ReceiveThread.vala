@@ -24,6 +24,7 @@ namespace Bavardage.Threads {
                 Thread.usleep (10000);
                 m = { -1, "".data, "".data, "".data };
                 if (receive_message (out m) == 0) {
+                    
                     var sender = new StringBuilder ("");
                     for (int i = 0; i < m.sender.length; i++) {
                         sender.append_c((char) m.sender[i]);
@@ -36,6 +37,7 @@ namespace Bavardage.Threads {
                     for (int i = 0; i < m.receiver.length; i++) {
                         receiver.append_c ((char) m.receiver[i]);
                     }
+
                     switch (m.code) {
                     case CREATE_ROOM_KO:
                     case JOIN_ROOM_KO:
