@@ -230,11 +230,13 @@ namespace Bavardage.Threads {
                             }
                         }
 
-                        if (client.chat.get_buffer () == client.rooms_map_chats.get (receiver.str)) {
-                            client.chat.get_buffer ().get_iter_at_line (out iter, client.chat.get_buffer ().get_line_count ());
-                            client.chat.scroll_to_iter (iter, 0.0, false, 0.0, 1.0);
-                            client.chat.get_buffer ().set_modified (true);
+                        if (client.chat.get_buffer () != client.rooms_map_chats.get (room_name)) {
+                            Posix.system ("notify-send \"Bavardage : Nouveau message privé de l'utilisateur " + sender.str + "\"");
                         }
+                        client.chat.get_buffer ().get_iter_at_line (out iter, client.chat.get_buffer ().get_line_count ());
+                        client.chat.scroll_to_iter (iter, 0.0, false, 0.0, 1.0);
+                        client.chat.get_buffer ().set_modified (true);
+                        
                         break;
                     case NEW_USER:
                         string s = sender.str + " vient de rejoindre le salon\n";

@@ -46,6 +46,7 @@ PACKAGES
   gtk+-3.0
   gee-1.0
   glib-2.0
+  posix
 OPTIONS
   --thread
   --target-glib=2.32
@@ -55,7 +56,7 @@ CUSTOM_VAPIS
 )
 
 find_package(PkgConfig)
-pkg_check_modules(DEPS REQUIRED gtk+-3.0 gee-1.0 glib-2.0)
+pkg_check_modules(DEPS REQUIRED gtk+-3.0 gee-1.0 glib-2.0 posix)
 set(CFLAGS ${DEPS_CFLAGS} ${DEPS_CFLAGS_OTHER} -w)
 
 set(LIB_PATHS ${DEPS_LIBRARY_DIRS} ${CMAKE_BIN_DIR})
