@@ -157,7 +157,7 @@ namespace Bavardage.Threads {
                         if (sender.str == ClientCore.get_login ()) {
                             room_name = "[" + receiver.str + "]";
                         }
-                        if (client.rooms_map_chats.get (room_name) == null) {
+                        if (!client.rooms_map_chats.has_key (room_name)) {
                             var rooms = client.open_rooms.get_model () as ListStore;
                             rooms.append (out tree_iter);
                             if (client.is_secure_room (room_name)) {
