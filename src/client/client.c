@@ -16,6 +16,7 @@ char *login, **tab_string;
 int status = NOT_CONNECTED;
 pthread_t thread_send, thread_recv;
 
+//gestion des signaux d'interruption
 void my_sigaction (int s) {
 	switch (s) {
 	case SIGINT:
@@ -26,6 +27,7 @@ void my_sigaction (int s) {
 	}
 }
 
+//Decoupage d'une chaine de caractère en fonction d'une taille donnée
 char *str_sub (const char *s, unsigned int start, unsigned int end) {
 	char *new_s = NULL;
 	if (s != NULL && start < end) {
@@ -44,6 +46,7 @@ char *str_sub (const char *s, unsigned int start, unsigned int end) {
 	return new_s;
 }
 
+//extraction du code d'une commande
 int extract_code (const char *str) {
 	char *command = NULL;
 	command = str_sub (str, 1, strlen (str));
@@ -69,6 +72,7 @@ int extract_code (const char *str) {
 	return -1;
 }
 
+//Lancement des threads de réception et d'envoi
 int start_communication () {
 	(void) signal (SIGINT, my_sigaction);
 	pthread_create (&thread_recv, NULL, traitement_recv, NULL);
@@ -80,6 +84,7 @@ int start_communication () {
 	return 0;
 }
 
+//Création du socket
 int connect_socket (const char *addr, const int port) {
 	int co;
 	if ((client_sock = creerSocketTCP ()) == NULL) {
@@ -98,6 +103,7 @@ int connect_socket (const char *addr, const int port) {
 	return 0;
 }
 
+//traitement des commandes saisies par l'utilisateur
 void *traitement_send (void *param) {
 	char mess[MAX_MESS_SIZE] = "";
 	while (fgets (mess, MAX_MESS_SIZE, stdin) != NULL) {
@@ -107,12 +113,12 @@ void *traitement_send (void *param) {
 	pthread_exit (0);
 }
 
+//Traitement des commandes reçues par le client
 void *traitement_recv (void *param) {
 	message mess;
 	while (1) {
 
-		if (readSocketTCP (client_sock, (char*) &mess, sizeof(message)) > 0) {
-			//~ printf ("message recieved, code = %d, mess = %s, asked_code = %d, status = %d\n", mess.code, mess.mess, msg->code, status);
+		if (readSocketTCP (client_sock, (char*) &mess, sizeof(message)) > 0) {			
 		} else {
 			perror ("readSocketTCP");
 			break;
@@ -192,8 +198,7 @@ void *traitement_recv (void *param) {
 		if (msg->code == DELETE_ROOM && mess.code == KO) {
 			printf ("Error: %s\n", mess.content);
 		}
-		if (mess.code == DELETE_ROOM) {
-			//TODO supprimer le salon
+		if (mess.code == DELETE_ROOM) {			
 			printf ("The room %s has been deleted\n", mess.content);
 		}
 
@@ -207,6 +212,7 @@ void *traitement_recv (void *param) {
 	pthread_exit (0);
 }
 
+//Calcul de la taille d'un tableau de chaines de caractères
 int len (char **tab) {
 	int n = 0;
 	if (tab == NULL)
@@ -221,6 +227,7 @@ int len (char **tab) {
 	}
 }
 
+//Envoi des commandes au serveur
 int send_command () {
 	if (msg == NULL) {
 		msg = (message*) malloc (sizeof(message));
@@ -232,6 +239,7 @@ int send_command () {
 	return 0;
 }
 
+//Créer un tableau a partir d'une chaine
 char **create_table_param (const char *string) {
 	char **res = (char **) malloc (sizeof(char*) * MAX_MESS_SIZE);
 	int i = 0;
@@ -246,6 +254,7 @@ char **create_table_param (const char *string) {
 	return res;
 }
 
+//Envoi un message au serveur
 int send_message (const char *mess) {
 	int code;
 	char buffer[strlen (mess)];
@@ -325,7 +334,7 @@ int send_message (const char *mess) {
 			send_command ();
 			break;
 
-		case MP:  // Cas d'envoi de message prive
+		case MP:  // Cas d'envoi de message privé
 			tab_string = create_table_param (buffer);
 			strcpy (msg->receiver, tab_string[1]);
 			for (i = 2; i < len (tab_string); i++) {
@@ -341,6 +350,7 @@ int send_message (const char *mess) {
 	return 0;
 }
 
+//Déconnexion du client
 int disconnect () {
 	msg->code = DISCONNECT;
 	send_command ();

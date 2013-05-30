@@ -28,6 +28,7 @@ pthread_t thread_send, thread_recv, thread_recv_sec;
 
 int leng;
 
+//Gestion des signaux d'interruption
 void handler(int signum) {
     switch (signum) {
         case SIGINT:
@@ -40,6 +41,7 @@ void handler(int signum) {
     
 }
 
+
 int connectSignals() {
     struct sigaction sa;
     sa.sa_handler = handler;
@@ -51,7 +53,7 @@ int connectSignals() {
     return 0;
 }
 
-
+//traitement des commandes saisies par l'utilisateur
 void *traitement_send (void *param) {
     connectSignals();
     char mess[MAX_MESS_SIZE] = "";
@@ -79,7 +81,7 @@ void *traitement_send (void *param) {
     pthread_exit (0);
 }
 
-
+//Traitement des commandes sécurisées reçues par le client
 void *traitement_recv_sec (void *param) {
     connectSignals();
     char text[MAX_MESS_SIZE] = " ";
@@ -108,23 +110,19 @@ void *traitement_recv_sec (void *param) {
         char *res = NULL, conn[MAX_MESS_SIZE] = "";
         switch (mess.code) {
         case CONNECT_SEC:
-            strcpy(conn, "/CONNECT ");
-           // printf("mess.sender: <%s>\n", mess.sender);
+            strcpy(conn, "/CONNECT ");         
             strcat(conn, mess.sender);
             send_message (conn, NULL);
-            //printf("init_rooms: <%d>\n", init_rooms());
             break;
         case CONNECT_SEC_OK:
             printf("--------------------------You are now connected ------------------------\n");
             break;
-        case DISCONNECT:
-            //disconnect ();
+        case DISCONNECT:          
             printf ("You're now disconnected from the chat server\n");
             pthread_detach (thread_send);
             exit (0);
 
         case DISCONNECT_SEC:
-            //disconnect_sec();
             printf ("You're now disconnected from the chat secure server\n");
             pthread_detach (thread_send);
             exit (0);
@@ -239,6 +237,7 @@ void *traitement_recv_sec (void *param) {
     pthread_exit (0);
 }
 
+//Traitement des commandes reçues par le client
 void *traitement_recv (void *param) {
     connectSignals();
     message mess;
@@ -340,6 +339,7 @@ void *traitement_recv (void *param) {
     pthread_exit (0);
 }
 
+//Lancement des threads de réception et d'envoi
 int start_communication () {
     pthread_create (&thread_recv_sec, NULL, traitement_recv_sec, NULL);
     pthread_create (&thread_recv, NULL, traitement_recv, NULL);
@@ -352,6 +352,7 @@ int start_communication () {
     return 0;
 }
 
+//Récupération du chemin du certificat du client
 char *get_root_ca_path() {
     char path[1024];
     char dest[1024];

@@ -13,7 +13,7 @@ SocketTCP *client_sock;
 message *msg;
 char *login, **tab_string;
 
-
+//Decoupage d'une chaine de caractère en fonction d'une taille donnée
 char *str_sub (const char *s, unsigned int start, unsigned int end) {
 	char *new_s = NULL;
 	if (s != NULL && start < end) {
@@ -32,6 +32,7 @@ char *str_sub (const char *s, unsigned int start, unsigned int end) {
 	return new_s;
 }
 
+//extraction du code d'une commande
 int extract_code (const char *str) {
 	char *command = NULL;
 	command = str + 1;
@@ -57,6 +58,7 @@ int extract_code (const char *str) {
 	return -1;
 }
 
+//Création du socket
 int connect_socket (const char *addr, const int port) {
 	int co;
 	if ((client_sock = creerSocketTCP ()) == NULL) {
@@ -72,8 +74,8 @@ int connect_socket (const char *addr, const int port) {
 	return 0;
 }
 
+//Récupération du message reçu
 int receive_message (message *m) {
-   // printf("receive_message libclient\n");
 	int ret = readSocketTCP (client_sock, (char *) m, sizeof(message));
 	if (ret == 0) {
 		return -1;
@@ -82,6 +84,7 @@ int receive_message (message *m) {
 	}
 }
 
+//Calcul de la taille d'un tableau de chaines de caractères
 int len (char **tab) {
 	int n = 0;
 	if (tab == NULL)
@@ -94,6 +97,7 @@ int len (char **tab) {
 	}
 }
 
+//Envoi des commandes au serveur
 int send_command () {
 	if (client_sock == NULL) {
 		return -1;
@@ -113,6 +117,7 @@ int send_command () {
 	return 0;
 }
 
+//Créer un tableau a partir d'une chaine
 char **create_table_param (const char *string) {
 	char **res = (char **) malloc (sizeof(char*) * 100);
 	int i = 0;
@@ -131,6 +136,7 @@ char **create_table_param (const char *string) {
 	return res;
 }
 
+//Envoi un message au serveur
 int send_message (const char *mess, char **error_mess) {
 	int code;
 	char buffer[20 + MAX_NAME_SIZE + MAX_MESS_SIZE] = "";
@@ -245,6 +251,7 @@ int send_message (const char *mess, char **error_mess) {
 	return 0;
 }
 
+//Déconnexion d'un client
 int disconnect () {
 	if (client_sock != NULL && msg != NULL) {
 		msg->code = DISCONNECT;
@@ -253,6 +260,7 @@ int disconnect () {
 	return 0;
 }
 
+//Récupération du login de l'utilisateur
 char *get_login () {
 	return strdup (login);
 }

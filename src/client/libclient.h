@@ -46,7 +46,7 @@ int len (char **tab);
 int send_command ();
 
 /**
- *      Ce connecte au serveur
+ *      Se connecte au serveur
  *      @param addr adresse IP du serveur
  *      @param port port du serveur
  *      @return 0 ou -1 en cas d'erreur
