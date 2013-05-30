@@ -12,6 +12,7 @@
 
 pthread_t thread_send, thread_recv;
 
+//traitement des commandes saisies par l'utilisateur
 void *traitement_send (void *param) {
 	char mess[MAX_MESS_SIZE] = "";
 	while (fgets (mess, MAX_MESS_SIZE, stdin) != NULL) {
@@ -30,6 +31,7 @@ void *traitement_send (void *param) {
 	pthread_exit (0);
 }
 
+//Traitement des commandes reçues par le client
 void *traitement_recv (void *param) {
 	message mess;
 	while (1) {
@@ -94,6 +96,7 @@ void *traitement_recv (void *param) {
 	pthread_exit (0);
 }
 
+//Lancement des threads de réception et d'envoi
 int start_communication () {
 	pthread_create (&thread_recv, NULL, traitement_recv, NULL);
 	pthread_create (&thread_send, NULL, traitement_send, NULL);

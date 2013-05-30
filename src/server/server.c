@@ -16,6 +16,7 @@ pthread_mutex_t mutex;
 user_map server_user_map;
 char *home_room = "accueil";
 
+//Vérifie si un login est valide
 int is_login_valid (char *login) {
     int i = 0;
     char c = login[0];
@@ -29,6 +30,7 @@ int is_login_valid (char *login) {
     return 1;
 }
 
+//Gestion des signaux
 void my_sigaction (int s) {
     switch (s) {
     case SIGINT:
@@ -40,6 +42,7 @@ void my_sigaction (int s) {
     }
 }
 
+//On vide la structure message
 int clear_message (message *m) {
     strcpy (m->sender, "");
     strcpy (m->content, "");
@@ -48,6 +51,7 @@ int clear_message (message *m) {
     return 0;
 }
 
+//ajouter un utilisateur dans un salon 
 int join_room (user u, char *room_name) {
     
     user_list users = get_users (room_name);
@@ -85,6 +89,7 @@ int join_room (user u, char *room_name) {
     return 0;
 }
 
+//supprimer un utilisateur d'un salon
 int quit_room (user u, char *room_name) {
     user_list users = get_users (room_name);
     user_list t;
@@ -98,6 +103,7 @@ int quit_room (user u, char *room_name) {
     return 0;
 }
 
+//supprimer un salon
 int delete_room (char *room_name) {
     user_list users = get_users (room_name);
     user_list t;
@@ -353,6 +359,7 @@ void *handle_connexion (void *param) {
 
 }
 
+//création de thread
 void new_thread (SocketTCP *socket) {
     int ret;
 
@@ -382,6 +389,7 @@ void new_thread (SocketTCP *socket) {
     }
 }
 
+//création du salon principal
 int create_main_room () {
     init_rooms ();
     add_room (home_room, NULL);
@@ -390,6 +398,7 @@ int create_main_room () {
     return 0;
 }
 
+//création de la socket d'écoute
 int start_listening (const char *addr, int port) {
     SocketTCP *client;
 

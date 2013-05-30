@@ -27,25 +27,24 @@ int debug = 0;
 int is_room_create = 0;
 
 extern char *login, **tab_string;
-//partie test échange sec
-unsigned int salt[] = {12345, 54321};
-int leng;
 
-//fin partie test échange
 
+//Récupération du nom du certificat pour le stocker dans une variable
 int set_certif_filename (const char *certif_f) {
     certif_filename = strdup (certif_f);
 }
 
+//Récupération du nom du fichier de la requête pour le stocker dans une variable
 int set_certif_request_filename (const char *certif_req_f) {
     certif_request_filename = strdup (certif_req_f);
 }
 
+//Récupération du nom de la clé pour le stocker dans une variable
 int set_private_key_filename (const char *private_key_f) {
     private_key_filename = strdup (private_key_f);
 }
 
-//modif
+//Fonction appelée lorsque la clé est chiffrée
 char *pass = "";
 int password_cb(char *buf,int num, int rwflag,void *userdata) {
     if(num<strlen(pass)+1)
@@ -55,14 +54,17 @@ int password_cb(char *buf,int num, int rwflag,void *userdata) {
     return(strlen(pass));
 }
 
+//Récupération du mot de passe de la clé privé
 void set_private_key_password (char *password) {
     pass = strdup (password);
 }
 
+//Récupération du nom du certificat racine pour le stocker dans une variable
 void set_root_certif_filename (const char *filename) {
     root_certif_filename = strdup (filename);
 }
 
+//génération d'un sel pseudo aléatoire
 unsigned char *gen_salt () {
     unsigned char *buf;
     buf = (unsigned char *) malloc (SALT_SIZE);
@@ -74,6 +76,7 @@ unsigned char *gen_salt () {
     return buf;
 }
 
+//Génération d'une clé et d'un IV pour le chiffrement et déchiffrement des messages
 key_iv gen_keyiv (unsigned char *master_key, unsigned char *salt) {
     int nrounds = 5;
     key_iv keyiv = malloc (sizeof (struct KEY_IV));
@@ -81,7 +84,7 @@ key_iv gen_keyiv (unsigned char *master_key, unsigned char *salt) {
     return keyiv;
 }
 
-
+//Initialisation du contexte SSL pour les communications sécurisées
 SSL_CTX *setup_client_ctx (void) {
     //SSL_CTX *ctx;
     ctx = SSL_CTX_new (SSLv23_method ());
@@ -99,10 +102,9 @@ SSL_CTX *setup_client_ctx (void) {
     return ctx;
 }
 
-//fin modif
 
+//Création du socket sécurisé
 int connect_secure_socket (const char *addr, const int port) {
-   // printf ("BEGIN connect_secure_socket\n");
     int co;
     if ((secure_socket = creerSocketTCP ()) == NULL) {
         fprintf (stderr, "Failed to create SocketTCP\n");
@@ -129,6 +131,7 @@ int connect_secure_socket (const char *addr, const int port) {
     return 0;
 }
 
+//Gestion de la connexion avec authentification
 int connect_with_authentication (char *chatservaddr, int chatservport,
                                  char *secservaddr, int secservport) {
     
@@ -137,15 +140,18 @@ int connect_with_authentication (char *chatservaddr, int chatservport,
     
 }
 
+//Déconnexion du client des serveurs
 int disconnect_servers () {
     disconnect ();
     disconnect_sec ();
 }
 
+//Initialisation d'une instance de l'implémentation par défaut de HMAC
 int hmac_init (unsigned char *key, HMAC_CTX *hm_ctx, size_t keylen) {
     HMAC_Init (hm_ctx, key, keylen, EVP_sha1 ());
 }
 
+//Calcul du haché d'un message
 unsigned char *compute_hmac (HMAC_CTX *hm_ctx, char *text, unsigned int *len) {
     // Compute the text hmac
     unsigned char out[HMAC_SIZE];
@@ -156,6 +162,7 @@ unsigned char *compute_hmac (HMAC_CTX *hm_ctx, char *text, unsigned int *len) {
     return out;
 }
 
+//Hachage d'un texte et comparaison avec le haché mis en paramètre
 int check_hmac (unsigned char *hash_key, char *text, unsigned char *hmac) {
 
     // Init the hmac context
@@ -178,7 +185,7 @@ int check_hmac (unsigned char *hash_key, char *text, unsigned char *hmac) {
     return same_hmac;
 }
 
-
+//Initialisation du contexte de chiffrement avec AES
 int aes_init (unsigned char *key, unsigned char *iv, EVP_CIPHER_CTX *e_ctx, EVP_CIPHER_CTX *d_ctx) {
 
     EVP_CIPHER_CTX_init (e_ctx);
@@ -189,6 +196,7 @@ int aes_init (unsigned char *key, unsigned char *iv, EVP_CIPHER_CTX *e_ctx, EVP_
     return 0;
 }
 
+//Fonction de chiffrement avec AES
 char *aes_encrypt (keys k, char *plaintext, int *len) {
     char finaltext[MAX_MESS_SIZE];
     memset (finaltext, 0, MAX_MESS_SIZE);
@@ -225,6 +233,7 @@ char *aes_encrypt (keys k, char *plaintext, int *len) {
     return finaltext;
 }
 
+//Fonction de dechiffrement avec AES
 char *aes_decrypt (keys k, char *ciphertext, int *len) {
     EVP_CIPHER_CTX e_ctx, d_ctx;
 
@@ -260,6 +269,7 @@ char *aes_decrypt (keys k, char *ciphertext, int *len) {
     return plaintext;
 }
 
+//Fonction de dechiffrement d'un texte envoyé à une ROOM
 char *decrypt (char *room_name, char *ciphered, int ciphered_size) {
     keys k = get_keys_from_room(room_name);
     int lenght = MAX_CIPHERED_SIZE;
@@ -267,6 +277,7 @@ char *decrypt (char *room_name, char *ciphered, int ciphered_size) {
     return res;
 }
 
+//Traitement des messages sécurisés reçus par le client
 int receive_message_sec(message *m) {
     int ret = SSL_read (ssl, (char *) m, sizeof(message));
     
@@ -319,6 +330,7 @@ int receive_message_sec(message *m) {
     }
 }
 
+//extraction du code d'une commande sécurisée
 int extract_code_sec (const char *str) {
     if (str == NULL) {
         return -1;
@@ -360,7 +372,7 @@ int extract_code_sec (const char *str) {
     return -1;
 }
 
-
+//Envoi des commandes sécurisés au serveur
 int send_command_sec () {
  
     if (secure_socket == NULL) {
@@ -381,6 +393,7 @@ int send_command_sec () {
     return 0;
 }
 
+//Envoi un message au serveur sécurisé
 int send_message_sec (const char *mess, char **error_mess) {
     int code;
     char buffer[20 + MAX_NAME_SIZE + MAX_MESS_SIZE] = "";
@@ -655,6 +668,7 @@ int send_message_sec (const char *mess, char **error_mess) {
     return 0;
 }
 
+//Déconnexion du client sécurisé
 int disconnect_sec () {
     if (secure_socket != NULL && msg != NULL) {
         msg->code = DISCONNECT_SEC;
