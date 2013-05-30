@@ -100,6 +100,6 @@ user get_user (char *login, user_map map) {
 			return t->current_user;
 		}
 	}
-	return t->current_user;
+	return NULL;
 }
 

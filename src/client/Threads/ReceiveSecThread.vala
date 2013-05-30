@@ -34,6 +34,13 @@ namespace Bavardage.Threads {
                         receiver.append_c ((char) m.receiver[i]);
                     }
                     switch (m.code) {
+                    case KO:
+                        string s = "Erreur : " + content.str + "\n";
+                        TextIter iter;
+                        client.chat.get_buffer ().get_end_iter (out iter);
+                        client.chat.get_buffer ().insert_text (ref iter, s, s.length);
+
+                        break;
                     case CONNECT_SEC:
                         client.is_secured = true;
                         client.secure_statusbar.push (client.statusbar.get_context_id ("securestatus"), "(Connexion sécurisée)");
