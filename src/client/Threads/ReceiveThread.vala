@@ -160,7 +160,11 @@ namespace Bavardage.Threads {
                         if (client.rooms_map_chats.get (room_name) == null) {
                             var rooms = client.open_rooms.get_model () as ListStore;
                             rooms.append (out tree_iter);
-                            rooms.set (tree_iter, 0, room_name, -1);
+                            if (client.is_secure_room (room_name)) {
+                                rooms.set (tree_iter, 0, room_name, 1, img, -1);
+                            } else {
+                                rooms.set (tree_iter, 0, room_name, 1, null, -1);
+                            }
 
                             client.rooms_map_users.set (room_name, new ListStore (2, typeof (string), typeof (string)));
                             var buffer = new TextBuffer (new TextTagTable ());

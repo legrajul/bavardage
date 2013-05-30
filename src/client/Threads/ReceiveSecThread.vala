@@ -49,6 +49,7 @@ namespace Bavardage.Threads {
                         }
                         break;
                     case MP_SEC_OK:
+                        
                         var room_name = new StringBuilder ("");
                         for (int i = 0; i < m.content.length && m.content[i] != '|'; i++) {
                             room_name.append_c ((char) m.content[i]);

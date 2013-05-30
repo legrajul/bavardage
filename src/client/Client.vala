@@ -183,9 +183,14 @@ namespace Bavardage {
                             if (((string) v)[0] == '[') {
                                 connected_users.get_parent ().hide ();
                                 send_mp_button.hide ();
+                                invite_button.hide ();
+                                kick_button.hide ();
                             } else {
                                 connected_users.get_parent ().show_all ();
                                 send_mp_button.show ();
+                                invite_button.show ();
+                                kick_button.show ();
+                                
                             }
                             kick_button.set_sensitive (is_secure_room ((string) v));
                             invite_button.set_sensitive (is_secure_room ((string) v));
